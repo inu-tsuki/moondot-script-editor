@@ -10,12 +10,14 @@
 
 - `roadmap/`：阶段路线，只放阶段级计划和范围边界。
 - `engineering/`：当前工程搭建和技术选型计划。
+- `reviews/`：已合并 PR 的 review、回顾和后续动作。
 - `TODO.md`：AI 协作期任务池和提交规范相关的执行清单；阶段权威以 `roadmap/` 为准。
 
 当前优先从这里开始：
 
 - `planning/roadmap/README.md`
 - `planning/development-workflow.md`
+- `planning/reviews/pr-001-app-scaffold.md`
 - `planning/TODO.md`
 
 ## 知识库：`docs/knowledge/`
@@ -35,6 +37,7 @@
 - `knowledge/product/vision.md`
 - `knowledge/architecture/screenplay-model-direction.md`
 - `knowledge/interaction/semantic-block-editing.md`
+- `knowledge/interaction/workbench-layout.md`
 - `knowledge/validation/screenplay-ast-validation.md`
 - `knowledge/export/fountain-like-projection.md`
 - `knowledge/schema/README.md`
@@ -49,6 +52,7 @@
 
 - 要安排阶段顺序、阶段边界、72 小时交付策略：放 `planning/roadmap/`。
 - 要安排当前工程脚手架、技术栈和 PR 拆分：放 `planning/engineering/`。
+- 要保存已合并 PR 的 review 和 follow-up：放 `planning/reviews/`。
 - 要保存 PR、commit、第一次提交和开发节奏：放 `planning/development-workflow.md`。
 - 要记录当前任务、PR 拆分、提交前检查：放 `planning/TODO.md`。
 - 要保存官方议题、评审和提交约束：放 `knowledge/requirements/`。
