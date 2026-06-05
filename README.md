@@ -57,7 +57,7 @@ MVP 要完成一条可演示链路：
 ## 当前状态
 
 - Phase 0：需求、范围、文档库和开发流程已建立。
-- Phase 1：工程脚手架和基础 UI 待创建。
+- Phase 1：React + TypeScript + Vite 脚手架已创建，基础工作台 UI 开始搭建。
 - Demo：待实现。
 
 ## 文档
@@ -104,9 +104,25 @@ MVP 要完成一条可演示链路：
 
 ## 运行
 
-工程脚手架尚未创建。当前仓库目前只包含项目文档、PR 模板和 Git 忽略规则。
+安装依赖：
 
-脚手架完成后，本节会补充安装、启动、测试和构建命令。
+```sh
+pnpm install
+```
+
+启动开发服务器：
+
+```sh
+pnpm dev
+```
+
+检查代码：
+
+```sh
+pnpm lint
+pnpm build
+pnpm format:check
+```
 
 ## Demo
 

@@ -4,7 +4,7 @@ What does this PR change for 月点, and why now?
 
 ## Changes
 
-- 
+-
 
 ## Verification
 
