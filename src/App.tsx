@@ -2,6 +2,7 @@ import { AlertTriangle, Download, FileText, Plus, Sparkles, WandSparkles } from 
 import { useMemo, useState } from 'react';
 import './App.css';
 import { demoNovelText, demoScreenplayDocument } from './core/screenplay';
+import { validateScreenplayDocument } from './core/validation';
 import type {
   BlockId,
   CharacterId,
@@ -10,6 +11,7 @@ import type {
   ScriptBlock,
   SourceBundle,
 } from './core/screenplay';
+import type { Diagnostic } from './core/validation';
 
 const blockTypeLabels: Record<ScriptBlock['type'], string> = {
   action: 'ACTION',
@@ -67,6 +69,25 @@ function App() {
   const charactersById = useMemo(
     () => new Map(screenplayDocument.characters.map((character) => [character.id, character])),
     [screenplayDocument.characters],
+  );
+  const documentDiagnostics = useMemo(
+    () => validateScreenplayDocument(screenplayDocument, { requireSubmissionReady: true }),
+    [screenplayDocument],
+  );
+  const displayedDiagnostics = useMemo<Diagnostic[]>(
+    () => [
+      {
+        severity: chapterCount >= 3 ? 'info' : 'warning',
+        code: 'source_text_chapter_count',
+        message:
+          chapterCount >= 3
+            ? '提交样例满足 3+ 章节检查。'
+            : '当前输入少于 3 章，普通转换允许继续。',
+        path: 'sourceText',
+      },
+      ...documentDiagnostics,
+    ],
+    [chapterCount, documentDiagnostics],
   );
 
   const yamlPreview = useMemo(() => {
@@ -321,14 +342,15 @@ ${sceneYaml}`;
           <div className="panel-body side-tabs">
             <pre className="yaml-preview">{yamlPreview}</pre>
             <div className="diagnostics">
-              <div className="diagnostic">
-                <AlertTriangle size={16} />
-                <span>
-                  {chapterCount >= 3
-                    ? '提交样例满足 3+ 章节检查。'
-                    : '当前输入少于 3 章，普通转换允许继续。'}
-                </span>
-              </div>
+              {displayedDiagnostics.map((diagnostic, index) => (
+                <div className="diagnostic" key={`${diagnostic.code}-${diagnostic.path}-${index}`}>
+                  <AlertTriangle size={16} />
+                  <span>
+                    {diagnostic.message}
+                    {diagnostic.suggestion ? ` ${diagnostic.suggestion}` : ''}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </section>
