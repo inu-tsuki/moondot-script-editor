@@ -11,7 +11,7 @@
 
 - 官方提交规范要求代码仓库在开题后创建，并要求持续 PR / commit。
 - 复用自己过去的代码片段时，需要在 PR 描述中注明来源。
-- 当前项目的核心是“小说 -> 剧本 AST -> YAML 序列化”，和两个相邻项目都相似但不相同。
+- 当前项目的核心是“小说 -> `ScreenplayDocument` -> YAML 序列化”，和两个相邻项目都相似但不相同。
 
 默认策略：
 
@@ -25,9 +25,9 @@
 适合复用的架构：
 
 - LLM 网关思路：统一屏蔽 OpenAI / Gemini / OpenAI-compatible provider 差异。
-- 结构化输出契约：让模型输出严格 JSON，再映射到本项目 AST。
+- 结构化输出契约：让模型输出严格 JSON，再映射到本项目 `ScreenplayDocument`。
 - 多阶段生成：不要一次 prompt 直接产最终文档，可分为章节分析、角色抽取、场景规划、剧本块生成、校验修复。
-- 灵感生成模式：可作为月点长期 AI 创作入口参考，从主题、关键词、人物关系或世界观设定生成 story seed，再进入 AST 语义编辑。
+- 灵感生成模式：可作为月点长期 AI 创作入口参考，从主题、关键词、人物关系或世界观设定生成 story seed，再进入 document / AST 语义编辑。
 - fallback 思路：真实模型调用失败时使用 mock 或示例数据，保证 demo 可复现。
 - 流式状态事件：生成过程中向 UI 展示阶段状态，而不是让用户盯着空白 loading。
 - Director / Writer 分工思想：可改造成 Planner / Writer / Verifier。
@@ -50,7 +50,7 @@
 
 适合复用的架构：
 
-- `source -> AST -> IR/projection -> runtime/export` 的分层心智。
+- `source -> document / AST -> IR/projection -> runtime/export` 的分层心智。
 - Parser 不直接决定运行时行为，语义路由和导出由后续层处理。
 - diagnostics / audit 思路：每个阶段产生可展示的错误和警告。
 - Monaco 编辑器集成：可用于 YAML 输出、prompt/debug 面板或未来 DSL 编辑。
@@ -59,7 +59,7 @@
 
 不建议直接复用的部分：
 
-- KMD parser / lowering 代码：面向动态文字 DSL，和剧本 AST 不同。
+- KMD parser / lowering 代码：面向动态文字 DSL，和月点剧本文档结构不同。
 - Pixi / GSAP runtime：当前不需要演出播放引擎。
 - KMD 指令系统、layout/stage/effect manager：过重。
 - Vue/Pixi 编辑器壳：可借鉴，不建议直接搬。

@@ -1,45 +1,17 @@
 import { AlertTriangle, Download, FileText, Plus, Sparkles, WandSparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import './App.css';
+import { demoNovelText, demoScreenplayDocument } from './core/screenplay';
+import type {
+  BlockId,
+  CharacterId,
+  NovelSource,
+  ScreenplayDocument,
+  ScriptBlock,
+  SourceBundle,
+} from './core/screenplay';
 
-type BlockType = 'action' | 'dialogue' | 'narration' | 'transition' | 'note';
-
-type ScriptBlock = {
-  id: string;
-  type: BlockType;
-  character?: string;
-  text: string;
-};
-
-const initialSource = `第一章 雨夜重逢
-张三在咖啡厅里等一个迟到很多年的人。雨声不断，他以为自己已经忘记那段旧事。
-
-第二章 未寄出的信
-李四带来一封没有寄出的信。信里写着当年分开的真相，也写着他们都不愿承认的愧疚。
-
-第三章 月台灯火
-两个人在末班车前重新做出选择。城市安静下来，月光落在站台边缘。`;
-
-const initialBlocks: ScriptBlock[] = [
-  {
-    id: 'blk_001',
-    type: 'action',
-    text: '雨水顺着咖啡厅的玻璃滑落。张三坐在角落，手指反复摩挲杯沿。',
-  },
-  {
-    id: 'blk_002',
-    type: 'dialogue',
-    character: '张三',
-    text: '你终于来了。',
-  },
-  {
-    id: 'blk_003',
-    type: 'narration',
-    text: '多年没有出口的那句话，随着雨声一起悬在两人之间。',
-  },
-];
-
-const blockTypeLabels: Record<BlockType, string> = {
+const blockTypeLabels: Record<ScriptBlock['type'], string> = {
   action: 'ACTION',
   dialogue: 'DIALOGUE',
   narration: 'NARRATION',
@@ -47,69 +19,174 @@ const blockTypeLabels: Record<BlockType, string> = {
   note: 'NOTE',
 };
 
-function App() {
-  const [sourceText, setSourceText] = useState(initialSource);
-  const [blocks, setBlocks] = useState(initialBlocks);
+const locationTypeLabels: Record<
+  ScreenplayDocument['script']['scenes'][number]['heading']['locationType'],
+  string
+> = {
+  INT: 'INT',
+  EXT: 'EXT',
+  INT_EXT: 'INT/EXT',
+};
 
-  const chapterCount = useMemo(() => {
-    const matches = sourceText.match(/(^|\n)\s*(第.{1,9}章|Chapter\s+\d+)/gi);
-    return Math.max(matches?.length ?? 0, 1);
-  }, [sourceText]);
+const isNovelSource = (source: SourceBundle): source is NovelSource => source.type === 'novel';
+
+const countChaptersInText = (sourceText: string) => {
+  const matches = sourceText.match(/(^|\n)\s*(第.{1,9}章|Chapter\s+\d+)/gi);
+
+  return Math.max(matches?.length ?? 0, 1);
+};
+
+const escapeYamlString = (value: string) =>
+  value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+
+const yamlString = (value: string) => `"${escapeYamlString(value)}"`;
+
+const yamlStringList = (values: string[]) => `[${values.map(yamlString).join(', ')}]`;
+
+const createNextBlockId = (blocks: ScriptBlock[]): BlockId =>
+  `blk_${String(blocks.length + 1).padStart(3, '0')}` as BlockId;
+
+const getBlockCharacterId = (block: ScriptBlock): CharacterId | undefined =>
+  block.type === 'dialogue' ? block.characterId : undefined;
+
+const formatSceneHeading = (heading: ScreenplayDocument['script']['scenes'][number]['heading']) =>
+  `${locationTypeLabels[heading.locationType]}. ${heading.location} - ${heading.timeOfDay}`;
+
+function App() {
+  const [sourceText, setSourceText] = useState(demoNovelText);
+  const [screenplayDocument, setScreenplayDocument] =
+    useState<ScreenplayDocument>(demoScreenplayDocument);
+
+  const sourceChapters = useMemo(
+    () => (isNovelSource(screenplayDocument.source) ? screenplayDocument.source.chapters : []),
+    [screenplayDocument.source],
+  );
+  const activeScene = screenplayDocument.script.scenes[0];
+  const chapterCount = Math.max(countChaptersInText(sourceText), sourceChapters.length, 1);
+
+  const charactersById = useMemo(
+    () => new Map(screenplayDocument.characters.map((character) => [character.id, character])),
+    [screenplayDocument.characters],
+  );
 
   const yamlPreview = useMemo(() => {
-    const blockYaml = blocks
-      .map((block) => {
-        const characterLine = block.character
-          ? `          characterId: "${block.character}"\n`
-          : '';
+    const chapterYaml =
+      sourceChapters
+        .map(
+          (chapter) => `    - id: ${yamlString(chapter.id)}
+      title: ${yamlString(chapter.title)}
+      summary: ${yamlString(chapter.summary ?? '')}`,
+        )
+        .join('\n') || '    []';
 
-        return `        - id: "${block.id}"
-          type: "${block.type}"
-${characterLine}          text: "${block.text.replace(/"/g, '\\"')}"`;
-      })
-      .join('\n');
+    const characterYaml =
+      screenplayDocument.characters
+        .map(
+          (character) => `  - id: ${yamlString(character.id)}
+    name: ${yamlString(character.name)}
+    aliases: ${yamlStringList(character.aliases)}
+    description: ${yamlString(character.description ?? '')}`,
+        )
+        .join('\n') || '  []';
+
+    const sceneYaml = activeScene
+      ? (() => {
+          const sourceChapterIds = activeScene.sourceRefs
+            .filter((sourceRef) => sourceRef.kind === 'chapter')
+            .map((sourceRef) => sourceRef.sourceId);
+          const blockYaml =
+            activeScene.blocks
+              .map((block) => {
+                const characterLine =
+                  block.type === 'dialogue'
+                    ? `          characterId: ${yamlString(block.characterId)}\n`
+                    : '';
+                const parentheticalLine =
+                  block.type === 'dialogue' && block.parenthetical
+                    ? `          parenthetical: ${yamlString(block.parenthetical)}\n`
+                    : '';
+
+                return `        - id: ${yamlString(block.id)}
+          type: ${yamlString(block.type)}
+${characterLine}${parentheticalLine}          text: ${yamlString(block.text)}`;
+              })
+              .join('\n') || '        []';
+
+          return `  scenes:
+    - id: ${yamlString(activeScene.id)}
+      sourceChapterIds: ${yamlStringList(sourceChapterIds)}
+      heading:
+        locationType: ${yamlString(activeScene.heading.locationType)}
+        location: ${yamlString(activeScene.heading.location)}
+        timeOfDay: ${yamlString(activeScene.heading.timeOfDay)}
+      title: ${yamlString(activeScene.title)}
+      synopsis: ${yamlString(activeScene.synopsis ?? '')}
+      blocks:
+${blockYaml}`;
+        })()
+      : '  scenes: []';
 
     return `schemaVersion: "0.1"
 project:
-  title: "月点示例剧本"
-  language: "zh-CN"
-  targetMedium: "short_drama"
-  sourceType: "novel"
+  title: ${yamlString(screenplayDocument.project.title)}
+  language: ${yamlString(screenplayDocument.project.language)}
+  targetMedium: ${yamlString(screenplayDocument.project.targetMedium)}
+  sourceType: ${yamlString(screenplayDocument.source.type)}
 source:
   chapterCount: ${chapterCount}
+  chapters:
+${chapterYaml}
+characters:
+${characterYaml}
 script:
   structure:
-    type: "linear"
-    startSceneId: "scene_001"
-  scenes:
-    - id: "scene_001"
-      sourceChapterIds: ["ch_001"]
-      heading:
-        locationType: "INT"
-        location: "咖啡厅"
-        timeOfDay: "夜"
-      title: "雨夜重逢"
-      blocks:
-${blockYaml}`;
-  }, [blocks, chapterCount]);
+    type: ${yamlString(screenplayDocument.script.structure.type)}
+    startSceneId: ${yamlString(activeScene?.id ?? '')}
+${sceneYaml}`;
+  }, [activeScene, chapterCount, screenplayDocument, sourceChapters]);
 
   const addBlock = () => {
-    const nextIndex = blocks.length + 1;
+    setScreenplayDocument((currentDocument) => {
+      const scene = currentDocument.script.scenes[0];
 
-    setBlocks((currentBlocks) => [
-      ...currentBlocks,
-      {
-        id: `blk_${String(nextIndex).padStart(3, '0')}`,
+      if (!scene) {
+        return currentDocument;
+      }
+
+      const nextBlock: ScriptBlock = {
+        id: createNextBlockId(scene.blocks),
         type: 'action',
         text: '新的动作描写。',
-      },
-    ]);
+      };
+
+      return {
+        ...currentDocument,
+        script: {
+          ...currentDocument.script,
+          scenes: currentDocument.script.scenes.map((currentScene) =>
+            currentScene.id === scene.id
+              ? {
+                  ...currentScene,
+                  blocks: [...currentScene.blocks, nextBlock],
+                }
+              : currentScene,
+          ),
+        },
+      };
+    });
   };
 
-  const updateBlockText = (id: string, text: string) => {
-    setBlocks((currentBlocks) =>
-      currentBlocks.map((block) => (block.id === id ? { ...block, text } : block)),
-    );
+  const updateBlockText = (id: BlockId, text: string) => {
+    setScreenplayDocument((currentDocument) => ({
+      ...currentDocument,
+      script: {
+        ...currentDocument.script,
+        scenes: currentDocument.script.scenes.map((scene) => ({
+          ...scene,
+          blocks: scene.blocks.map((block) => (block.id === id ? { ...block, text } : block)),
+        })),
+      },
+    }));
   };
 
   return (
@@ -145,7 +222,9 @@ ${blockYaml}`;
               <FileText size={16} />
               Source
             </div>
-            <span className="panel-meta">novel · {chapterCount} chapters</span>
+            <span className="panel-meta">
+              {screenplayDocument.source.type} · {chapterCount} chapters
+            </span>
           </div>
           <div className="panel-body">
             <textarea
@@ -157,7 +236,7 @@ ${blockYaml}`;
             <div className="chapter-strip" aria-label="章节识别结果">
               <div className="chapter-pill">
                 <span>sourceType</span>
-                <span>novel</span>
+                <span>{screenplayDocument.source.type}</span>
               </div>
               <div className="chapter-pill">
                 <span>submission check</span>
@@ -185,34 +264,48 @@ ${blockYaml}`;
           </div>
           <div className="panel-body">
             <div className="scene-list">
-              <article className="scene-card">
-                <div className="scene-heading">
-                  <div>
-                    <div className="scene-kicker">INT. 咖啡厅 - 夜</div>
-                    <div className="scene-title">雨夜重逢</div>
-                    <div className="scene-summary">张三和李四多年后在雨夜重逢。</div>
-                  </div>
-                  <span className="panel-meta">scene_001</span>
-                </div>
-                <div className="block-list">
-                  {blocks.map((block) => (
-                    <div className="script-block" key={block.id}>
-                      <div className="block-toolbar">
-                        <span className="block-type">{blockTypeLabels[block.type]}</span>
-                        {block.character ? (
-                          <span className="block-character">{block.character}</span>
-                        ) : null}
-                      </div>
-                      <textarea
-                        aria-label={`${blockTypeLabels[block.type]} ${block.id}`}
-                        className="block-input"
-                        value={block.text}
-                        onChange={(event) => updateBlockText(block.id, event.target.value)}
-                      />
+              {activeScene ? (
+                <article className="scene-card">
+                  <div className="scene-heading">
+                    <div>
+                      <div className="scene-kicker">{formatSceneHeading(activeScene.heading)}</div>
+                      <div className="scene-title">{activeScene.title}</div>
+                      <div className="scene-summary">{activeScene.synopsis}</div>
                     </div>
-                  ))}
+                    <span className="panel-meta">{activeScene.id}</span>
+                  </div>
+                  <div className="block-list">
+                    {activeScene.blocks.map((block) => {
+                      const characterId = getBlockCharacterId(block);
+                      const characterName = characterId
+                        ? (charactersById.get(characterId)?.name ?? characterId)
+                        : undefined;
+
+                      return (
+                        <div className="script-block" key={block.id}>
+                          <div className="block-toolbar">
+                            <span className="block-type">{blockTypeLabels[block.type]}</span>
+                            {characterName ? (
+                              <span className="block-character">{characterName}</span>
+                            ) : null}
+                          </div>
+                          <textarea
+                            aria-label={`${blockTypeLabels[block.type]} ${block.id}`}
+                            className="block-input"
+                            value={block.text}
+                            onChange={(event) => updateBlockText(block.id, event.target.value)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </article>
+              ) : (
+                <div className="diagnostic">
+                  <AlertTriangle size={16} />
+                  <span>当前 document 没有可编辑场景。</span>
                 </div>
-              </article>
+              )}
             </div>
           </div>
         </section>
@@ -223,7 +316,7 @@ ${blockYaml}`;
               <Download size={16} />
               YAML Projection
             </div>
-            <span className="panel-meta">draft v0.1</span>
+            <span className="panel-meta">document v{screenplayDocument.documentVersion}</span>
           </div>
           <div className="panel-body side-tabs">
             <pre className="yaml-preview">{yamlPreview}</pre>

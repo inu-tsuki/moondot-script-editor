@@ -116,13 +116,13 @@ git push -u origin main
    - 创建 React + TypeScript + Vite 应用。
    - 保证本地可启动。
 2. `feat/screenplay-ast`
-   - 定义 `ScreenplayAst` TypeScript 类型。
+   - 定义 `ScreenplayDocument` / `ScreenplayAst` TypeScript 类型。
    - 定义 Zod 或等价运行时校验。
 3. `feat/novel-import`
    - 实现文本粘贴/上传。
    - 实现章节边界解析。
 4. `feat/yaml-export`
-   - 实现 AST 到 YAML projection。
+   - 实现 document 到 YAML projection。
    - 显示 YAML 预览和导出。
 5. `feat/semantic-editor`
    - 实现场景和语义块的基础编辑。

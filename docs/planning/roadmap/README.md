@@ -66,12 +66,12 @@ Phase 0: 文档和范围锁定
 - 识别章节边界。
 - 生成最小结构化剧本 YAML。
 - 提供复制或下载 YAML 的能力。
-- 在 AST/YAML 中保留 `sourceType: "novel"`，为未来 `inspiration_seed`、`outline` 等入口留扩展空间。
+- 在 document/YAML 中保留 `sourceType: "novel"`，为未来 `inspiration_seed`、`outline` 等入口留扩展空间。
 
 完成标准：
 
 - 输入样例能解析出章节。
-- 可以生成最小 `ScreenplayAst`。
+- 可以生成最小 `ScreenplayDocument`。
 - 可以导出符合草案结构的 YAML。
 
 ### Phase 3：AI 改编链路和 Schema 文档
@@ -85,7 +85,7 @@ Phase 0: 文档和范围锁定
 完成标准：
 
 - 真实模型调用或 mock fallback 至少一条链路稳定可演示。
-- 生成结果进入 AST，而不是直接拼 YAML。
+- 生成结果进入 `ScreenplayDocument`，而不是直接拼 YAML。
 - Schema 文档解释字段设计原因。
 
 ### Phase 4：Demo、README、提交材料和质量收口

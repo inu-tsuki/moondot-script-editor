@@ -4,11 +4,11 @@
 
 这里放月点的剧本 YAML Schema 文档。官方议题要求额外提交一篇文档来定义剧本 YAML Schema，并说明该 Schema 的设计原因。
 
-注意：这里定义的是剧本 AST 的 YAML 序列化投影，不是编辑器的核心数据模型本身。核心模型见 `../architecture/screenplay-ast-contract.md`。
+注意：这里定义的是 `ScreenplayDocument` 的 YAML 序列化投影，不是编辑器的核心数据模型本身。核心模型见 `../architecture/screenplay-ast-contract.md`，内部结构规划见 `../architecture/screenplay-ast-structure.md`。
 
 ## 当前计划文档
 
-- `script-yaml-schema.md`：草案 v0.1，定义 AST 的 YAML 序列化 Schema、字段语义、示例和设计理由。
+- `script-yaml-schema.md`：草案 v0.1，定义 document 的 YAML 序列化 Schema、字段语义、示例和设计理由。
 
 ## Schema 文档验收标准
 

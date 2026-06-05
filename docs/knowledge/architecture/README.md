@@ -6,7 +6,9 @@
 
 ## 当前入口
 
-- `screenplay-ast-contract.md`：剧本 AST 是核心模型，YAML 是官方要求的序列化表示。
+- `document-workspace-boundary.md`：`ScreenplayDocument` 与未来 workspace/project/store 的长期拆分边界。
+- `screenplay-ast-contract.md`：`ScreenplayDocument` 是核心模型，`script: ScreenplayAst` 是脚本树，YAML 是官方要求的序列化表示。
+- `screenplay-ast-structure.md`：`ScreenplayDocument` v0.1 与内部 `ScreenplayAst` 的节点结构和实现切片。
 - `screenplay-model-direction.md`：从 brainstorm 收敛出的剧本数据模型和导出方向。
 - `tool-composition.md`：“小工具拼成大系统”的 typed tools 架构原则。
 
