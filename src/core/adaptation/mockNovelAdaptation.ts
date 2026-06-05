@@ -9,7 +9,10 @@ import type {
   SourceRef,
 } from '../screenplay';
 import type { Diagnostic } from '../validation';
-import { buildNovelAdaptationPrompt } from './buildNovelAdaptationPrompt';
+import {
+  buildNovelAdaptationPrompt,
+  buildNovelSceneWriterPrompt,
+} from './buildNovelAdaptationPrompt';
 import type {
   NovelAdaptationRequest,
   NovelAdaptationResult,
@@ -138,7 +141,10 @@ const createChapterScene = (
 export const adaptNovelToScreenplayMock = ({
   document,
 }: NovelAdaptationRequest): NovelAdaptationResult => {
-  const promptMessages = buildNovelAdaptationPrompt(document);
+  const promptMessages = [
+    ...buildNovelAdaptationPrompt(document),
+    ...buildNovelSceneWriterPrompt(document),
+  ];
 
   if (!isNovelSource(document.source)) {
     return {
@@ -182,11 +188,20 @@ export const adaptNovelToScreenplayMock = ({
     {
       label: 'source-ingestion',
       detail: `读取 ${document.source.chapters.length} 个小说章节作为 agent 输入。`,
+      stage: 'source_analysis',
       sourceIds: document.source.chapters.map((chapter) => chapter.id),
     },
     {
-      label: 'mock-adaptation',
-      detail: '使用本地 mock fallback 生成一章一场的 ScreenplayAst 草稿。',
+      label: 'mock-planning',
+      detail:
+        '本地 mock 暂以章节为粗略锚点生成场景；真实流程应先生成可跨章节合并/拆分的 scene outline。',
+      stage: 'adaptation_planning',
+      sourceIds: document.source.chapters.map((chapter) => chapter.id),
+    },
+    {
+      label: 'mock-writing',
+      detail: '根据 mock scene outline 写入 ScreenplayAst 草稿。',
+      stage: 'scene_draft',
       sourceIds: document.source.chapters.map((chapter) => chapter.id),
     },
   ];
@@ -199,7 +214,7 @@ export const adaptNovelToScreenplayMock = ({
       createDiagnostic(
         'info',
         'mock_adaptation_used',
-        '当前使用本地 mock fallback；真实转换应接入 LLM agent 和提示词工程。',
+        '当前使用本地 mock fallback；真实流程应先生成改编方案和 scene outline，再委托 Writer 写剧本初稿。',
         'adaptation',
       ),
     ],

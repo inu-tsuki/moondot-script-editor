@@ -122,6 +122,8 @@ Fountain-like text
 
 只有当输入本身已经是结构化剧本格式，例如 Fountain-like 文本时，才适合使用确定性 parser 直接导入为 AST。这个 parser 应放在 importer 边界，而不是复用小说 source ingestion。
 
+更完整的 AI 改编链路见 `adaptation-workflow.md`。核心方向是先生成 source analysis、开放问题和 scene outline，再根据用户确认后的 writer brief 生成剧本初稿。
+
 ## Project
 
 ```ts

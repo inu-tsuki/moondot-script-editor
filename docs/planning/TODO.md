@@ -39,12 +39,15 @@ Phase 1：工程脚手架、基础 UI、`ScreenplayDocument` 类型、runtime va
 - [x] 实现小说 source ingestion 和基础章节解析。
 - [x] 明确章节解析只属于 novel source ingestion，不承担小说到剧本的转换。
 - [x] 建立小说改编 prompt / mock fallback 骨架。
+- [x] 明确 AI 改编应先生成 source analysis / scene outline / writer brief，再委托 Writer 写剧本初稿。
 - [x] 实现增加语义块的基础 UI。
 
 ## 下一步
 
 - [ ] 以 PR 方式拆分第一组开发任务：脚手架、document / AST、文本输入、YAML 导出、语义块编辑。
 - [ ] 实现基础 YAML 导出交互。
+- [ ] 设计生成前配置 UI：目标长度、风格、忠实度、目标媒介、是否压缩支线。
+- [ ] 实现 adaptation plan / scene outline 的预览与确认交互。
 - [ ] 实现可选 `exportDocumentToFountainLike` 预览投影。
 - [ ] 接入轻量模型调用层，将 mock fallback 替换为可配置 LLM agent。
 
