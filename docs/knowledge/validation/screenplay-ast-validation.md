@@ -1,6 +1,6 @@
 # Screenplay Document Validation
 
-> 最近更新：2026-06-05  
+> 最近更新：2026-06-06  
 > 状态：草案 v0.1。
 
 ## 为什么需要校验层
@@ -33,14 +33,14 @@
 - 线性结构下，`script.scenes` 至少包含 1 个 scene。
 - 每个 scene 必须有 heading、title、blocks。
 - 每个 block 必须有 type 和 text。
-- `dialogue.characterId` 如果存在，必须指向存在的 character。
+- `dialogue.characterId` 如果存在，必须指向存在的 character；这是结构引用完整性错误。
 
 ## 改编质量校验
 
 这些不一定阻止导出，但应产生 warning：
 
 - scene 没有关联任何来源章节。
-- 角色表为空，但对白块出现了角色名。
+- LLM 或外部导入结果只提供角色名、但尚未绑定到 `characterId`。
 - 大量 narration/action 直接复制小说心理描写，没有转成可拍/可演内容。
 - 连续多个 scene 没有对白或没有动作，可能像摘要而不是剧本。
 - 生成结果明显少于输入章节覆盖范围。
@@ -94,3 +94,9 @@ Diagnostic 应包含：
 - `message`
 - `path`
 - 可选 `suggestion`
+
+实现备注：
+
+- v0.1 先使用手写 TypeScript validation，避免在早期 MVP 增加 Zod 依赖和 schema 维护成本。
+- Zod 仍是后续可选方向，适合在 LLM response parser、导入器和 serializer 需要共享同一套运行时 schema 时引入。
+- 改编质量校验先不作为强运行时规则；心理描写转写、对白/动作比例和章节覆盖等问题，后续应由 LLM 生成链路、修复链路和质量审查工具共同处理。

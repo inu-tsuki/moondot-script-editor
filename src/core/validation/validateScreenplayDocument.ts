@@ -3,6 +3,7 @@ import type { CharacterId, ScreenplayDocument, ScriptBlock, SourceRef } from '..
 
 export type ValidateScreenplayDocumentOptions = {
   requireSubmissionReady?: boolean;
+  requireChapterText?: boolean;
 };
 
 const createDiagnostic = (
@@ -160,6 +161,17 @@ export const validateScreenplayDocument = (
           ),
         );
       }
+
+      if (options.requireChapterText && !chapter.text?.trim()) {
+        diagnostics.push(
+          createDiagnostic(
+            'error',
+            'empty_chapter_text',
+            '章节正文不能为空。',
+            `source.chapters[${chapterIndex}].text`,
+          ),
+        );
+      }
     });
   }
 
@@ -188,7 +200,7 @@ export const validateScreenplayDocument = (
 
     if (!scene.title.trim()) {
       diagnostics.push(
-        createDiagnostic('warning', 'empty_scene_title', '场景标题为空。', `${scenePath}.title`),
+        createDiagnostic('error', 'empty_scene_title', '场景标题不能为空。', `${scenePath}.title`),
       );
     }
 

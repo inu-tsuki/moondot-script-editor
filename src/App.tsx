@@ -1,16 +1,10 @@
 import { AlertTriangle, Download, FileText, Plus, Sparkles, WandSparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import './App.css';
+import { serializeDocumentToYaml } from './core/serialization';
 import { demoNovelText, demoScreenplayDocument } from './core/screenplay';
 import { validateScreenplayDocument } from './core/validation';
-import type {
-  BlockId,
-  CharacterId,
-  NovelSource,
-  ScreenplayDocument,
-  ScriptBlock,
-  SourceBundle,
-} from './core/screenplay';
+import type { BlockId, CharacterId, ScreenplayDocument, ScriptBlock } from './core/screenplay';
 import type { Diagnostic } from './core/validation';
 
 const blockTypeLabels: Record<ScriptBlock['type'], string> = {
@@ -30,20 +24,15 @@ const locationTypeLabels: Record<
   INT_EXT: 'INT/EXT',
 };
 
-const isNovelSource = (source: SourceBundle): source is NovelSource => source.type === 'novel';
-
 const countChaptersInText = (sourceText: string) => {
+  if (!sourceText.trim()) {
+    return 0;
+  }
+
   const matches = sourceText.match(/(^|\n)\s*(第.{1,9}章|Chapter\s+\d+)/gi);
 
   return Math.max(matches?.length ?? 0, 1);
 };
-
-const escapeYamlString = (value: string) =>
-  value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-
-const yamlString = (value: string) => `"${escapeYamlString(value)}"`;
-
-const yamlStringList = (values: string[]) => `[${values.map(yamlString).join(', ')}]`;
 
 const createNextBlockId = (blocks: ScriptBlock[]): BlockId =>
   `blk_${String(blocks.length + 1).padStart(3, '0')}` as BlockId;
@@ -56,115 +45,46 @@ const formatSceneHeading = (heading: ScreenplayDocument['script']['scenes'][numb
 
 function App() {
   const [sourceText, setSourceText] = useState(demoNovelText);
+  const [generatedAt] = useState(() => new Date().toISOString());
   const [screenplayDocument, setScreenplayDocument] =
     useState<ScreenplayDocument>(demoScreenplayDocument);
 
-  const sourceChapters = useMemo(
-    () => (isNovelSource(screenplayDocument.source) ? screenplayDocument.source.chapters : []),
-    [screenplayDocument.source],
-  );
   const activeScene = screenplayDocument.script.scenes[0];
-  const chapterCount = Math.max(countChaptersInText(sourceText), sourceChapters.length, 1);
+  const chapterCount = countChaptersInText(sourceText);
 
   const charactersById = useMemo(
     () => new Map(screenplayDocument.characters.map((character) => [character.id, character])),
     [screenplayDocument.characters],
   );
   const documentDiagnostics = useMemo(
-    () => validateScreenplayDocument(screenplayDocument, { requireSubmissionReady: true }),
+    () =>
+      validateScreenplayDocument(screenplayDocument, {
+        requireChapterText: true,
+        requireSubmissionReady: true,
+      }),
     [screenplayDocument],
   );
   const displayedDiagnostics = useMemo<Diagnostic[]>(
     () => [
       {
-        severity: chapterCount >= 3 ? 'info' : 'warning',
-        code: 'source_text_chapter_count',
-        message:
-          chapterCount >= 3
+        severity: sourceText.trim() ? (chapterCount >= 3 ? 'info' : 'warning') : 'error',
+        code: sourceText.trim() ? 'source_text_chapter_count' : 'empty_source_text',
+        message: sourceText.trim()
+          ? chapterCount >= 3
             ? '提交样例满足 3+ 章节检查。'
-            : '当前输入少于 3 章，普通转换允许继续。',
+            : '当前输入少于 3 章，普通转换允许继续。'
+          : '小说文本不能为空。',
         path: 'sourceText',
       },
       ...documentDiagnostics,
     ],
-    [chapterCount, documentDiagnostics],
+    [chapterCount, documentDiagnostics, sourceText],
   );
 
-  const yamlPreview = useMemo(() => {
-    const chapterYaml =
-      sourceChapters
-        .map(
-          (chapter) => `    - id: ${yamlString(chapter.id)}
-      title: ${yamlString(chapter.title)}
-      summary: ${yamlString(chapter.summary ?? '')}`,
-        )
-        .join('\n') || '    []';
-
-    const characterYaml =
-      screenplayDocument.characters
-        .map(
-          (character) => `  - id: ${yamlString(character.id)}
-    name: ${yamlString(character.name)}
-    aliases: ${yamlStringList(character.aliases)}
-    description: ${yamlString(character.description ?? '')}`,
-        )
-        .join('\n') || '  []';
-
-    const sceneYaml = activeScene
-      ? (() => {
-          const sourceChapterIds = activeScene.sourceRefs
-            .filter((sourceRef) => sourceRef.kind === 'chapter')
-            .map((sourceRef) => sourceRef.sourceId);
-          const blockYaml =
-            activeScene.blocks
-              .map((block) => {
-                const characterLine =
-                  block.type === 'dialogue'
-                    ? `          characterId: ${yamlString(block.characterId)}\n`
-                    : '';
-                const parentheticalLine =
-                  block.type === 'dialogue' && block.parenthetical
-                    ? `          parenthetical: ${yamlString(block.parenthetical)}\n`
-                    : '';
-
-                return `        - id: ${yamlString(block.id)}
-          type: ${yamlString(block.type)}
-${characterLine}${parentheticalLine}          text: ${yamlString(block.text)}`;
-              })
-              .join('\n') || '        []';
-
-          return `  scenes:
-    - id: ${yamlString(activeScene.id)}
-      sourceChapterIds: ${yamlStringList(sourceChapterIds)}
-      heading:
-        locationType: ${yamlString(activeScene.heading.locationType)}
-        location: ${yamlString(activeScene.heading.location)}
-        timeOfDay: ${yamlString(activeScene.heading.timeOfDay)}
-      title: ${yamlString(activeScene.title)}
-      synopsis: ${yamlString(activeScene.synopsis ?? '')}
-      blocks:
-${blockYaml}`;
-        })()
-      : '  scenes: []';
-
-    return `schemaVersion: "0.1"
-project:
-  title: ${yamlString(screenplayDocument.project.title)}
-  language: ${yamlString(screenplayDocument.project.language)}
-  targetMedium: ${yamlString(screenplayDocument.project.targetMedium)}
-  sourceType: ${yamlString(screenplayDocument.source.type)}
-source:
-  chapterCount: ${chapterCount}
-  chapters:
-${chapterYaml}
-characters:
-${characterYaml}
-script:
-  structure:
-    type: ${yamlString(screenplayDocument.script.structure.type)}
-    startSceneId: ${yamlString(activeScene?.id ?? '')}
-${sceneYaml}`;
-  }, [activeScene, chapterCount, screenplayDocument, sourceChapters]);
+  const yamlPreview = useMemo(
+    () => serializeDocumentToYaml(screenplayDocument, { generatedAt }),
+    [generatedAt, screenplayDocument],
+  );
 
   const addBlock = () => {
     setScreenplayDocument((currentDocument) => {

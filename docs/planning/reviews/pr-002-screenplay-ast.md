@@ -48,7 +48,24 @@ PR #2 落地了月点核心的数据模型与校验机制：
 #### ③ 缺失 `nextSceneId` 字段
 - **规范要求**（[script-yaml-schema.md](../../knowledge/schema/script-yaml-schema.md)）：场景节点需要 `nextSceneId` 来表达线性链条。在 YAML 拼装中此字段暂未实现。
 
-## 后续动作
+## 本分支后续处理状态
+
+在同一 `feat/screenplay-ast` 分支内，review 后已继续处理：
+
+- 已补充 `chapter.text` 空文本校验。
+- 已将空场景标题从 `warning` 调整为 `error`。
+- 已在 UI/input 边界补充小说来源文本为空的 diagnostic。
+- 已抽取 `serializeDocumentToYaml`，不再由 `App.tsx` 临时拼接 YAML。
+- YAML projection 已覆盖完整 `script.scenes[]`，并生成 `generatedAt` 和线性 `nextSceneId`。
+
+仍保留为后续 PR 的事项：
+
+- `missing_dialogue_character` 继续保持 `error`，因为这是 AST 引用断裂；如果未来接收“带角色名但未入库”的 LLM 输出，应在导入/修复层产生 warning 或自动建角色。
+- 标准 YAML 库暂不引入，当前仍使用轻量手写 serializer。
+- Zod 暂不引入，当前仍使用手写 TypeScript validation。
+- 改编质量 heuristics 暂不做运行时强校验，后续放到 LLM 生成、修复和质量审查链路。
+
+## 原始后续动作
 
 1. **修正校验规则的级别**：
    - 补全 `validateScreenplayDocument.ts` 中对 `chapter.text` 的空文本校验。
@@ -66,17 +83,20 @@ PR #2 落地了月点核心的数据模型与校验机制：
 
 The implementation of `ScreenplayDocument` types and custom `validateScreenplayDocument` validation looks solid and builds successfully (`pnpm build`).
 
-A few minor gaps/differences have been identified for downstream adjustments:
-- **Validation Discrepancies**:
-  - `missing_dialogue_character` is classified as `error` in code but was proposed as `warning` in the docs.
-  - `empty_scene_title` is currently a `warning` instead of a blocking `error`.
-  - Chapter text empty check is missing.
-- **YAML Serializer Limitations**:
-  - Currently only serializes `scenes[0]` instead of all scenes.
-  - `generatedAt` and `nextSceneId` are missing in the generated YAML projection.
+A few minor gaps/differences were identified during review. Follow-up commits in the same branch have already addressed:
+- Chapter text empty validation.
+- Empty scene title severity alignment.
+- Source text empty diagnostic at the UI/input boundary.
+- Full scenes list YAML serialization.
+- `generatedAt` and linear `nextSceneId` in the generated YAML projection.
+
+Remaining intentional deferrals:
+- `missing_dialogue_character` remains an `error`, because it is an AST reference integrity issue.
+- **YAML library**:
+  - The current serializer is still hand-written for MVP simplicity; a standard YAML package can replace it later behind `serializeDocumentToYaml`.
 - **Zod & Quality Checks**:
   - Manual TypeScript validation is implemented instead of Zod for MVP simplicity.
   - Adaptation quality heuristics (NLP-based) are deferred to LLM/backend generation stages.
 
-Follow-up PRs will focus on aligning the validation rules, supporting full scenes list serialization in YAML, and updating the architecture docs accordingly.
+Future PRs can focus on source ingestion, a standard YAML package, and quality heuristics.
 ```
