@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-Phase 0：文档、范围和开发流程锁定已收口。下一步进入 Phase 1：工程脚手架与基础 UI。
+Phase 1：工程脚手架与基础 UI 已开始。当前重点是让月点工作台在本地可运行，并保持后续 AST、source ingestion 和 YAML projection 的扩展空间。
 
 ## 已完成
 
@@ -28,11 +28,12 @@ Phase 0：文档、范围和开发流程锁定已收口。下一步进入 Phase 
 - [x] 建立 PR、commit 和第一次提交后的开发流程文档。
 - [x] 建立月点长期产品愿景文档，并明确长期 IDE 目标不进入当前 MVP 承诺。
 - [x] 决定 MVP 默认目标媒介：短剧/影视线性剧本，视觉小说作为可选导出方向。
+- [x] 按 React + TypeScript + Vite 搭建项目脚手架。
+- [x] 建立 `.editorconfig`、Prettier 和 ESLint 基础规范。
 
 ## 下一步
 
-- [ ] 按 React + TypeScript + Vite 搭建项目脚手架。
-- [ ] 创建 GitHub public repo 并推送第一次提交。
+- [ ] 提交并创建 `feat/app-scaffold` PR。
 - [ ] 以 PR 方式拆分第一组开发任务：脚手架、AST、文本输入、YAML 导出、语义块编辑。
 - [ ] 定义 `ScreenplayAst` TypeScript 类型和运行时校验。
 - [ ] 实现 AST 到 YAML projection 的序列化器。

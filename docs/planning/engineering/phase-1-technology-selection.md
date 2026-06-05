@@ -41,6 +41,28 @@ Creative source
 
 仅当决定直接复用 KMD 编辑器壳和 Monaco 集成方式时考虑。当前不推荐。
 
+## 包管理和基础规范
+
+推荐：
+
+- pnpm 管理依赖和 lockfile。
+- `.editorconfig` 统一编辑器基础格式。
+- Prettier 统一代码格式。
+- ESLint 做 TypeScript、React Hooks 和 React Refresh 检查。
+
+暂不加入：
+
+- 自动导入插件。
+- Husky / lint-staged。
+- 复杂 monorepo workspace 配置。
+
+理由：
+
+- pnpm lockfile 稳定，安装速度快。
+- EditorConfig、Prettier、ESLint 是第一批 PR 就应该建立的低成本规范。
+- 自动导入会增加构建魔法；当前文件数量少，手动 import 更清楚。
+- Git hooks 可以等测试和提交节奏稳定后再加。
+
 ## 核心模型和校验
 
 推荐：
