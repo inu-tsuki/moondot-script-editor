@@ -5,12 +5,12 @@
 
 ## 核心结论
 
-MVP 主编辑体验应是 AST 语义块编辑，而不是 fountain-like 文本编辑。
+MVP 主编辑体验应是 `ScreenplayDocument` 中的 AST 语义块编辑，而不是 fountain-like 文本编辑。
 
 原因：
 
 - 官方要求“可编辑、可进一步打磨的剧本初稿”，不是要求用户会写 Fountain。
-- 我们的核心模型是 `ScreenplayAst`，UI 应直接编辑 AST 的 scene / block / character。
+- 我们的核心模型是 `ScreenplayDocument`，UI 应直接编辑其中的 scene / block / character 等语义数据。
 - Fountain-like 更适合做阅读预览和可选导出，而不是第一版主输入法。
 - 语义块 UI 更容易展示“AI 生成了结构化剧本”，也更容易做字段校验和局部重生成。
 
@@ -61,7 +61,7 @@ Action | Dialogue | Narration | Transition | Note
 - Transition：转场类型或文本。
 - Note：批注文本。
 
-新增后立即写入 AST，再由 preview 和 YAML projection 自动更新。
+新增后立即写入 document，再由 preview 和 YAML projection 自动更新。
 
 ## Fountain-like 在 UI 中的位置
 

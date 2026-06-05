@@ -10,7 +10,9 @@
 - `requirements/submission-rules.md`：评审规则、提交规范、PR/commit 有效性约束。
 - `product/vision.md`：月点长期产品愿景，以及它和当前 MVP 的边界。
 - `brainstorm/README.md`：产品脑暴和调研底稿索引。
-- `architecture/screenplay-ast-contract.md`：剧本 AST 是核心模型，YAML 是官方要求的序列化表示。
+- `architecture/document-workspace-boundary.md`：`ScreenplayDocument` 与未来 workspace/project/store 的长期拆分边界。
+- `architecture/screenplay-ast-contract.md`：`ScreenplayDocument` 是核心模型，`script: ScreenplayAst` 是脚本树，YAML 是官方要求的序列化表示。
+- `architecture/screenplay-ast-structure.md`：`ScreenplayDocument` v0.1 与内部 `ScreenplayAst` 的节点结构和实现切片。
 - `architecture/screenplay-model-direction.md`：从 brainstorm 收敛出的剧本数据模型和导出方向。
 - `architecture/tool-composition.md`：“小工具拼成大系统”的 typed tools 架构原则。
 - `interaction/semantic-block-editing.md`：MVP 主编辑体验是 AST 语义块编辑，Fountain-like 是预览/导出投影。
@@ -18,7 +20,7 @@
 - `reuse/adjacent-projects.md`：`ai-visual-novel-engine`、`kmd` 的复用策略。
 - `validation/screenplay-ast-validation.md`：输入、AST、projection 和导出器校验规则。
 - `export/fountain-like-projection.md`：Fountain-like 导出投影。
-- `schema/script-yaml-schema.md`：剧本 AST 的 YAML 序列化 Schema 草案和设计原因。
+- `schema/script-yaml-schema.md`：剧本文档的 YAML 序列化 Schema 草案和设计原因。
 
 ## 子目录
 

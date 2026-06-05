@@ -2,7 +2,7 @@
 
 > 最近更新：2026-06-05
 
-这里记录 AST 到外部格式的导出投影。它回答“如何把 `ScreenplayAst` 展示或导出成某种目标格式”。
+这里记录 `ScreenplayDocument` 到外部格式的导出投影。它回答“如何把内部 document 展示或导出成某种目标格式”。
 
 ## 当前入口
 
@@ -10,7 +10,6 @@
 
 ## 维护规则
 
-- 所有导出器都从 `ScreenplayAst` 出发。
-- 导出器不能反向决定 AST 结构。
+- 所有导出器都从 `ScreenplayDocument` 出发，必要时只读取其中的 `script: ScreenplayAst`。
+- 导出器不能反向决定 document 结构。
 - YAML 官方提交格式的字段定义放在 `../schema/`，这里放非 YAML 的阅读和导出目标。
-

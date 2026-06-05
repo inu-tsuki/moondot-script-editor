@@ -1,11 +1,11 @@
-# Screenplay AST Validation
+# Screenplay Document Validation
 
 > 最近更新：2026-06-05  
 > 状态：草案 v0.1。
 
 ## 为什么需要校验层
 
-校验层不是为了把作者挡在外面，而是为了保护 AST 这条主链路。
+校验层不是为了把作者挡在外面，而是为了保护 `ScreenplayDocument` 这条主链路。
 
 本项目有几个天然不稳定源：
 
@@ -13,7 +13,7 @@
 - LLM 输出可能缺字段、错字段、重复 ID、引用不存在的角色。
 - 用户编辑可能删掉必要结构。
 - YAML 序列化可能被中文标点、空值和嵌套结构影响。
-- 可选导出器可能只支持 AST 的一部分。
+- 可选导出器可能只支持 document / script AST 的一部分。
 
 因此校验层要在每个关键边界把问题变成 diagnostics，而不是让错误在 demo 时变成空白页面、坏 YAML 或不可解释的模型失败。
 
@@ -26,12 +26,11 @@
 - 章节正文不能全为空。
 - 如果自动分章失败，应提示用户手动分章。
 
-## AST 结构校验
+## Document / AST 结构校验
 
-- `schemaVersion` / `project` / `source` / `characters` / `script` 必须存在。
+- `documentVersion` / `project` / `source` / `characters` / `script` 必须存在。
 - `scene.id`、`block.id`、`character.id` 在各自作用域内必须唯一。
-- `script.structure.startSceneId` 必须指向存在的 scene。
-- `scene.nextSceneId` 如果存在，必须指向存在的 scene。
+- 线性结构下，`script.scenes` 至少包含 1 个 scene。
 - 每个 scene 必须有 heading、title、blocks。
 - 每个 block 必须有 type 和 text。
 - `dialogue.characterId` 如果存在，必须指向存在的 character。
@@ -48,7 +47,7 @@
 
 ## YAML Projection 校验
 
-- AST 能成功序列化为 YAML。
+- document 能成功序列化为 YAML。
 - YAML 能被重新解析为对象。
 - 字符串字段中的中文冒号、引号、破折号不会破坏 YAML。
 - YAML projection 不应丢掉官方要求相关字段，例如章节映射、场景、角色、剧本块。
@@ -57,11 +56,11 @@
 
 每个导出器只校验自己的能力范围：
 
-- YAML exporter：要求完整 AST。
+- YAML exporter：要求完整 `ScreenplayDocument`。
 - Fountain-like exporter：要求线性 scene 顺序、scene heading、action/dialogue/narration 等基础块。
 - Ren'Py sample exporter：要求 character alias 或可生成变量名。
 
-导出器不应该反向要求 AST 为自己改变形状。
+导出器不应该反向要求 document 为自己改变形状。
 
 ## Diagnostic 分级
 
@@ -85,7 +84,7 @@
 第一版实现：
 
 ```text
-validateScreenplayAst(ast) -> Diagnostic[]
+validateScreenplayDocument(document) -> Diagnostic[]
 ```
 
 Diagnostic 应包含：

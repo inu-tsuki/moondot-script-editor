@@ -35,6 +35,7 @@
 - `knowledge/requirements/xengineer-ai-novel-to-script.md`
 - `knowledge/requirements/submission-rules.md`
 - `knowledge/product/vision.md`
+- `knowledge/architecture/screenplay-ast-structure.md`
 - `knowledge/architecture/screenplay-model-direction.md`
 - `knowledge/interaction/semantic-block-editing.md`
 - `knowledge/interaction/workbench-layout.md`
@@ -60,7 +61,7 @@
 - 要保存已收敛的数据模型、导出策略和架构方向：放 `knowledge/architecture/`。
 - 要保存编辑体验和 UI 交互语义：放 `knowledge/interaction/`。
 - 要保存相邻项目复用策略：放 `knowledge/reuse/`。
-- 要保存 AST/input/projection 校验规则：放 `knowledge/validation/`。
+- 要保存 document / AST / input / projection 校验规则：放 `knowledge/validation/`。
 - 要保存非 YAML 导出投影：放 `knowledge/export/`。
 - 要保存想法来源和调研底稿：放 `knowledge/brainstorm/`。
 - 要解释剧本 YAML 结构、字段语义、Schema 版本：放 `knowledge/schema/`。

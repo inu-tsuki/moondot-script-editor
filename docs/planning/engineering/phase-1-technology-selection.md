@@ -5,14 +5,14 @@
 
 ## 选型原则
 
-不同领域需要不同选型，但都必须围绕 `ScreenplayAst`。
+不同领域需要不同选型，但都必须围绕 `ScreenplayDocument`。其中 `script: ScreenplayAst` 是脚本树。
 
 ```text
 Creative source
   -> source adapter
   -> chapter parser for novel source
   -> LLM planner / writer
-  -> ScreenplayAst
+  -> ScreenplayDocument
   -> validation diagnostics
   -> preview / editor
   -> YAML projection
@@ -21,7 +21,7 @@ Creative source
 
 不要用某一个领域的工具统治全部系统：
 
-- 不要让 YAML 模板统治 AST。
+- 不要让 YAML 模板统治 document。
 - 不要让编辑器组件统治数据模型。
 - 不要让 LLM prompt 统治导出格式。
 - 不要让未来 VN 导出拖重 MVP。
@@ -67,9 +67,9 @@ Creative source
 
 推荐：
 
-- TypeScript 定义 `ScreenplayAst`。
+- TypeScript 定义 `ScreenplayDocument` / `ScreenplayAst`。
 - Zod 做运行时校验和类型推导。
-- `yaml` 或 `js-yaml` 做 AST -> YAML 序列化。
+- `yaml` 或 `js-yaml` 做 document -> YAML 序列化。
 
 理由：
 
@@ -124,13 +124,13 @@ Creative source
 
 第一版只实现：
 
-- `ScreenplayAst -> YAML`。
-- `ScreenplayAst -> preview blocks`。
+- `ScreenplayDocument -> YAML`。
+- `ScreenplayDocument -> preview blocks`。
 
 可选：
 
-- `ScreenplayAst -> Fountain-like text`。
-- `ScreenplayAst -> Ren'Py sample`。
+- `ScreenplayDocument -> Fountain-like text`。
+- `ScreenplayDocument -> Ren'Py sample`。
 
 不做：
 
@@ -160,7 +160,7 @@ Creative source
 ```text
 src/
   core/
-    ast/
+    screenplay/
     validation/
     serialization/
     source-ingestion/
@@ -175,8 +175,8 @@ src/
 ## 第一批 PR 建议
 
 - PR 1：项目脚手架、README 初稿、依赖说明。
-- PR 2：`ScreenplayAst` 类型与 Zod schema。
+- PR 2：`ScreenplayDocument` / `ScreenplayAst` 类型与 Zod schema。
 - PR 3：source ingestion、章节解析和 diagnostics。
-- PR 4：AST -> YAML serializer。
+- PR 4：document -> YAML serializer。
 - PR 5：基础 UI：输入、章节列表、预览、YAML 输出。
 - PR 6：LLM/mock 改编管线。

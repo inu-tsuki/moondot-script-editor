@@ -3,27 +3,27 @@
 > 最近更新：2026-06-05  
 > 状态：草案 v0.1，用于 MVP 设计。实现落地后需同步校正字段。  
 > 对应官方要求：定义剧本 YAML Schema，并说明 Schema 的设计原因。  
-> 核心前提：本项目设计的是剧本 AST；YAML 是 AST 的官方提交序列化表示。
+> 核心前提：本项目设计的是内部 `ScreenplayDocument`；YAML 是 document 的官方提交序列化表示。
 
 ## 设计目标
 
-这个 Schema 定义“小说文本自动转换后的剧本 AST”如何序列化为 YAML。提交演示需要覆盖 3 个以上章节，但 Schema 本身不限制只能处理 3+ 章节。它需要同时满足：
+这个 Schema 定义“小说文本自动转换后的剧本文档”如何序列化为 YAML。提交演示需要覆盖 3 个以上章节，但 Schema 本身不限制只能处理 3+ 章节。它需要同时满足：
 
 - 对评审：能证明输出是结构化剧本，而不是普通摘要。
 - 对作者：能继续编辑、打磨、复制和导出。
 - 对工程：能被校验、局部重生成和未来导出到其他格式。
 
-## 与 AST 的关系
+## 与 Document / AST 的关系
 
-AST 是内部单一事实来源。YAML 是 AST 的一个 projection：
+`ScreenplayDocument` 是内部单一事实来源。它包含项目元信息、来源、角色表和 `script: ScreenplayAst`。YAML 是 document 的一个 projection：
 
 ```text
-ScreenplayAst
+ScreenplayDocument
   -> ScreenplayYamlProjection
   -> YAML text
 ```
 
-因此，UI 不应直接围绕 YAML 字符串编辑；AI 生成、结构化预览、字段编辑和导出器都应读写 AST。YAML 只负责保存、提交、校验和展示结构化结果。
+因此，UI 不应直接围绕 YAML 字符串编辑；AI 生成、结构化预览、字段编辑和导出器都应读写 document / AST。YAML 只负责保存、提交、校验和展示结构化结果。
 
 ## YAML 顶层结构
 
@@ -77,7 +77,7 @@ script:
 
 必填。Schema 版本号。当前草案为 `"0.1"`。
 
-设计原因：作品挑战期间 AST 和序列化字段会快速迭代，版本号可以避免 demo、README 和生成器之间互相误解。
+设计原因：作品挑战期间内部 document 和序列化字段会快速迭代，版本号可以避免 demo、README 和生成器之间互相误解。
 
 ### `project`
 
@@ -89,7 +89,7 @@ script:
 - `sourceType`：来源类型。当前 submission 使用 `"novel"`；长期可扩展为 `"inspiration_seed"`、`"outline"`、`"world_bible"` 等创作入口。
 - `generatedAt`：生成时间，使用 ISO 8601 字符串。
 
-设计原因：同一套 AST 未来可能导出影视剧本、短剧或视觉小说脚本，目标媒介需要显式保存。
+设计原因：同一份 document 未来可能导出影视剧本、短剧或视觉小说脚本，目标媒介需要显式保存。
 
 ### `source`
 
@@ -169,7 +169,7 @@ script:
 - `characterId`：关联角色 ID。
 - `parenthetical`：对白前的神态或语气提示。
 
-设计原因：块级结构让 AI 能单独生成、校验和修复对白或动作，也让 UI 能按剧本格式渲染。这里的 YAML 块结构应和 AST 块结构保持可映射，但不要求成为 UI 状态的原始存储。
+设计原因：块级结构让 AI 能单独生成、校验和修复对白或动作，也让 UI 能按剧本格式渲染。这里的 YAML 块结构应和 `ScreenplayAst` 块结构保持可映射，但不要求成为 UI 状态的原始存储。
 
 ## MVP 校验规则
 
@@ -185,13 +185,14 @@ script:
 ## 设计取舍
 
 - 选择 YAML：符合官方要求，同时便于人工阅读、复制和 Git diff。
-- 以 AST 为核心，YAML 只是序列化表示：避免 UI 和生成链路被 YAML 模板绑死。
+- 以 `ScreenplayDocument` 为核心，YAML 只是序列化表示：避免 UI 和生成链路被 YAML 模板绑死。
 - 保留 AST 式块结构：比整段剧本文本更适合 AI 生成和局部编辑。
 - 保留章节映射：对应官方对多章节长文本处理能力的要求，也让改编过程可追溯。
-- 保留 `sourceType`：当前为 novel，未来可支持灵感生成、大纲扩写或世界观设定入口，而不改变剧本 AST 的核心结构。
+- 保留 `sourceType`：当前为 novel，未来可支持灵感生成、大纲扩写或世界观设定入口，而不改变内部 document 的核心结构。
 - 暂不把 Fountain 作为主格式：Fountain 适合影视剧本文本，但不能完整表达来源章节、角色资产和未来分支。
 - 暂不把 YAML + Fountain 作为核心存储：它是可选导出目标，不是当前 MVP 的单一事实来源。
 - 暂不把 Ren'Py/Naninovel 字段做成必填：这些是后续导出目标，MVP 不应被游戏引擎字段拖重。
+- 内部私有格式通过 importer / exporter 兼容标准：未来可以支持 Fountain 或 VN 脚本导入导出，但不让这些边界格式反向决定 document 结构。
 
 ## 开放问题
 
@@ -200,4 +201,4 @@ script:
 - 场景块是否需要单独支持 `subtext` 或“潜台词”字段？
 - 是否需要为每个 scene 保存 AI 生成置信度、模型名和 prompt 摘要？
 - YAML 输出是否需要同时包含完整原文片段，还是只保留章节摘要以降低体积？
-- AST 与 YAML projection 是否允许字段不完全一致，例如 UI-only 字段不进入 YAML？
+- document 与 YAML projection 是否允许字段不完全一致，例如 UI-only 字段不进入 YAML？
