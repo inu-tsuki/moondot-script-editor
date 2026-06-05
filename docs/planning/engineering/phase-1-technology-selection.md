@@ -106,6 +106,8 @@ Creative source
 
 章节解析是当前 `novel` source adapter 的一部分。长期可以增加 inspiration seed、outline 或 world bible adapter，但 Phase 1 只实现小说文本入口。
 
+边界：章节解析只做 source ingestion，不做小说到剧本的改编。它不能可靠地产生场景、对白、人物动机或动作调度；这些应交给 LLM planner / writer，再通过 validation 和修复链路收敛到 `ScreenplayDocument`。
+
 能力范围：
 
 - 识别 `第X章`、`Chapter X`、明显标题行。

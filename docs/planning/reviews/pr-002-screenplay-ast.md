@@ -57,12 +57,15 @@ PR #2 落地了月点核心的数据模型与校验机制：
 - 已在 UI/input 边界补充小说来源文本为空的 diagnostic。
 - 已抽取 `serializeDocumentToYaml`，不再由 `App.tsx` 临时拼接 YAML。
 - YAML projection 已覆盖完整 `script.scenes[]`，并生成 `generatedAt` 和线性 `nextSceneId`。
+- 已补充小说 source ingestion / 章节解析，但明确它只负责来源摄取，不承担小说到剧本转换。
+- 已补充小说改编 prompt / mock fallback 骨架，作为未来 LLM agent 接入点。
 
 仍保留为后续 PR 的事项：
 
 - `missing_dialogue_character` 继续保持 `error`，因为这是 AST 引用断裂；如果未来接收“带角色名但未入库”的 LLM 输出，应在导入/修复层产生 warning 或自动建角色。
 - 标准 YAML 库暂不引入，当前仍使用轻量手写 serializer。
 - Zod 暂不引入，当前仍使用手写 TypeScript validation。
+- 真实模型调用层暂不接入，当前只保留 prompt 协议和 mock fallback。
 - 改编质量 heuristics 暂不做运行时强校验，后续放到 LLM 生成、修复和质量审查链路。
 
 ## 原始后续动作
@@ -98,5 +101,5 @@ Remaining intentional deferrals:
   - Manual TypeScript validation is implemented instead of Zod for MVP simplicity.
   - Adaptation quality heuristics (NLP-based) are deferred to LLM/backend generation stages.
 
-Future PRs can focus on source ingestion, a standard YAML package, and quality heuristics.
+Future PRs can focus on the real model API layer, a standard YAML package, and quality heuristics.
 ```

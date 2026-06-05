@@ -1,10 +1,19 @@
 import { AlertTriangle, Download, FileText, Plus, Sparkles, WandSparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import './App.css';
+import { adaptNovelToScreenplayMock } from './core/adaptation';
 import { serializeDocumentToYaml } from './core/serialization';
-import { demoNovelText, demoScreenplayDocument } from './core/screenplay';
+import {
+  appendBlockToFirstScene,
+  demoNovelText,
+  demoScreenplayDocument,
+  formatSceneHeading,
+  getBlockCharacterId,
+  updateBlockText as updateDocumentBlockText,
+} from './core/screenplay';
+import { parseNovelChapters } from './core/source-ingestion';
 import { validateScreenplayDocument } from './core/validation';
-import type { BlockId, CharacterId, ScreenplayDocument, ScriptBlock } from './core/screenplay';
+import type { BlockId, ScreenplayDocument, ScriptBlock } from './core/screenplay';
 import type { Diagnostic } from './core/validation';
 
 const blockTypeLabels: Record<ScriptBlock['type'], string> = {
@@ -15,54 +24,42 @@ const blockTypeLabels: Record<ScriptBlock['type'], string> = {
   note: 'NOTE',
 };
 
-const locationTypeLabels: Record<
-  ScreenplayDocument['script']['scenes'][number]['heading']['locationType'],
-  string
-> = {
-  INT: 'INT',
-  EXT: 'EXT',
-  INT_EXT: 'INT/EXT',
-};
-
-const countChaptersInText = (sourceText: string) => {
-  if (!sourceText.trim()) {
-    return 0;
-  }
-
-  const matches = sourceText.match(/(^|\n)\s*(第.{1,9}章|Chapter\s+\d+)/gi);
-
-  return Math.max(matches?.length ?? 0, 1);
-};
-
-const createNextBlockId = (blocks: ScriptBlock[]): BlockId =>
-  `blk_${String(blocks.length + 1).padStart(3, '0')}` as BlockId;
-
-const getBlockCharacterId = (block: ScriptBlock): CharacterId | undefined =>
-  block.type === 'dialogue' ? block.characterId : undefined;
-
-const formatSceneHeading = (heading: ScreenplayDocument['script']['scenes'][number]['heading']) =>
-  `${locationTypeLabels[heading.locationType]}. ${heading.location} - ${heading.timeOfDay}`;
-
 function App() {
   const [sourceText, setSourceText] = useState(demoNovelText);
   const [generatedAt] = useState(() => new Date().toISOString());
   const [screenplayDocument, setScreenplayDocument] =
     useState<ScreenplayDocument>(demoScreenplayDocument);
+  const [adaptationDiagnostics, setAdaptationDiagnostics] = useState<Diagnostic[]>([]);
 
-  const activeScene = screenplayDocument.script.scenes[0];
-  const chapterCount = countChaptersInText(sourceText);
+  const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
+  const workingDocument = useMemo<ScreenplayDocument>(
+    () => ({
+      ...screenplayDocument,
+      source: {
+        type: 'novel',
+        title:
+          screenplayDocument.source.type === 'novel'
+            ? screenplayDocument.source.title
+            : screenplayDocument.project.title,
+        chapters: parsedNovel.chapters,
+      },
+    }),
+    [parsedNovel.chapters, screenplayDocument],
+  );
+  const activeScene = workingDocument.script.scenes[0];
+  const chapterCount = parsedNovel.chapters.length;
 
   const charactersById = useMemo(
-    () => new Map(screenplayDocument.characters.map((character) => [character.id, character])),
-    [screenplayDocument.characters],
+    () => new Map(workingDocument.characters.map((character) => [character.id, character])),
+    [workingDocument.characters],
   );
   const documentDiagnostics = useMemo(
     () =>
-      validateScreenplayDocument(screenplayDocument, {
+      validateScreenplayDocument(workingDocument, {
         requireChapterText: true,
         requireSubmissionReady: true,
       }),
-    [screenplayDocument],
+    [workingDocument],
   );
   const displayedDiagnostics = useMemo<Diagnostic[]>(
     () => [
@@ -76,58 +73,36 @@ function App() {
           : '小说文本不能为空。',
         path: 'sourceText',
       },
+      ...parsedNovel.diagnostics,
+      ...adaptationDiagnostics,
       ...documentDiagnostics,
     ],
-    [chapterCount, documentDiagnostics, sourceText],
+    [adaptationDiagnostics, chapterCount, documentDiagnostics, parsedNovel.diagnostics, sourceText],
   );
 
   const yamlPreview = useMemo(
-    () => serializeDocumentToYaml(screenplayDocument, { generatedAt }),
-    [generatedAt, screenplayDocument],
+    () => serializeDocumentToYaml(workingDocument, { generatedAt }),
+    [generatedAt, workingDocument],
   );
 
   const addBlock = () => {
-    setScreenplayDocument((currentDocument) => {
-      const scene = currentDocument.script.scenes[0];
-
-      if (!scene) {
-        return currentDocument;
-      }
-
-      const nextBlock: ScriptBlock = {
-        id: createNextBlockId(scene.blocks),
-        type: 'action',
-        text: '新的动作描写。',
-      };
-
-      return {
-        ...currentDocument,
-        script: {
-          ...currentDocument.script,
-          scenes: currentDocument.script.scenes.map((currentScene) =>
-            currentScene.id === scene.id
-              ? {
-                  ...currentScene,
-                  blocks: [...currentScene.blocks, nextBlock],
-                }
-              : currentScene,
-          ),
-        },
-      };
-    });
+    setScreenplayDocument((currentDocument) => appendBlockToFirstScene(currentDocument));
   };
 
   const updateBlockText = (id: BlockId, text: string) => {
-    setScreenplayDocument((currentDocument) => ({
-      ...currentDocument,
-      script: {
-        ...currentDocument.script,
-        scenes: currentDocument.script.scenes.map((scene) => ({
-          ...scene,
-          blocks: scene.blocks.map((block) => (block.id === id ? { ...block, text } : block)),
-        })),
-      },
-    }));
+    setScreenplayDocument((currentDocument) => updateDocumentBlockText(currentDocument, id, text));
+  };
+
+  const updateSourceText = (text: string) => {
+    setSourceText(text);
+    setAdaptationDiagnostics([]);
+  };
+
+  const generateScreenplay = () => {
+    const adaptationResult = adaptNovelToScreenplayMock({ document: workingDocument });
+
+    setScreenplayDocument(adaptationResult.document);
+    setAdaptationDiagnostics(adaptationResult.diagnostics);
   };
 
   return (
@@ -145,7 +120,12 @@ function App() {
             <FileText size={16} />
             导入
           </button>
-          <button className="button-primary" type="button" title="生成剧本">
+          <button
+            className="button-primary"
+            type="button"
+            title="生成剧本"
+            onClick={generateScreenplay}
+          >
             <WandSparkles size={16} />
             生成
           </button>
@@ -164,7 +144,7 @@ function App() {
               Source
             </div>
             <span className="panel-meta">
-              {screenplayDocument.source.type} · {chapterCount} chapters
+              {workingDocument.source.type} · {chapterCount} chapters
             </span>
           </div>
           <div className="panel-body">
@@ -172,12 +152,12 @@ function App() {
               aria-label="小说来源文本"
               className="source-textarea"
               value={sourceText}
-              onChange={(event) => setSourceText(event.target.value)}
+              onChange={(event) => updateSourceText(event.target.value)}
             />
             <div className="chapter-strip" aria-label="章节识别结果">
               <div className="chapter-pill">
                 <span>sourceType</span>
-                <span>{screenplayDocument.source.type}</span>
+                <span>{workingDocument.source.type}</span>
               </div>
               <div className="chapter-pill">
                 <span>submission check</span>
@@ -257,7 +237,7 @@ function App() {
               <Download size={16} />
               YAML Projection
             </div>
-            <span className="panel-meta">document v{screenplayDocument.documentVersion}</span>
+            <span className="panel-meta">document v{workingDocument.documentVersion}</span>
           </div>
           <div className="panel-body side-tabs">
             <pre className="yaml-preview">{yamlPreview}</pre>
