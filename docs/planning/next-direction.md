@@ -1,7 +1,7 @@
 # Next Direction
 
-> 最近更新：2026-06-06  
-> 状态：Phase 3 正式规划启动，用于承接 `roadmap/phase-3-model-workflow.md` 后的第一组代码 PR。
+> 最近更新：2026-06-07
+> 状态：Phase 3.2 已合并；当前用于承接 Phase 3.3 / 3.4 的下一组模型工作流 PR。
 
 本文用于回答“下一两个 PR 先做什么”。阶段级边界见 `roadmap/README.md` 和 `roadmap/phase-3-model-workflow.md`；长期产品愿景仍以 `../knowledge/product/vision.md` 为准。
 
@@ -18,8 +18,10 @@
 - document-backed screenplay reading surface。
 - 基础语义编辑控件和工业化手稿 UI polish。
 - Vitest / Testing Library / Playwright 前端测试护栏。
+- Phase 3.1 model adapter contract：`ModelCallRequest` / `ModelCallResult` / `ModelCallError`、typed stage payload、mock adapter。
+- Phase 3.2 Structured Architect contract：Architect Zod schema、`ADAPTATION_PLAN_SCHEMA_ID`、`structuredOutput: { schemaId }` envelope、app-side semantic validation。
 
-Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步应从 model adapter contract 开始，而不是直接在 UI 里调用真实模型。
+Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步应进入 WriterBrief / scene draft contract，而不是直接接 local proxy 或真实 SDK。
 
 ## 近期原则
 
@@ -38,12 +40,14 @@ typed workflow
 - 把 API key 暴露在浏览器端。
 - 让模型直接生成 YAML。
 - 让模型输出绕过 `ScreenplayDocument` validation。
-- 在第一组 PR 引入完整 agent graph runtime。
+- 在下一组 PR 引入完整 agent graph runtime。
 - 把 mock fallback 和真实模型做成两套互不相干的路径。
+- 让 Writer stage 直接返回完整 `ScreenplayDocument`，绕过 scene patch / document operation。
+- 在 prompt 中要求模型伪造“最小有效 artifact”来吞掉失败。
 
 ## 推荐 PR 顺序
 
-### PR A：Model adapter contract
+### PR A：Model adapter contract（已合并）
 
 目标：定义 mock fallback 和真实模型调用共用的边界。
 
@@ -62,7 +66,7 @@ typed workflow
 - 不提交 secret 或 `.env.local`。
 - `pnpm format:check` / `pnpm lint` / `pnpm build` / `pnpm test` 通过。
 
-### PR B：Structured Architect contract
+### PR B：Structured Architect contract（已合并）
 
 目标：让 Architect 的 plan 输出变成可验证 artifact。
 
@@ -88,14 +92,22 @@ typed workflow
 
 - 定义 `WriterBrief` 代码 contract。
 - 定义 Writer 输出 schema。
+- 将 Writer 模型产物从完整 `ScreenplayDocument` 收窄为 `WriterScenePatch` / `SceneDraftPatch`。
+- 为 Writer 输出定义 schema id，并通过 `structuredOutput: { schemaId }` 进入 model request。
+- 建立 Writer app-side validator：先 Zod `safeParse`，再校验 scene id、sourceRefs、character references、block 类型和空场景。
 - Writer prompt 明确禁止直接输出 YAML。
+- Writer prompt 不重复完整 schema，也不鼓励伪造最小有效 patch；无法生成可执行 patch 时进入明确 failure / diagnostic。
 - Writer 产物先通过 validation，再由 document operation 写入 `ScreenplayDocument.script`。
+- mock Writer 和未来真实 Writer 共用同一个 Writer artifact contract。
 
 完成标准：
 
 - Writer 不直接消费完整小说文本。
+- Writer stage 不直接返回完整 `ScreenplayDocument`。
+- Writer structured output request 可序列化，并能通过 schema id 找到 app-side schema。
 - 生成结果继续驱动 YAML preview 和 diagnostics。
 - mock Writer 和未来真实 Writer 共用 contract。
+- 测试覆盖 Writer schema、semantic validation、mock success 和 failure `ModelCallError`。
 
 ### PR D：Local model proxy / server boundary
 
@@ -106,14 +118,19 @@ typed workflow
 - 增加最小 local proxy 或 dev server endpoint。
 - 从环境变量读取模型配置。
 - 前端只调用本地 endpoint。
+- 建立 server-side schema registry / resolver，把 Architect / Writer `schemaId` 映射到真实 SDK structured output 参数。
+- 前端到 proxy 只传可序列化 request envelope，不传 Zod runtime object。
+- 未知 `schemaId` 明确返回 schema configuration diagnostic 或 `ModelCallError`。
 - 文档说明 `.env.local` 示例变量名。
 - 请求超时、取消、错误状态进入 `ModelCallError`。
+- refusal / empty output / parse / schema mismatch 不进入假成功 artifact。
 
 完成标准：
 
 - 无 API key 时 mock fallback 可用。
 - 有 API key 时可触发真实 Architect 或 Writer 调用。
 - 浏览器 bundle 中不包含 API key。
+- 真实调用路径能证明 `schemaId` 已被解析并传入 provider structured output 配置。
 
 ## 暂缓事项
 
