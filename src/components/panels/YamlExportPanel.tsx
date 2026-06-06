@@ -23,7 +23,7 @@ export function YamlExportPanel({
   return (
     <section
       aria-label="YAML 导出"
-      className="flex flex-wrap items-center justify-between gap-2.5 rounded-md border border-[#d9d1c4] bg-[#fffaf2] p-2.5"
+      className="flex flex-wrap items-center justify-between gap-2.5 rounded-md border border-[#e4ded3] p-2.5"
     >
       <div className="flex flex-wrap gap-1.5">
         <Badge variant={exportStatus.isReady ? 'success' : 'error'}>

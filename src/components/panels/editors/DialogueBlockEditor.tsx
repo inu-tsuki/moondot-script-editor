@@ -10,19 +10,18 @@ type DialogueBlockEditorProps = {
   block: DialogueBlock;
   isSelected: boolean;
   allCharacters: CharacterProfile[];
+  manuscriptField?: string;
+  manuscriptText?: string;
   onChange: (text: string) => void;
   onEdit: (action: EditAction) => void;
 };
-
-const ghostSelect =
-  'appearance-none bg-transparent border border-transparent font-extrabold uppercase tracking-wide text-[#17211d]';
-const ghostInput = 'bg-transparent border border-transparent text-[13px] italic text-[#7b776b]';
-const activeControl = 'rounded border-[#cfc7ba] bg-white px-1';
 
 export function DialogueBlockEditor({
   block,
   isSelected,
   allCharacters,
+  manuscriptField = '',
+  manuscriptText = '',
   onChange,
   onEdit,
 }: DialogueBlockEditorProps) {
@@ -47,7 +46,7 @@ export function DialogueBlockEditor({
         <div className="flex flex-wrap items-center justify-center gap-2">
           <select
             aria-label="Character"
-            className={`${ghostSelect} ${isSelected ? activeControl : ''} cursor-pointer`}
+            className={`${manuscriptField} appearance-none cursor-pointer font-extrabold uppercase tracking-wide text-[#17211d]`}
             onChange={(e) =>
               onEdit({
                 type: 'update-block-character',
@@ -67,7 +66,7 @@ export function DialogueBlockEditor({
           {showParenthetical ? (
             <input
               aria-label="Parenthetical"
-              className={`${ghostInput} ${isSelected ? activeControl : ''} outline-none`}
+              className={`${manuscriptField} text-[13px] italic text-[#7b776b] outline-none`}
               onChange={(e) =>
                 onEdit({
                   type: 'update-parenthetical',
@@ -85,7 +84,7 @@ export function DialogueBlockEditor({
         <textarea
           ref={textareaRef}
           aria-label={`Dialogue ${block.id}`}
-          className="mt-0.5 w-full resize-none overflow-hidden border border-transparent bg-transparent p-0 text-center text-[14px] leading-relaxed text-[#17211d] outline-none transition-colors focus:rounded-md focus:border-[#cfc7ba] focus:bg-[#fffdf8] focus:text-left"
+          className={`${manuscriptText} mt-0.5 text-center text-[14px] leading-relaxed text-[#17211d]`}
           rows={1}
           value={block.text}
           onChange={(event) => onChange(event.target.value)}

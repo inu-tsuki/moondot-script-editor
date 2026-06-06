@@ -19,6 +19,7 @@
 - [pr-011-workbench-layout-tabs.md](pr-011-workbench-layout-tabs.md)：PR #11 `feat/workbench-layout-tabs`（GitHub #23）的 review，关注 WorkbenchLayout、output tabs、中央编辑区权重和 2.5.5 方案衔接。
 - [pr-012-screenplay-reading-surface.md](pr-012-screenplay-reading-surface.md)：PR #12 `feat/screenplay-reading-surface`（GitHub #24）的 review，关注 document-backed Fountain-like reading surface、per-block editor 和手稿输入体验风险。
 - [pr-013-basic-semantic-editor-controls.md](pr-013-basic-semantic-editor-controls.md)：PR #13 `feat/basic-semantic-editor-controls`（GitHub #25）的 review，关注基础语义编辑闭环、document 追溯边界和手稿式 UI/UX 收口。
+- [pr-014-industrial-manuscript-ui-polish.md](pr-014-industrial-manuscript-ui-polish.md)：PR #14 `feat/industrial-manuscript-ui-polish`（GitHub #26）的 review，关注工业化手稿 UI、toolbar gutter、视觉节奏和窄屏回退。
 
 ## 维护规则
 

@@ -13,7 +13,7 @@ export function PanelShell({ as: Component = 'section', className, ...props }: P
   return (
     <Component
       className={cx(
-        'flex min-h-0 flex-col overflow-hidden rounded-lg border border-[#d9d1c4] bg-[#fffdf8] max-[760px]:min-h-[360px]',
+        'flex min-h-0 flex-col overflow-hidden rounded-lg border border-[#e4ded3] bg-[#faf9f6] max-[760px]:min-h-[360px]',
         className,
       )}
       {...props}

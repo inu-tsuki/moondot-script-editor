@@ -1,4 +1,3 @@
-import { PanelMeta } from '../ui';
 import { BlockToolbar } from './BlockToolbar';
 import {
   ActionBlockEditor,
@@ -24,16 +23,22 @@ type ScenePageProps = {
   onUpdateBlockText: (id: BlockId, text: string) => void;
 };
 
-// Ghost control base styles: controls always exist, styled to look like static text when idle
-const ghostBase = 'bg-transparent border border-transparent outline-none hover:opacity-70';
-const ghostFocus =
-  'focus:rounded focus:border-[#cfc7ba] focus:bg-[#fffdf8] focus:px-1 focus:opacity-100';
+// ---------------------------------------------------------------------------
+// Manuscript tokens — controls are always transparent; containers use
+// focus-within for activation highlight
+// ---------------------------------------------------------------------------
 
-const ghostSelect = `${ghostBase} ${ghostFocus} appearance-none cursor-pointer`;
-const ghostInput = `${ghostBase} ${ghostFocus}`;
-const ghostTextarea = `${ghostBase} ${ghostFocus} resize-none`;
+const manuscriptField = 'bg-transparent border-0 outline-none px-0.5 hover:opacity-70';
 
-const headingFieldClass = `${ghostInput} font-extrabold uppercase tracking-wide text-[#7b6651]`;
+const manuscriptSelect = `${manuscriptField} appearance-none cursor-pointer`;
+
+const manuscriptText =
+  'w-full resize-none overflow-hidden border-0 bg-transparent p-0 outline-none transition-colors';
+
+const headingInputBase = `${manuscriptField} font-extrabold uppercase tracking-wide text-[#7b6651] max-w-full`;
+
+// Shared activation background for any container whose child gains focus
+const focusContainer = 'focus-within:bg-[#f4f1ea] focus-within:rounded transition-colors';
 
 const locationTypeOptions = [
   { value: 'INT', label: 'INT.' },
@@ -57,7 +62,14 @@ export function ScenePage({
     const editor = (() => {
       switch (block.type) {
         case 'action':
-          return <ActionBlockEditor key={block.id} block={block} onChange={onChange} />;
+          return (
+            <ActionBlockEditor
+              key={block.id}
+              block={block}
+              className={manuscriptText}
+              onChange={onChange}
+            />
+          );
         case 'dialogue':
           return (
             <DialogueBlockEditor
@@ -65,127 +77,158 @@ export function ScenePage({
               allCharacters={allCharacters}
               block={block}
               isSelected={isSelected}
+              manuscriptField={manuscriptField}
+              manuscriptText={manuscriptText}
               onChange={onChange}
               onEdit={onEdit}
             />
           );
         case 'narration':
-          return <NarrationBlockEditor key={block.id} block={block} onChange={onChange} />;
+          return (
+            <NarrationBlockEditor
+              key={block.id}
+              block={block}
+              className={manuscriptText}
+              onChange={onChange}
+            />
+          );
         case 'transition':
-          return <TransitionBlockEditor key={block.id} block={block} onChange={onChange} />;
+          return (
+            <TransitionBlockEditor
+              key={block.id}
+              block={block}
+              className={manuscriptText}
+              onChange={onChange}
+            />
+          );
         case 'note':
-          return <NoteBlockEditor key={block.id} block={block} onChange={onChange} />;
+          return (
+            <NoteBlockEditor
+              key={block.id}
+              block={block}
+              className={manuscriptText}
+              onChange={onChange}
+            />
+          );
       }
     })();
 
     return (
       <div
         key={block.id}
-        className={`rounded-md transition-shadow ${isSelected ? 'ring-1 ring-[#bfb59c]' : ''}`}
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (
-            target instanceof HTMLTextAreaElement ||
-            target instanceof HTMLSelectElement ||
-            target instanceof HTMLInputElement ||
-            target.closest('button')
-          ) {
-            return;
-          }
-          onEdit({
-            type: 'select-block',
-            blockId: isSelected ? null : block.id,
-          });
-        }}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
+        className={`group grid grid-cols-[24px_1fr] min-[761px]:grid-cols-[32px_1fr_auto] items-start gap-x-2 ${focusContainer} ${
+          isSelected ? 'bg-[#f4f1ea]' : ''
+        } -mx-4 rounded px-4 min-[761px]:-mx-10 min-[761px]:px-10`}
+      >
+        {/* Left gutter: selection handle */}
+        <button
+          aria-label={`Select block ${block.id}`}
+          className={`mt-1 min-h-[24px] cursor-pointer self-stretch border-l-2 transition-colors ${
+            isSelected
+              ? 'border-l-[#7b6651]'
+              : 'border-l-transparent group-hover:border-l-[#d9d1c4] group-focus-within:border-l-[#7b6651]'
+          }`}
+          onClick={() =>
             onEdit({
               type: 'select-block',
               blockId: isSelected ? null : block.id,
-            });
+            })
           }
-        }}
-        role="button"
-        tabIndex={0}
-      >
-        {/* Toolbar is always rendered, positioned absolutely to never affect document flow */}
-        <div className="relative">
+          type="button"
+        />
+
+        {/* Content area: auto-selects block when any child gains focus */}
+        <div
+          className="min-w-0 min-h-0 overflow-hidden pt-0.5"
+          onFocus={() => {
+            if (!isSelected) {
+              onEdit({ type: 'select-block', blockId: block.id });
+            }
+          }}
+        >
           {editor}
-          <div
-            className={`absolute left-0 top-full z-10 mt-1 transition-opacity ${isSelected ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
-          >
-            <BlockToolbar
-              blockId={block.id}
-              blockIndex={index}
-              characters={allCharacters}
-              onEdit={onEdit}
-              sceneId={scene.id}
-              totalBlocks={scene.blocks.length}
-            />
-          </div>
+        </div>
+
+        {/* Right gutter: toolbar (spans full width below content on narrow screens) */}
+        <div
+          className={`col-span-full min-[761px]:col-span-1 pt-0.5 transition-opacity ${
+            isSelected ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        >
+          <BlockToolbar
+            blockId={block.id}
+            blockIndex={index}
+            characters={allCharacters}
+            onEdit={onEdit}
+            sceneId={scene.id}
+            totalBlocks={scene.blocks.length}
+          />
         </div>
       </div>
     );
   };
 
   return (
-    <article className="overflow-hidden rounded-lg border border-[#d9d1c4] bg-[#fffdf8]">
-      <div className="border-b border-[#e4d9c9] px-4 py-3.5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-extrabold uppercase tracking-wide text-[#7b6651]">
-            <select
-              aria-label="Location type"
-              className={`${ghostSelect} font-extrabold uppercase tracking-wide text-[#7b6651]`}
-              onChange={(e) =>
-                onEdit({
-                  type: 'update-scene-heading',
-                  sceneId: scene.id,
-                  patch: { locationType: e.target.value as SceneNode['heading']['locationType'] },
-                })
-              }
-              value={scene.heading.locationType}
-            >
-              {locationTypeOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <input
-              aria-label="Location"
-              className={headingFieldClass}
-              onChange={(e) =>
-                onEdit({
-                  type: 'update-scene-heading',
-                  sceneId: scene.id,
-                  patch: { location: e.target.value },
-                })
-              }
-              type="text"
-              value={scene.heading.location}
-            />
-            <span>-</span>
-            <input
-              aria-label="Time of day"
-              className={headingFieldClass}
-              onChange={(e) =>
-                onEdit({
-                  type: 'update-scene-heading',
-                  sceneId: scene.id,
-                  patch: { timeOfDay: e.target.value },
-                })
-              }
-              type="text"
-              value={scene.heading.timeOfDay}
-            />
-          </div>
-          <PanelMeta>{scene.id}</PanelMeta>
+    <article>
+      <header className="mb-6 border-b border-[#e4ded3] pb-4">
+        {/* Scene heading: container lights up when any field is focused */}
+        <div
+          className={`${focusContainer} -mx-1 flex flex-wrap items-center gap-x-2 gap-y-1 rounded px-1 font-extrabold uppercase tracking-wide text-[#7b6651]`}
+        >
+          <select
+            aria-label="Location type"
+            className={`${manuscriptSelect} font-extrabold uppercase tracking-wide text-[#7b6651]`}
+            onChange={(e) =>
+              onEdit({
+                type: 'update-scene-heading',
+                sceneId: scene.id,
+                patch: { locationType: e.target.value as SceneNode['heading']['locationType'] },
+              })
+            }
+            value={scene.heading.locationType}
+          >
+            {locationTypeOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <input
+            aria-label="Location"
+            className={`${headingInputBase} w-[12ch]`}
+            onChange={(e) =>
+              onEdit({
+                type: 'update-scene-heading',
+                sceneId: scene.id,
+                patch: { location: e.target.value },
+              })
+            }
+            size={12}
+            type="text"
+            value={scene.heading.location}
+          />
+          <span>-</span>
+          <input
+            aria-label="Time of day"
+            className={`${headingInputBase} w-[8ch]`}
+            onChange={(e) =>
+              onEdit({
+                type: 'update-scene-heading',
+                sceneId: scene.id,
+                patch: { timeOfDay: e.target.value },
+              })
+            }
+            size={8}
+            type="text"
+            value={scene.heading.timeOfDay}
+          />
         </div>
-        <div className="mt-2">
+
+        {/* Scene title: container lights up on focus */}
+        <div className={`${focusContainer} -mx-1 mt-2 rounded px-1`}>
           <input
             aria-label="Scene title"
-            className={`${ghostInput} w-full text-lg font-extrabold text-[#17211d] placeholder:font-extrabold placeholder:text-[#b0a89a]`}
+            className={`${manuscriptField} w-full text-lg font-extrabold text-[#17211d] placeholder:font-extrabold placeholder:text-[#b0a89a]`}
             onChange={(e) =>
               onEdit({
                 type: 'update-scene-metadata',
@@ -198,10 +241,12 @@ export function ScenePage({
             value={scene.title ?? ''}
           />
         </div>
-        <div className="mt-1">
+
+        {/* Scene synopsis: container lights up on focus */}
+        <div className={`${focusContainer} -mx-1 mt-1 rounded px-1`}>
           <textarea
             aria-label="Scene synopsis"
-            className={`${ghostTextarea} w-full text-[13px] leading-relaxed text-[#56615a] placeholder:text-[#b0a89a]`}
+            className={`${manuscriptText} w-full text-[13px] leading-relaxed text-[#56615a] placeholder:text-[#b0a89a]`}
             onChange={(e) =>
               onEdit({
                 type: 'update-scene-metadata',
@@ -214,8 +259,8 @@ export function ScenePage({
             value={scene.synopsis ?? ''}
           />
         </div>
-      </div>
-      <div className="flex flex-col gap-1 px-4 py-4">
+      </header>
+      <div className="flex flex-col">
         {scene.blocks.map((block, index) => renderBlockEditor(block, index))}
       </div>
     </article>

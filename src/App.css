@@ -5,8 +5,8 @@
 
 .topbar {
   align-items: center;
-  background: #fffaf2;
-  border-bottom: 1px solid #d9d1c4;
+  background: #faf9f6;
+  border-bottom: 1px solid #e4ded3;
   display: flex;
   gap: 20px;
   justify-content: space-between;
@@ -23,9 +23,9 @@
 
 .brand-mark {
   align-items: center;
-  background: #17211d;
+  background: #3d4a44;
   border-radius: 6px;
-  color: #fffaf2;
+  color: #faf9f6;
   display: inline-flex;
   font-size: 17px;
   font-weight: 800;
