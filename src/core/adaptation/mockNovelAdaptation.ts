@@ -222,6 +222,10 @@ export const adaptNovelToScreenplayMock = ({
     ],
     document: {
       ...document,
+      project: {
+        ...document.project,
+        targetMedium: plan.preferences.targetMedium,
+      },
       script: {
         structure: {
           type: 'linear',

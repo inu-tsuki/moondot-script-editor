@@ -214,6 +214,72 @@ select:focus-visible {
   padding: 0 10px;
 }
 
+.preference-panel {
+  background: #fffaf2;
+  border: 1px solid #d9d1c4;
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.preference-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.preference-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.preference-field-wide {
+  grid-column: 1 / -1;
+}
+
+.preference-field span,
+.preference-toggle span {
+  color: #5f6b64;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.preference-field select {
+  background: #ffffff;
+  border: 1px solid #cfc7ba;
+  border-radius: 6px;
+  color: #17211d;
+  min-height: 32px;
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.preference-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preference-toggle {
+  align-items: center;
+  background: #eef6f2;
+  border: 1px solid #b8d8ce;
+  border-radius: 6px;
+  display: inline-flex;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 8px;
+}
+
+.preference-toggle input {
+  accent-color: #1f7667;
+  height: 14px;
+  margin: 0;
+  width: 14px;
+}
+
 .scene-list {
   display: grid;
   gap: 12px;
@@ -324,6 +390,22 @@ select:focus-visible {
   display: flex;
   gap: 8px;
   justify-content: space-between;
+}
+
+.outline-preferences {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.outline-preferences span {
+  background: #e6f3ee;
+  border: 1px solid #c2ded4;
+  border-radius: 4px;
+  color: #2f665c;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 6px;
 }
 
 .outline-list {
