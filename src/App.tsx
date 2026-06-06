@@ -1,5 +1,5 @@
 import { FileText, Layout } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import './App.css';
 import { PanelBody, PanelHeader, PanelMeta, PanelShell, PanelTitle, Tabs } from './components/ui';
 import {
@@ -13,10 +13,11 @@ import {
   YamlExportPanel,
 } from './components/panels';
 import {
+  buildNovelAdaptationPrompt,
+  buildNovelSceneWriterPrompt,
   defaultAdaptationPreferences,
-  draftNovelAdaptationFromPlanMock,
-  planNovelAdaptationMock,
 } from './core/adaptation';
+import { createMockModelAdapter } from './core/model';
 import { serializeDocumentToYaml } from './core/serialization';
 import {
   appendBlockToScene,
@@ -102,11 +103,32 @@ function App() {
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
 
+  // ---------------------------------------------------------------------------
+  // Model adapter — stable reference, reads latest state via refs
+  // ---------------------------------------------------------------------------
+  const docRef = useRef(screenplayDocument);
+  const prefsRef = useRef(adaptationPreferences);
+  prefsRef.current = adaptationPreferences;
+  const planRef = useRef(adaptationPlan);
+  planRef.current = adaptationPlan;
+
+  const modelAdapter = useMemo(
+    () =>
+      createMockModelAdapter({
+        getDocument: () => docRef.current,
+        getPreferences: () => prefsRef.current,
+        getPlan: () => planRef.current,
+      }),
+    [],
+  );
+
   const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
   const workingDocument = useMemo<ScreenplayDocument>(
     () => withParsedNovelChapters(screenplayDocument, parsedNovel.chapters),
     [parsedNovel.chapters, screenplayDocument],
   );
+  // Keep docRef in sync with the derived working document used by all call sites.
+  docRef.current = workingDocument;
   const activeScene = workingDocument.script.scenes[0];
   const chapterCount =
     workingDocument.source.type === 'novel'
@@ -254,36 +276,68 @@ function App() {
     clearAdaptationRun();
   };
 
-  const generateSceneOutline = () => {
-    const adaptationResult = planNovelAdaptationMock({
-      document: workingDocument,
-      preferences: adaptationPreferences,
+  const generateSceneOutline = async () => {
+    const messages = buildNovelAdaptationPrompt(workingDocument, adaptationPreferences);
+    const result = await modelAdapter.call<AdaptationPlan>({
+      messages,
+      stage: 'adaptation_planning',
     });
 
-    setAdaptationPlan(adaptationResult.plan);
-    setAdaptationTrace(adaptationResult.trace);
-    setAdaptationDiagnostics(adaptationResult.diagnostics);
+    setAdaptationPlan(result.data ?? undefined);
+    setAdaptationTrace(
+      result.data
+        ? [
+            {
+              label: 'source-ingestion',
+              detail: `读取 ${chapterCount} 个小说章节作为模型输入。`,
+              stage: 'source_analysis',
+              artifactType: 'source_analysis',
+              sourceIds: result.data.sceneOutline.flatMap((sceneCard) =>
+                sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
+              ),
+            },
+            {
+              label: 'model-planning',
+              detail: `通过 ${result.trace.provider} provider 生成 ${result.data.sceneOutline.length} 张 scene cards；scene 可以引用多个章节。`,
+              stage: 'adaptation_planning',
+              artifactType: 'adaptation_plan',
+            },
+          ]
+        : [],
+    );
+    setAdaptationDiagnostics(result.diagnostics);
     setExportFeedback('');
     setOutputTab('outline');
     clearSelection();
   };
 
-  const confirmSceneOutline = () => {
+  const confirmSceneOutline = async () => {
     if (!adaptationPlan) {
       return;
     }
 
-    const adaptationResult = draftNovelAdaptationFromPlanMock({
-      document: workingDocument,
-      plan: adaptationPlan,
+    const messages = buildNovelSceneWriterPrompt(workingDocument, adaptationPlan);
+    const result = await modelAdapter.call<ScreenplayDocument>({
+      messages,
+      stage: 'scene_draft',
     });
 
-    setScreenplayDocument(adaptationResult.document);
+    if (!result.data) {
+      setAdaptationDiagnostics(result.diagnostics);
+      return;
+    }
+
+    setScreenplayDocument(result.data);
     setAdaptationTrace((currentTrace) => [
       ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
-      ...adaptationResult.trace,
+      {
+        label: 'model-writing',
+        detail: `通过 ${result.trace.provider} provider 写入 ScreenplayAst 草稿。`,
+        stage: 'scene_draft',
+        artifactType: 'writer_draft',
+      },
     ]);
-    setAdaptationDiagnostics(adaptationResult.diagnostics);
+    setAdaptationDiagnostics(result.diagnostics);
     setExportFeedback('');
     clearSelection();
   };
