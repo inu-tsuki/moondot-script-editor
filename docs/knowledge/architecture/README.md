@@ -11,7 +11,9 @@
 - `screenplay-ast-contract.md`：`ScreenplayDocument` 是核心模型，`script: ScreenplayAst` 是脚本树，YAML 是官方要求的序列化表示。
 - `screenplay-ast-structure.md`：`ScreenplayDocument` v0.1 与内部 `ScreenplayAst` 的节点结构和实现切片。
 - `screenplay-model-direction.md`：从 brainstorm 收敛出的剧本数据模型和导出方向。
+- `source-ingestion-complete.md`：source ingestion 的长期完整形态，从章节锚点扩展到 segment、beat 和 coverage。
 - `tool-composition.md`：“小工具拼成大系统”的 typed tools 架构原则。
+- `version-control-direction.md`：长期版本控制、草稿历史和 generation run 的边界。
 
 ## 放置规则
 

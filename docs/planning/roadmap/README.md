@@ -110,6 +110,7 @@ Phase 0: 文档和范围锁定
 - 场景卡片墙和结构大纲。
 - 角色关系、出场统计和弧线追踪。
 - 多版本草稿和局部重生成。
+- source ingestion 完整体：source store、segment、event beat 和 coverage map。
 - Fountain-like、视觉小说脚本、制片表等更多投影。
 - 更完整的剧本排版和阅读体验。
 
@@ -118,4 +119,6 @@ Phase 0: 文档和范围锁定
 - `../../knowledge/requirements/xengineer-ai-novel-to-script.md`
 - `../../knowledge/requirements/submission-rules.md`
 - `../../knowledge/product/vision.md`
+- `../../knowledge/architecture/source-ingestion-complete.md`
+- `../../knowledge/architecture/version-control-direction.md`
 - `../../planning/submission-fit-review.md`
