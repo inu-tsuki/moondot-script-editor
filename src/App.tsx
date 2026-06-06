@@ -311,11 +311,11 @@ function App() {
               <YamlExportPanel
                 exportStatus={exportStatus}
                 feedback={exportFeedback}
-                yamlText={yamlPreview}
                 onCopy={copyYaml}
                 onDownload={downloadYaml}
               />
             </div>
+            <pre className="yaml-preview">{yamlPreview}</pre>
             <DiagnosticsPanel diagnostics={displayedDiagnostics} />
           </PanelBody>
         </PanelShell>
