@@ -132,6 +132,11 @@ select:focus-visible {
   background: #f2ece2;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .workbench {
   display: grid;
   gap: 16px;
@@ -390,6 +395,11 @@ select:focus-visible {
   display: flex;
   gap: 8px;
   justify-content: space-between;
+}
+
+.outline-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .outline-preferences {

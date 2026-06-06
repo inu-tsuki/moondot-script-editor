@@ -19,6 +19,13 @@ export type NovelAdaptationRequest = {
   preferences?: Partial<AdaptationPreferences>;
 };
 
+export type NovelAdaptationPlanRequest = NovelAdaptationRequest;
+
+export type NovelAdaptationDraftRequest = {
+  document: ScreenplayDocument;
+  plan: AdaptationPlan;
+};
+
 export type AdaptationTargetLength =
   | 'short_scene'
   | 'short_drama_3_min'
