@@ -43,17 +43,17 @@ Main workbench:
 
 ## Fountain-like 阅读排版
 
-Fountain-like 不作为主编辑器，但 preview 和语义块视觉应该借鉴剧本阅读格式。
+Fountain-like 不作为主输入格式，但 preview 和中央语义块编辑区都应该借鉴剧本阅读格式。Phase 2.5.5 的目标是建立由 `ScreenplayDocument` 支撑的 Fountain-like reading surface：底层依赖 project metadata、source refs、character registry 和 `script: ScreenplayAst`，表层呈现为更像剧本稿的阅读面。
 
 后续 UI 应做到：
 
 - Scene heading 以清晰的场景行样式展示。
-- Action 块像正文段落，而不是普通 textarea。
+- Action 块像正文段落，而不是普通卡片表单。
 - Dialogue 块突出角色名、对白和 parenthetical。
 - Narration / voice-over 和 transition 有独立视觉层级。
 - Note 不干扰最终阅读，可以轻量折叠或弱化。
 
-主编辑仍然编辑 AST 字段；fountain-like 是阅读投影和视觉语言。
+主编辑仍然编辑 document / AST 字段；fountain-like 是阅读投影和视觉语言。当前不引入 Fountain parser、反解析、Monaco 或完整 WYSIWYG 剧本编辑器。
 
 ## Dock 系统取舍
 

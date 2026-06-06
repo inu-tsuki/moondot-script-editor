@@ -71,13 +71,40 @@ Fountain-like 不作为主编辑器。
 
 - 剧本预览面板。
 - 导出预览 tab。
-- demo 中展示“AST 还能投影成剧本文本”的能力。
+- demo 中展示“同一份 `ScreenplayDocument` 还能投影成剧本文本”的能力。
 
 第一版不做：
 
 - 在 Fountain-like 文本中编辑并反解析回 AST。
 - 完整 Fountain parser。
 - 复杂所见即所得剧本排版编辑器。
+
+## 中央阅读面雏形
+
+Phase 2.5.5 应把中心编辑区升级为由 `ScreenplayDocument` 支撑的 Fountain-like reading surface。它不是让用户直接编辑 Fountain 文本，而是在 document metadata、角色表、source refs 和语义块上覆盖更像剧本稿的排版语言。
+
+推荐组件层级：
+
+```text
+ScriptEditorPanel
+  -> ScenePage
+    -> SceneHeadingEditor
+    -> ScriptBlockEditor
+      -> ActionBlockEditor
+      -> DialogueBlockEditor
+      -> NarrationBlockEditor
+      -> TransitionBlockEditor
+      -> NoteBlockEditor
+```
+
+编辑原则：
+
+- 默认视觉像剧本阅读稿，聚焦某个块时再显露边框、工具条或编辑提示。
+- 先使用受控 `textarea`，通过无边框、自动高度和类型化排版降低表单感。
+- 暂不使用 `contenteditable`；它会过早引入 IME、selection、撤销栈和反解析复杂度。
+- Dialogue 使用已有 `characterId`、`parenthetical` 和 `text` 分层展示。
+- Transition 可以右对齐；Note 应弱化或旁注化；Action / narration 保持正文阅读节奏。
+- 所有编辑仍通过 scene / block id 回写 `ScreenplayDocument`，不引入独立的 Fountain 文本状态。
 
 ## 推荐界面结构
 
