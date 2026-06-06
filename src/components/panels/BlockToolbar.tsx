@@ -48,10 +48,11 @@ export function BlockToolbar({
   };
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-[#e6ded2] pt-2">
+    <div className="flex flex-col gap-0.5">
       <Button
         disabled={blockIndex === 0}
         onClick={() => onEdit({ type: 'move-block', sceneId, blockId, direction: 'up' })}
+        size="icon-sm"
         title="Move up"
         variant="ghost"
       >
@@ -60,35 +61,30 @@ export function BlockToolbar({
       <Button
         disabled={blockIndex === totalBlocks - 1}
         onClick={() => onEdit({ type: 'move-block', sceneId, blockId, direction: 'down' })}
+        size="icon-sm"
         title="Move down"
         variant="ghost"
       >
         <ChevronDown size={14} />
       </Button>
-      <Button
-        onClick={() => onEdit({ type: 'delete-block', sceneId, blockId })}
-        title="Delete block"
-        variant="ghost"
-      >
-        <Trash2 size={14} />
-      </Button>
 
       <div className="relative">
         <Button
           onClick={() => setShowInsertMenu((prev) => !prev)}
+          size="icon-sm"
           title="Insert block after"
           variant="ghost"
         >
           <Plus size={14} />
         </Button>
         {showInsertMenu ? (
-          <div className="absolute left-0 top-full z-10 mt-1 flex flex-col rounded-md border border-[#cfc7ba] bg-white py-1 shadow-sm">
+          <div className="absolute right-full top-0 z-10 mr-1 flex flex-col rounded-md border border-[#cfc7ba] bg-white py-1 shadow-sm">
             {blockTypes.map((type) => {
               const disabled = type === 'dialogue' && hasNoCharacters(characters);
               return (
                 <button
                   key={type}
-                  className={`px-3 py-1.5 text-left text-xs leading-none ${
+                  className={`whitespace-nowrap px-3 py-1.5 text-left text-xs leading-none ${
                     disabled
                       ? 'cursor-not-allowed text-[#b0b0b0]'
                       : 'text-[#26322d] hover:bg-[#f2ece2]'
@@ -105,6 +101,15 @@ export function BlockToolbar({
           </div>
         ) : null}
       </div>
+
+      <Button
+        onClick={() => onEdit({ type: 'delete-block', sceneId, blockId })}
+        size="icon-sm"
+        title="Delete block"
+        variant="ghost"
+      >
+        <Trash2 size={14} />
+      </Button>
     </div>
   );
 }

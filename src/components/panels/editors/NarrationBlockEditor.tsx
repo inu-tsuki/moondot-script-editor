@@ -4,6 +4,7 @@ import type { NarrationBlock } from '../../../core/screenplay';
 
 type NarrationBlockEditorProps = {
   block: NarrationBlock;
+  className?: string;
   onChange: (text: string) => void;
 };
 
@@ -13,7 +14,11 @@ const voiceLabels: Record<string, string> = {
   narrator: 'NARRATOR',
 };
 
-export function NarrationBlockEditor({ block, onChange }: NarrationBlockEditorProps) {
+export function NarrationBlockEditor({
+  block,
+  className = '',
+  onChange,
+}: NarrationBlockEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const adjustHeight = () => {
@@ -39,7 +44,7 @@ export function NarrationBlockEditor({ block, onChange }: NarrationBlockEditorPr
       <textarea
         ref={textareaRef}
         aria-label={`Narration ${block.id}`}
-        className="min-w-0 flex-1 resize-none overflow-hidden border border-transparent bg-transparent p-0 text-[15px] leading-relaxed text-[#17211d] outline-none transition-colors focus:rounded-md focus:border-[#cfc7ba] focus:bg-[#fffdf8]"
+        className={`${className} min-w-0 flex-1 text-[15px] leading-relaxed text-[#17211d]`}
         rows={1}
         value={block.text}
         onChange={(event) => onChange(event.target.value)}

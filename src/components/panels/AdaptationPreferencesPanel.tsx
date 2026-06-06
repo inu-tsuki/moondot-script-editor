@@ -58,7 +58,7 @@ export function AdaptationPreferencesPanel({
   return (
     <div
       aria-label="改编基础偏好"
-      className="grid gap-2.5 rounded-md border border-[#d9d1c4] bg-[#fffaf2] p-2.5"
+      className="grid gap-2.5 rounded-md border border-[#e4ded3] p-2.5"
     >
       <div className="grid grid-cols-2 gap-2">
         <Field label="媒介">
@@ -139,7 +139,7 @@ export function AdaptationPreferencesPanel({
         </Field>
       </div>
       <div className="flex flex-wrap gap-2">
-        <label className="inline-flex min-h-[30px] items-center gap-1.5 rounded-md border border-[#b8d8ce] bg-[#eef6f2] px-2">
+        <label className="inline-flex min-h-[30px] items-center gap-1.5 rounded-md border border-[#e4ded3] px-2">
           <input
             type="checkbox"
             className="h-3.5 w-3.5 accent-[#1f7667]"
@@ -150,7 +150,7 @@ export function AdaptationPreferencesPanel({
           />
           <span className="text-[11px] font-extrabold text-[#5f6b64]">压缩支线</span>
         </label>
-        <label className="inline-flex min-h-[30px] items-center gap-1.5 rounded-md border border-[#b8d8ce] bg-[#eef6f2] px-2">
+        <label className="inline-flex min-h-[30px] items-center gap-1.5 rounded-md border border-[#e4ded3] px-2">
           <input
             type="checkbox"
             className="h-3.5 w-3.5 accent-[#1f7667]"
@@ -159,7 +159,7 @@ export function AdaptationPreferencesPanel({
           />
           <span className="text-[11px] font-extrabold text-[#5f6b64]">重排时间线</span>
         </label>
-        <label className="inline-flex min-h-[30px] items-center gap-1.5 rounded-md border border-[#b8d8ce] bg-[#eef6f2] px-2">
+        <label className="inline-flex min-h-[30px] items-center gap-1.5 rounded-md border border-[#e4ded3] px-2">
           <input
             type="checkbox"
             className="h-3.5 w-3.5 accent-[#1f7667]"

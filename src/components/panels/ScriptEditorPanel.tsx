@@ -1,6 +1,7 @@
 import { AlertTriangle, ChevronDown, Plus, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { Button, PanelBody, PanelHeader, PanelShell, PanelTitle } from '../ui';
+import { Button, PanelTitle } from '../ui';
+import { ManuscriptSurface } from './ManuscriptSurface';
 import { ScenePage } from './ScenePage';
 import { buildDefaultBlockDraft } from '../../core/screenplay';
 import type {
@@ -53,57 +54,58 @@ export function ScriptEditorPanel({
     setMenuOpen(false);
   };
 
-  return (
-    <PanelShell>
-      <PanelHeader>
-        <PanelTitle icon={<Sparkles size={16} />}>Semantic Blocks</PanelTitle>
-        <div className="relative">
-          <Button disabled={!scene} onClick={() => setMenuOpen((prev) => !prev)} title="增加语义块">
-            <Plus size={16} />
-            Block
-            <ChevronDown size={12} />
-          </Button>
-          {menuOpen ? (
-            <div className="absolute right-0 top-full z-10 mt-1 flex flex-col rounded-md border border-[#cfc7ba] bg-white py-1 shadow-sm">
-              {blockTypes.map((type) => {
-                const disabled = type === 'dialogue' && hasNoCharacters(allCharacters);
-                return (
-                  <button
-                    key={type}
-                    className={`px-3 py-1.5 text-left text-xs leading-none ${
-                      disabled
-                        ? 'cursor-not-allowed text-[#b0b0b0]'
-                        : 'text-[#26322d] hover:bg-[#f2ece2]'
-                    }`}
-                    disabled={disabled}
-                    onClick={() => handleAppendBlock(type)}
-                    title={disabled ? '当前 document 没有角色，无法创建 Dialogue 块' : undefined}
-                    type="button"
-                  >
-                    {blockTypeLabels[type]}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
-      </PanelHeader>
-      <PanelBody>
-        {scene ? (
-          <ScenePage
-            scene={scene}
-            charactersById={charactersById}
-            selectedBlockId={selectedBlockId}
-            onEdit={onEdit}
-            onUpdateBlockText={onUpdateBlockText}
-          />
-        ) : (
-          <div className="flex items-start gap-2 rounded-md border border-[#ebce7a] bg-[#fff6db] p-2.5 text-xs leading-relaxed text-[#5e4a15]">
-            <AlertTriangle className="mt-px shrink-0" size={16} />
-            <span>当前 document 没有可编辑场景。</span>
+  const header = (
+    <>
+      <PanelTitle icon={<Sparkles size={16} />}>Semantic Blocks</PanelTitle>
+      <div className="relative">
+        <Button disabled={!scene} onClick={() => setMenuOpen((prev) => !prev)} title="增加语义块">
+          <Plus size={16} />
+          Block
+          <ChevronDown size={12} />
+        </Button>
+        {menuOpen ? (
+          <div className="absolute right-0 top-full z-10 mt-1 flex flex-col rounded-md border border-[#cfc7ba] bg-white py-1 shadow-sm">
+            {blockTypes.map((type) => {
+              const disabled = type === 'dialogue' && hasNoCharacters(allCharacters);
+              return (
+                <button
+                  key={type}
+                  className={`px-3 py-1.5 text-left text-xs leading-none ${
+                    disabled
+                      ? 'cursor-not-allowed text-[#b0b0b0]'
+                      : 'text-[#26322d] hover:bg-[#f2ece2]'
+                  }`}
+                  disabled={disabled}
+                  onClick={() => handleAppendBlock(type)}
+                  title={disabled ? '当前 document 没有角色，无法创建 Dialogue 块' : undefined}
+                  type="button"
+                >
+                  {blockTypeLabels[type]}
+                </button>
+              );
+            })}
           </div>
-        )}
-      </PanelBody>
-    </PanelShell>
+        ) : null}
+      </div>
+    </>
+  );
+
+  return (
+    <ManuscriptSurface header={header}>
+      {scene ? (
+        <ScenePage
+          scene={scene}
+          charactersById={charactersById}
+          selectedBlockId={selectedBlockId}
+          onEdit={onEdit}
+          onUpdateBlockText={onUpdateBlockText}
+        />
+      ) : (
+        <div className="flex items-start gap-2 rounded-md border border-[#ebce7a] bg-[#fff6db] p-2.5 text-xs leading-relaxed text-[#5e4a15]">
+          <AlertTriangle className="mt-px shrink-0" size={16} />
+          <span>当前 document 没有可编辑场景。</span>
+        </div>
+      )}
+    </ManuscriptSurface>
   );
 }
