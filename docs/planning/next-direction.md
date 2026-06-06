@@ -142,6 +142,25 @@ Tailwind foundation
 - 仍保持 document / AST semantic block editing。
 - 不把 Fountain-like 变成主输入格式。
 
+### PR F：Industrial manuscript UI polish
+
+目标：让整页视觉跟随中央手稿，而不是只让 `ScenePage` 像剧本。
+
+建议内容：
+
+- 统一页面背景、panel、tabs、button、badge 和 diagnostics 的工业化手稿风格。
+- 让 source / outline / YAML / diagnostics 成为安静的辅助区，不和中央剧本正文争抢注意力。
+- 减少普通 dashboard 卡片感，强调审稿台、批注栏、制片文档和稿纸的秩序。
+- 使用中性色、纸面色、墨色和少量状态色，避免营销式高饱和界面。
+- 不改变 `ScreenplayDocument`、工作流或 projection，只做 UI polish。
+
+完成标准：
+
+- 页面整体看起来像剧本改编工作台。
+- 中央手稿是第一视觉中心。
+- 辅助面板更像工具托盘和批注栏。
+- 不引入重型设计系统或主题系统。
+
 ## 暂缓事项
 
 以下事项有价值，但不应抢在 Phase 2.5 前面：

@@ -226,6 +226,28 @@ Sections
 - 不引入 `contenteditable`、Fountain parser、反解析、Monaco 或完整 WYSIWYG 剧本编辑器。
 - 不改变 `ScreenplayDocument` / `ScriptBlock` 类型边界。
 
+### Phase 2.5.6：Industrial manuscript UI polish
+
+目标：让整页视觉服从中央工业化手稿风格，而不是只让编辑器主体像剧本。
+
+这一步是 Phase 2.5 的小型 UI 收口，不改变 document 模型、生成工作流或输出格式。它的职责是统一页面外壳、辅助面板和控件语言，让 source、outline、YAML、diagnostics 都像同一个剧本制作工作台的一部分。
+
+建议内容：
+
+- 将页面背景、panel 边框、header、tabs 和按钮统一成克制的制片文档 / 审稿台气质。
+- 让中央 `ScenePage` 更像主稿纸，左右辅助区更像工具托盘或批注栏。
+- 减少装饰性卡片感，避免页面像普通 SaaS dashboard。
+- 使用更稳定的中性色、纸面色、墨色和少量状态色；避免高饱和营销感。
+- 让 diagnostics、source refs、outline cards 更像批注、索引和生产记录。
+- 保持密度适中：能扫描，但不要压迫中央手稿的阅读节奏。
+
+完成标准：
+
+- 用户一眼能感到这是剧本审阅 / 改编工作台，而不是通用表单页。
+- 中央手稿仍是第一视觉中心。
+- 辅助面板视觉更安静，不和剧本正文竞争注意力。
+- 不新增重型设计系统，不引入布局持久化或复杂主题系统。
+
 ## 非目标
 
 Phase 2.5 暂不做：
@@ -250,6 +272,7 @@ Phase 2.5 完成时，月点应满足：
 - 基础 UI primitives 支撑后续 PR。
 - `App.tsx` 不再承载全部 panel 渲染细节。
 - Tailwind 已接入并用于主要新 UI。
+- 页面整体视觉服务工业化手稿风格，而不是普通 SaaS dashboard。
 - Phase 2 的核心演示链路不退化。
 
 完成 Phase 2.5 后，再进入 Phase 3：真实模型调用层、prompt contract 强化、提交 demo 和质量收口。
