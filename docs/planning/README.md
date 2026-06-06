@@ -12,7 +12,8 @@
 - `next-direction.md`：PR #9 之后的近期开发方向，优先级和 PR 拆分建议。
 - `reviews/README.md`：已合并 PR 的 review、回顾和后续动作。
 - `roadmap/README.md`：72 小时作品挑战的阶段路线。
-- `roadmap/phase-2-adaptation-workflow.md`：当前 Phase 2 的 Adaptation Plan / Scene Outline 工作流规划。
+- `roadmap/phase-2-adaptation-workflow.md`：Phase 2 的 Adaptation Plan / Scene Outline 工作流规划。
+- `roadmap/phase-2-5-workbench-ui-foundation.md`：Phase 2.5 工作台 UI 地基规划，位于真实模型调用层之前。
 - `TODO.md`：任务池和提交前检查。
 
 ## 子目录

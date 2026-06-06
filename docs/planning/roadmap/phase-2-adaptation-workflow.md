@@ -1,7 +1,7 @@
 # Phase 2: Adaptation Workflow
 
 > 最近更新：2026-06-06  
-> 状态：当前启动阶段，用于把 mock adaptation scaffold 推进为可解释、可确认、可继续接入模型的改编工作流。
+> 状态：基础切片已完成，用于记录 mock adaptation scaffold 如何推进为可解释、可确认、可继续接入模型的改编工作流。
 
 Phase 2 的目标不是“让模型直接写得更像剧本”，而是把小说改编拆成稳定的中间层：
 
@@ -186,7 +186,7 @@ Phase 2 完成时，月点应能稳定演示：
 6. 生成结果进入 `ScreenplayDocument.script`。
 7. 用户可以复制或下载 YAML。
 
-完成这个阶段后，再进入 Phase 3：真实模型调用层、prompt contract 强化、提交 demo 和质量收口。
+完成这个阶段后，先进入 Phase 2.5：Workbench UI Foundation；再进入 Phase 3：真实模型调用层、prompt contract 强化、提交 demo 和质量收口。
 
 ## 参考
 

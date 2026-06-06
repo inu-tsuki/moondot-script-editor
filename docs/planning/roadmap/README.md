@@ -26,6 +26,7 @@
 Phase 0: 文档和范围锁定
   -> Phase 1: 工程脚手架、文档模型、ingestion、YAML projection 和 mock scaffold
   -> Phase 2: Adaptation Plan / Scene Outline 工作流
+  -> Phase 2.5: Workbench UI Foundation
   -> Phase 3: 真实模型调用、导出体验和 demo 强化
   -> Phase 4: Demo、README、提交材料和质量收口
 ```
@@ -87,6 +88,26 @@ Phase 0: 文档和范围锁定
 
 详细计划见 `phase-2-adaptation-workflow.md`。
 
+状态：已完成基础切片。
+
+### Phase 2.5：Workbench UI Foundation
+
+- 引入 Tailwind CSS，建立后续 UI 重构的样式地基。
+- 借鉴 KMD dock / workbench 的信息架构，但不直接搬完整 Vue / Pinia / split-pane dock 代码。
+- 抽出基础 UI primitives 和业务 panels，降低 `App.tsx` 单体复杂度。
+- 让工作台以剧本编辑区为中心，source、outline、YAML 和 diagnostics 成为辅助 panel。
+- 让 output 进入 tabs，为 Fountain-like preview 和真实模型 trace 留出位置。
+- 改善语义块的剧本阅读视觉，保持 AST semantic block editing 作为主编辑方式。
+
+完成标准：
+
+- 中央剧本编辑区获得主要空间。
+- Source、scene outline、YAML 和 diagnostics 不再杂乱垂直堆叠。
+- Tailwind 已接入并用于主要新 UI。
+- Phase 2 的导入、规划、确认、写入和 YAML 导出链路不退化。
+
+详细计划见 `phase-2-5-workbench-ui-foundation.md`。
+
 状态：当前启动。
 
 ### Phase 3：真实模型调用、导出体验和 demo 强化
@@ -139,4 +160,5 @@ Phase 0: 文档和范围锁定
 - `../../knowledge/architecture/adaptation-workflow.md`
 - `../../knowledge/architecture/agent-workflow-research.md`
 - `phase-2-adaptation-workflow.md`
+- `phase-2-5-workbench-ui-foundation.md`
 - `../../planning/submission-fit-review.md`
