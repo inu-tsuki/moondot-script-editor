@@ -15,6 +15,7 @@
 - [pr-007-adaptation-preferences-ui.md](pr-007-adaptation-preferences-ui.md)：PR #7 `feat/adaptation-preferences-ui` 的 review，关注生成前配置表单 UI、偏好数据联动及可视化呈现。
 - [pr-008-scene-outline-confirmation.md](pr-008-scene-outline-confirmation.md)：PR #8 `feat/scene-outline-confirmation`（GitHub #15）的 review，关注大纲生成与剧本草稿编写的工作流分离与确认机制。
 - [pr-009-yaml-export-actions.md](pr-009-yaml-export-actions.md)：PR #9 `feat/yaml-export-actions`（GitHub #16）的 review，关注 YAML 复制/下载导出、导出前 validation 状态和 projection 边界。
+- [pr-010-panel-extraction.md](pr-010-panel-extraction.md)：PR #10 `feat/panel-extraction`（GitHub #21）的 review，关注文档库指引下的 panel 拆分、布局回归风险和 Phase 2.5 后续动作。
 
 ## 维护规则
 
