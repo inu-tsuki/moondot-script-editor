@@ -21,6 +21,7 @@
 - [pr-013-basic-semantic-editor-controls.md](pr-013-basic-semantic-editor-controls.md)：PR #13 `feat/basic-semantic-editor-controls`（GitHub #25）的 review，关注基础语义编辑闭环、document 追溯边界和手稿式 UI/UX 收口。
 - [pr-014-industrial-manuscript-ui-polish.md](pr-014-industrial-manuscript-ui-polish.md)：PR #14 `feat/industrial-manuscript-ui-polish`（GitHub #26）的 review，关注工业化手稿 UI、toolbar gutter、视觉节奏和窄屏回退。
 - [pr-015-frontend-test-harness.md](pr-015-frontend-test-harness.md)：PR #15 `chore/frontend-test-harness`（GitHub #27）的 review，关注 Vitest / Testing Library / Playwright 测试护栏、e2e 环境边界和后续质量节奏。
+- [pr-016-model-adapter-contract.md](pr-016-model-adapter-contract.md)：PR #16 `feat/model-adapter-contract`（Phase 3.1）的 review，关注模型适配层 contract、typed artifact、失败分类、异步边界和测试缺口。
 
 ## 维护规则
 

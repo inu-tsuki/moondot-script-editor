@@ -1,5 +1,5 @@
 import { FileText, Layout } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import './App.css';
 import { PanelBody, PanelHeader, PanelMeta, PanelShell, PanelTitle, Tabs } from './components/ui';
 import {
@@ -13,10 +13,11 @@ import {
   YamlExportPanel,
 } from './components/panels';
 import {
+  buildNovelAdaptationPrompt,
+  buildNovelSceneWriterPrompt,
   defaultAdaptationPreferences,
-  draftNovelAdaptationFromPlanMock,
-  planNovelAdaptationMock,
 } from './core/adaptation';
+import { createMockModelAdapter } from './core/model';
 import { serializeDocumentToYaml } from './core/serialization';
 import {
   appendBlockToScene,
@@ -102,11 +103,44 @@ function App() {
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
 
+  // ---------------------------------------------------------------------------
+  // Model adapter — stable reference, reads latest state via refs
+  // ---------------------------------------------------------------------------
+  const docRef = useRef(screenplayDocument);
+  const prefsRef = useRef(adaptationPreferences);
+  prefsRef.current = adaptationPreferences;
+  const planRef = useRef(adaptationPlan);
+  planRef.current = adaptationPlan;
+
+  const modelAdapter = useMemo(
+    () =>
+      createMockModelAdapter({
+        getDocument: () => docRef.current,
+        getPreferences: () => prefsRef.current,
+        getPlan: () => planRef.current,
+      }),
+    [],
+  );
+
+  // Track the latest call to ignore stale async results.
+  const latestRunIdRef = useRef<string | null>(null);
+
+  /**
+   * Invalidate any in-flight model run so a stale response cannot
+   * overwrite state after the user has changed source, preferences,
+   * or document content.
+   */
+  const invalidateModelRun = () => {
+    latestRunIdRef.current = null;
+  };
+
   const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
   const workingDocument = useMemo<ScreenplayDocument>(
     () => withParsedNovelChapters(screenplayDocument, parsedNovel.chapters),
     [parsedNovel.chapters, screenplayDocument],
   );
+  // Keep docRef in sync with the derived working document used by all call sites.
+  docRef.current = workingDocument;
   const activeScene = workingDocument.script.scenes[0];
   const chapterCount =
     workingDocument.source.type === 'novel'
@@ -170,6 +204,12 @@ function App() {
   // ---------------------------------------------------------------------------
 
   const handleEdit = (action: EditAction) => {
+    // Any document mutation invalidates in-flight model runs — a stale
+    // plan or draft must not overwrite the user's manual edits.
+    if (action.type !== 'select-block') {
+      invalidateModelRun();
+    }
+
     switch (action.type) {
       case 'select-block':
         setSelectedBlockId(action.blockId);
@@ -219,6 +259,7 @@ function App() {
   };
 
   const handleUpdateBlockText = (id: BlockId, text: string) => {
+    invalidateModelRun();
     setScreenplayDocument((currentDocument) => updateDocumentBlockText(currentDocument, id, text));
     setExportFeedback('');
   };
@@ -226,6 +267,7 @@ function App() {
   const clearSelection = () => setSelectedBlockId(null);
 
   const updateSourceText = (text: string) => {
+    invalidateModelRun();
     setSourceText(text);
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
@@ -235,6 +277,7 @@ function App() {
   };
 
   const clearAdaptationRun = () => {
+    invalidateModelRun();
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
@@ -246,6 +289,7 @@ function App() {
     key: Key,
     value: AdaptationPreferences[Key],
   ) => {
+    invalidateModelRun();
     setAdaptationPreferences((currentPreferences) => ({
       ...currentPreferences,
       [key]: value,
@@ -254,38 +298,110 @@ function App() {
     clearAdaptationRun();
   };
 
-  const generateSceneOutline = () => {
-    const adaptationResult = planNovelAdaptationMock({
-      document: workingDocument,
-      preferences: adaptationPreferences,
-    });
+  const generateSceneOutline = async () => {
+    const runId = crypto.randomUUID();
+    latestRunIdRef.current = runId;
 
-    setAdaptationPlan(adaptationResult.plan);
-    setAdaptationTrace(adaptationResult.trace);
-    setAdaptationDiagnostics(adaptationResult.diagnostics);
-    setExportFeedback('');
-    setOutputTab('outline');
-    clearSelection();
+    try {
+      const messages = buildNovelAdaptationPrompt(workingDocument, adaptationPreferences);
+      const result = await modelAdapter.call({
+        messages,
+        stage: 'adaptation_planning',
+        runId,
+      });
+
+      // Discard stale results (user changed source while request was in flight).
+      if (result.runId !== latestRunIdRef.current) {
+        return;
+      }
+
+      setAdaptationPlan(result.data ?? undefined);
+      setAdaptationTrace(
+        result.data
+          ? [
+              {
+                label: 'source-ingestion',
+                detail: `读取 ${chapterCount} 个小说章节作为模型输入。`,
+                stage: 'source_analysis',
+                artifactType: 'source_analysis',
+                sourceIds: result.data.sceneOutline.flatMap((sceneCard) =>
+                  sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
+                ),
+              },
+              {
+                label: 'model-planning',
+                detail: `通过 ${result.trace.provider} provider 生成 ${result.data.sceneOutline.length} 张 scene cards；scene 可以引用多个章节。`,
+                stage: 'adaptation_planning',
+                artifactType: 'adaptation_plan',
+              },
+            ]
+          : [],
+      );
+      setAdaptationDiagnostics(result.diagnostics);
+      setExportFeedback('');
+      setOutputTab('outline');
+      clearSelection();
+    } catch (err) {
+      setAdaptationDiagnostics([
+        {
+          severity: 'error',
+          code: 'model_call_rejected',
+          message: err instanceof Error ? err.message : 'Model call failed unexpectedly.',
+          path: 'model',
+        },
+      ]);
+    }
   };
 
-  const confirmSceneOutline = () => {
+  const confirmSceneOutline = async () => {
     if (!adaptationPlan) {
       return;
     }
 
-    const adaptationResult = draftNovelAdaptationFromPlanMock({
-      document: workingDocument,
-      plan: adaptationPlan,
-    });
+    const runId = crypto.randomUUID();
+    latestRunIdRef.current = runId;
 
-    setScreenplayDocument(adaptationResult.document);
-    setAdaptationTrace((currentTrace) => [
-      ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
-      ...adaptationResult.trace,
-    ]);
-    setAdaptationDiagnostics(adaptationResult.diagnostics);
-    setExportFeedback('');
-    clearSelection();
+    try {
+      const messages = buildNovelSceneWriterPrompt(workingDocument, adaptationPlan);
+      const result = await modelAdapter.call({
+        messages,
+        stage: 'scene_draft',
+        runId,
+      });
+
+      // Discard stale results.
+      if (result.runId !== latestRunIdRef.current) {
+        return;
+      }
+
+      if (!result.data) {
+        setAdaptationDiagnostics(result.diagnostics);
+        return;
+      }
+
+      setScreenplayDocument(result.data);
+      setAdaptationTrace((currentTrace) => [
+        ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
+        {
+          label: 'model-writing',
+          detail: `通过 ${result.trace.provider} provider 写入 ScreenplayAst 草稿。`,
+          stage: 'scene_draft',
+          artifactType: 'writer_draft',
+        },
+      ]);
+      setAdaptationDiagnostics(result.diagnostics);
+      setExportFeedback('');
+      clearSelection();
+    } catch (err) {
+      setAdaptationDiagnostics([
+        {
+          severity: 'error',
+          code: 'model_call_rejected',
+          message: err instanceof Error ? err.message : 'Model call failed unexpectedly.',
+          path: 'model',
+        },
+      ]);
+    }
   };
 
   const copyYaml = async () => {
