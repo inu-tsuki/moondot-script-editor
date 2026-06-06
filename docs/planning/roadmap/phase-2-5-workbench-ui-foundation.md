@@ -226,6 +226,29 @@ Sections
 - 不引入 `contenteditable`、Fountain parser、反解析、Monaco 或完整 WYSIWYG 剧本编辑器。
 - 不改变 `ScreenplayDocument` / `ScriptBlock` 类型边界。
 
+### Phase 2.5.5b：Basic semantic editor controls
+
+目标：把中央 reading surface 推进为可完成基础打磨流程的语义编辑器。
+
+2.5.5 解决“看起来像剧本稿”；2.5.5b 解决“能完整编辑剧本草稿”。它仍然不做 Fountain 文本编辑，也不做完整专业编剧 IDE，而是补齐 MVP 需要的结构化编辑闭环。
+
+建议内容：
+
+- 新增 `docs/knowledge/interaction/screenplay-editor-ux.md`，定义 selected / focused 状态、block toolbar、add block menu、dialogue editing、scene metadata editing 和移动端原则。
+- 支持新增指定类型 block：action / dialogue / narration / transition / note。
+- 支持删除、上移、下移、可选复制 block。
+- 支持编辑 dialogue 的 `characterId` 和 `parenthetical`。
+- 支持编辑 scene title、synopsis、locationType、location、timeOfDay。
+- 将新增、删除、移动、复制、更新 dialogue 字段和更新 scene metadata 的逻辑放进 `src/core/screenplay/operations.ts` 纯函数。
+- 让 selected block / toolbar state 只存在于 UI state，不进入 `ScreenplayDocument`。
+
+完成标准：
+
+- 用户可以完成一次基础剧本打磨：改场景、改 block、加 block、删 block、移动 block、修正 dialogue 角色和括号提示。
+- 所有编辑都回写 `ScreenplayDocument`，YAML preview 和 diagnostics 自动更新。
+- 中央页面仍保持 Fountain-like reading surface，不退回卡片表单。
+- 不引入 `contenteditable`、Fountain parser、拖拽排序、多选 block 或复杂 AI 局部重写工具条。
+
 ### Phase 2.5.6：Industrial manuscript UI polish
 
 目标：让整页视觉服从中央工业化手稿风格，而不是只让编辑器主体像剧本。
@@ -269,6 +292,7 @@ Phase 2.5 完成时，月点应满足：
 - 工作台布局以剧本编辑区为中心。
 - Source、outline、YAML 和 diagnostics 是辅助面板。
 - Output 使用 tabs 承载不同结果。
+- 中央编辑器支持基础语义编辑流程，而不只是 block 文本修改。
 - 基础 UI primitives 支撑后续 PR。
 - `App.tsx` 不再承载全部 panel 渲染细节。
 - Tailwind 已接入并用于主要新 UI。

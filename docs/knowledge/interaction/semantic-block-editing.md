@@ -106,6 +106,8 @@ ScriptEditorPanel
 - Transition 可以右对齐；Note 应弱化或旁注化；Action / narration 保持正文阅读节奏。
 - 所有编辑仍通过 scene / block id 回写 `ScreenplayDocument`，不引入独立的 Fountain 文本状态。
 
+完整基础编辑流程见 `screenplay-editor-ux.md`。阅读面只解决“像剧本稿”；真正可用的编辑器还需要 block toolbar、add block menu、delete / move、dialogue 角色与括号提示编辑，以及 scene metadata 编辑。
+
 ## 推荐界面结构
 
 ```text

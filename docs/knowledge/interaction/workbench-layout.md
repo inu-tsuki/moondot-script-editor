@@ -121,5 +121,6 @@ Phase 2.5 UI PR 应按这个顺序推进：
 4. 让 output 变成 tabbed panel：Scene Outline、YAML、Diagnostics，后续加入 Fountain-like。
 5. 扩大语义编辑区，让 scene 内容成为主阅读区域。
 6. 实现更像剧本排版的 block rendering。
-7. 做一次工业化手稿风格的整页 UI polish。
-8. 再评估是否需要 resizable panel。
+7. 补齐基础语义编辑控件：add type menu、delete、move、dialogue 和 scene metadata 编辑。
+8. 做一次工业化手稿风格的整页 UI polish。
+9. 再评估是否需要 resizable panel。
