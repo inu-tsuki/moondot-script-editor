@@ -4,4 +4,5 @@ export { SceneOutlinePanel } from './SceneOutlinePanel';
 export { ScriptEditorPanel } from './ScriptEditorPanel';
 export { SourcePanel } from './SourcePanel';
 export { Topbar } from './Topbar';
+export { WorkbenchLayout } from './WorkbenchLayout';
 export { YamlExportPanel } from './YamlExportPanel';

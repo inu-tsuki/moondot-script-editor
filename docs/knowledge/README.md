@@ -16,7 +16,7 @@
 - `architecture/screenplay-ast-structure.md`：`ScreenplayDocument` v0.1 与内部 `ScreenplayAst` 的节点结构和实现切片。
 - `architecture/screenplay-model-direction.md`：从 brainstorm 收敛出的剧本数据模型和导出方向。
 - `architecture/tool-composition.md`：“小工具拼成大系统”的 typed tools 架构原则。
-- `interaction/semantic-block-editing.md`：MVP 主编辑体验是 AST 语义块编辑，Fountain-like 是预览/导出投影。
+- `interaction/semantic-block-editing.md`：MVP 主编辑体验是 document / AST 语义块编辑，Fountain-like 是预览/导出投影。
 - `interaction/workbench-layout.md`：工作台布局、阅读/编辑区域、样式工具和 dock 取舍。
 - `reuse/adjacent-projects.md`：`ai-visual-novel-engine`、`kmd` 的复用策略。
 - `validation/screenplay-ast-validation.md`：输入、AST、projection 和导出器校验规则。

@@ -3,7 +3,7 @@
 > 最近更新：2026-06-06  
 > 状态：Phase 2 改编工作流规划，用于后续模型调用层和 UI 工作流。
 
-本文定义月点从创作来源到剧本 AST 的 AI 工作流。它参考了父目录 `ai-visual-novel-engine` 的分阶段叙事生成方式，但目标不是 VN runtime scene，而是可编辑、可校验、可导出的 `ScreenplayDocument`。
+本文定义月点从创作来源到 `ScreenplayDocument` 的 AI 工作流。它参考了父目录 `ai-visual-novel-engine` 的分阶段叙事生成方式，但目标不是 VN runtime scene，而是可编辑、可校验、可导出的剧本文档。
 
 外部 agent / workflow 框架调研见 `agent-workflow-research.md`。本工作流吸收其中的共识：workflow 优先于万能 agent，human review 是工作流节点，trace 和 validation 是生成链路的一部分。
 

@@ -202,21 +202,29 @@ Sections
 
 ### Phase 2.5.5：Screenplay reading surface
 
-目标：让语义块视觉更接近剧本阅读，而不是普通 textarea 列表。
+目标：建立由 `ScreenplayDocument` 支撑的 Fountain-like reading surface，而不是只给 textarea 换皮。
+
+这一步仍然不是完整 Fountain 编辑器。主输入模型继续是 `ScreenplayDocument`：project metadata、source refs、character registry 提供上下文，`script: ScreenplayAst` 提供场景和语义块结构。Fountain-like 是中央编辑区的阅读排版和交互语言。用户应该感觉自己在改剧本稿，但代码仍在稳定地编辑结构化 document / AST。
 
 建议内容：
 
-- Scene heading 使用剧本场景行视觉。
-- Action / narration 是正文段落感。
-- Dialogue 突出角色名、parenthetical 和对白。
-- Note / transition 使用弱化或独立层级。
-- 编辑能力仍然是 AST semantic block editing。
+- 将 `ScriptEditorPanel` 内部拆成 `ScenePage` 和 per-block renderer/editor。
+- 建立 `ActionBlockEditor`、`DialogueBlockEditor`、`NarrationBlockEditor`、`TransitionBlockEditor`、`NoteBlockEditor`。
+- Scene heading 使用剧本场景行视觉，保留 scene title / synopsis 的轻量上下文。
+- Action / narration 呈现为正文段落，而不是卡片表单。
+- Dialogue 突出角色名、parenthetical 和对白文本。
+- Transition 右对齐或独立成行。
+- Note 弱化或旁注化，不打断阅读。
+- 继续使用受控字段编辑 block 文本；可以让 textarea 无边框、自动高度、聚焦时显露编辑态。
+- 保留增加语义块能力，但暂不扩展到完整 block 类型选择器之外的复杂编辑器行为。
 
 完成标准：
 
 - 用户能在 UI 中看出这是剧本，而不是 YAML 或普通表单。
 - 仍可编辑块文本和添加语义块。
 - Fountain-like 仍是 projection，不变成主输入格式。
+- 不引入 `contenteditable`、Fountain parser、反解析、Monaco 或完整 WYSIWYG 剧本编辑器。
+- 不改变 `ScreenplayDocument` / `ScriptBlock` 类型边界。
 
 ## 非目标
 

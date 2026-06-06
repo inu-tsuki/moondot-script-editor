@@ -61,21 +61,9 @@
 .workbench {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(260px, 0.95fr) minmax(360px, 1.35fr) minmax(280px, 1fr);
+  grid-template-columns: minmax(220px, 0.6fr) minmax(420px, 1.8fr) minmax(280px, 0.8fr);
   min-height: calc(100vh - 64px);
   padding: 16px;
-}
-
-.side-tabs {
-  display: grid;
-  gap: 10px;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  min-height: 0;
-}
-
-.output-controls {
-  display: grid;
-  gap: 10px;
 }
 
 .yaml-preview {

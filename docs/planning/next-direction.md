@@ -121,21 +121,25 @@ Tailwind foundation
 - YAML、outline 和 diagnostics 不再互相挤压。
 - layout state 不进入 `ScreenplayDocument`。
 
-### PR E：Screenplay reading surface
+### PR E：Document-backed Fountain-like reading surface
 
-目标：让语义块视觉更像剧本。
+目标：把中央编辑区升级成由 `ScreenplayDocument` 支撑的 Fountain-like reading surface。用户看到的是更像剧本稿的阅读排版；底层仍使用 document metadata、source refs、character registry 和 `script: ScreenplayAst` 共同驱动编辑。
 
 建议内容：
 
+- 将 `ScriptEditorPanel` 内部拆成 `ScenePage` 和 per-block editor。
+- 按 block type 建立 `ActionBlockEditor`、`DialogueBlockEditor`、`NarrationBlockEditor`、`TransitionBlockEditor`、`NoteBlockEditor`。
 - Scene heading 采用剧本场景行视觉。
 - Action / narration 呈现为正文段落。
-- Dialogue 突出角色名和对白层级。
-- Note / transition 弱化或独立处理。
+- Dialogue 突出角色名、parenthetical 和对白层级。
+- Transition 右对齐或独立成行。
+- Note 弱化或旁注化，不打断阅读。
+- 先使用受控 `textarea` 做排版化编辑，暂不引入 `contenteditable` 或 Fountain 反解析。
 
 完成标准：
 
 - 用户能看出主编辑区是剧本，而不是普通表单。
-- 仍保持 AST semantic block editing。
+- 仍保持 document / AST semantic block editing。
 - 不把 Fountain-like 变成主输入格式。
 
 ## 暂缓事项

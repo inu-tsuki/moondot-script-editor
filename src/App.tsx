@@ -1,7 +1,7 @@
-import { Download, FileText } from 'lucide-react';
+import { FileText, Layout } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import './App.css';
-import { PanelBody, PanelHeader, PanelMeta, PanelShell, PanelTitle } from './components/ui';
+import { PanelBody, PanelHeader, PanelMeta, PanelShell, PanelTitle, Tabs } from './components/ui';
 import {
   AdaptationPreferencesPanel,
   DiagnosticsPanel,
@@ -9,6 +9,7 @@ import {
   ScriptEditorPanel,
   SourcePanel,
   Topbar,
+  WorkbenchLayout,
   YamlExportPanel,
 } from './components/panels';
 import {
@@ -88,6 +89,7 @@ function App() {
   const [adaptationPlan, setAdaptationPlan] = useState<AdaptationPlan>();
   const [adaptationTrace, setAdaptationTrace] = useState<NovelAdaptationTraceStep[]>([]);
   const [exportFeedback, setExportFeedback] = useState('');
+  const [outputTab, setOutputTab] = useState('outline');
   const isCurrentPlanDrafted = adaptationTrace.some(
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
@@ -202,6 +204,7 @@ function App() {
     setAdaptationTrace(adaptationResult.trace);
     setAdaptationDiagnostics(adaptationResult.diagnostics);
     setExportFeedback('');
+    setOutputTab('outline');
   };
 
   const confirmSceneOutline = () => {
@@ -224,6 +227,8 @@ function App() {
   };
 
   const copyYaml = async () => {
+    setOutputTab('yaml');
+
     if (!exportStatus.isReady) {
       setExportFeedback('存在 validation error，暂不复制。');
       return;
@@ -238,6 +243,8 @@ function App() {
   };
 
   const downloadYaml = () => {
+    setOutputTab('yaml');
+
     if (!exportStatus.isReady) {
       setExportFeedback('存在 validation error，暂不下载。');
       return;
@@ -266,60 +273,86 @@ function App() {
         onDownloadYaml={downloadYaml}
       />
 
-      <main className="workbench">
-        <PanelShell>
-          <PanelHeader>
-            <PanelTitle icon={<FileText size={16} />}>Source</PanelTitle>
-            <PanelMeta>
-              {workingDocument.source.type} · {chapterCount} chapters
-            </PanelMeta>
-          </PanelHeader>
-          <PanelBody>
-            <SourcePanel
-              chapterCount={chapterCount}
-              sourceText={sourceText}
-              sourceType={workingDocument.source.type}
-              onSourceTextChange={updateSourceText}
-            />
-            <AdaptationPreferencesPanel
-              preferences={adaptationPreferences}
-              onPreferenceChange={updateAdaptationPreference}
-            />
-          </PanelBody>
-        </PanelShell>
-
-        <ScriptEditorPanel
-          charactersById={charactersById}
-          scene={activeScene}
-          onAddBlock={addBlock}
-          onUpdateBlockText={updateBlockText}
-        />
-
-        <PanelShell className="panel-output">
-          <PanelHeader>
-            <PanelTitle icon={<Download size={16} />}>YAML Projection</PanelTitle>
-            <PanelMeta>document v{workingDocument.documentVersion}</PanelMeta>
-          </PanelHeader>
-          <PanelBody className="side-tabs">
-            <div className="output-controls">
-              <SceneOutlinePanel
-                isDrafted={isCurrentPlanDrafted}
-                plan={adaptationPlan}
-                trace={adaptationTrace}
-                onConfirm={confirmSceneOutline}
+      <WorkbenchLayout
+        left={
+          <PanelShell>
+            <PanelHeader>
+              <PanelTitle icon={<FileText size={16} />}>Source</PanelTitle>
+              <PanelMeta>
+                {workingDocument.source.type} · {chapterCount} chapters
+              </PanelMeta>
+            </PanelHeader>
+            <PanelBody>
+              <SourcePanel
+                chapterCount={chapterCount}
+                sourceText={sourceText}
+                sourceType={workingDocument.source.type}
+                onSourceTextChange={updateSourceText}
               />
-              <YamlExportPanel
-                exportStatus={exportStatus}
-                feedback={exportFeedback}
-                onCopy={copyYaml}
-                onDownload={downloadYaml}
+              <AdaptationPreferencesPanel
+                preferences={adaptationPreferences}
+                onPreferenceChange={updateAdaptationPreference}
               />
-            </div>
-            <pre className="yaml-preview">{yamlPreview}</pre>
-            <DiagnosticsPanel diagnostics={displayedDiagnostics} />
-          </PanelBody>
-        </PanelShell>
-      </main>
+            </PanelBody>
+          </PanelShell>
+        }
+        center={
+          <ScriptEditorPanel
+            charactersById={charactersById}
+            scene={activeScene}
+            onAddBlock={addBlock}
+            onUpdateBlockText={updateBlockText}
+          />
+        }
+        right={
+          <PanelShell className="panel-output">
+            <PanelHeader>
+              <PanelTitle icon={<Layout size={16} />}>Output</PanelTitle>
+              <PanelMeta>document v{workingDocument.documentVersion}</PanelMeta>
+            </PanelHeader>
+            <PanelBody>
+              <Tabs
+                tabs={[
+                  { id: 'outline', label: 'Scene Outline' },
+                  { id: 'yaml', label: 'YAML' },
+                  { id: 'diagnostics', label: 'Diagnostics' },
+                ]}
+                activeTabId={outputTab}
+                onTabChange={setOutputTab}
+              />
+              <div className="min-h-0 flex-1 overflow-auto">
+                {outputTab === 'outline' &&
+                  (adaptationPlan ? (
+                    <SceneOutlinePanel
+                      isDrafted={isCurrentPlanDrafted}
+                      plan={adaptationPlan}
+                      trace={adaptationTrace}
+                      onConfirm={confirmSceneOutline}
+                    />
+                  ) : (
+                    <div className="flex items-start gap-2 rounded-md border border-[#d9d1c4] bg-[#fffdf8] p-4 text-sm leading-relaxed text-[#66716b]">
+                      尚未生成改编大纲。点击顶部「大纲」按钮开始。
+                    </div>
+                  ))}
+                {outputTab === 'yaml' && (
+                  <div className="flex min-h-0 flex-col gap-2.5">
+                    <YamlExportPanel
+                      exportStatus={exportStatus}
+                      feedback={exportFeedback}
+                      onCopy={copyYaml}
+                      onDownload={downloadYaml}
+                    />
+                    <pre className="yaml-preview">{yamlPreview}</pre>
+                  </div>
+                )}
+                {outputTab === 'diagnostics' && (
+                  <DiagnosticsPanel diagnostics={displayedDiagnostics} />
+                )}
+              </div>
+            </PanelBody>
+          </PanelShell>
+        }
+      />
     </div>
   );
 }
