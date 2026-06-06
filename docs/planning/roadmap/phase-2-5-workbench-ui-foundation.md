@@ -1,7 +1,7 @@
 # Phase 2.5: Workbench UI Foundation
 
 > 最近更新：2026-06-06  
-> 状态：基础切片已完成。本文保留 Phase 2.5 的设计边界、落地顺序和进入 Phase 3 前的质量收口标准。
+> 状态：基础切片已完成。本文保留 Phase 2.5 的设计边界、落地顺序和进入 Phase 3 的收口标准。
 
 Phase 2.5 是插入阶段。它不改变月点的核心产品目标，也不扩大 submission 承诺；它解决 Phase 2 完成后暴露出的界面结构问题：早期三栏 UI 能证明功能存在，但不适合继续承载真实模型调用、Fountain-like preview、diagnostics、source coverage 和后续编辑能力。
 
@@ -330,6 +330,6 @@ Phase 2.5 完成时，月点应满足：
 - 页面整体视觉服务工业化手稿风格，而不是普通 SaaS dashboard。
 - Phase 2 的核心演示链路不退化。
 
-当前 Phase 2.5 的基础完成标准已经满足。进入 Phase 3 前，剩余工作是状态文档同步、确认 `pnpm e2e` 的本地运行路径，以及明确真实模型调用层的 contract。
+当前 Phase 2.5 的基础完成标准已经满足。状态文档同步、`pnpm e2e` 本地运行路径确认，以及真实模型调用层 contract 的正式规划已经完成。
 
-完成这些收口后，再进入 Phase 3：真实模型调用层、prompt contract 强化、提交 demo 和质量收口。
+后续工作进入 Phase 3：真实模型调用层、structured prompt contract、fallback / repair、提交 demo 和质量收口。

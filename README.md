@@ -2,7 +2,7 @@
 
 月点是一款 AI 剧本创作工作台。它面向故事创作者、短剧创作者和互动叙事创作者；当前 MVP 从小说改编切入，把多章节小说文本转换为可编辑的结构化剧本，并导出符合说明文档的 YAML 剧本数据。
 
-本仓库从七牛云 XEngineer 第三批次第三题“AI 小说转剧本工具”出发。当前已完成 Phase 2 的改编工作流基础切片和 Phase 2.5 的工作台 UI 地基：核心 document、scene outline 确认、YAML 导出、中央手稿编辑区、基础语义块操作和前端测试护栏已经建立。下一阶段将进入真实模型调用、prompt contract 和 demo 收口。
+本仓库从七牛云 XEngineer 第三批次第三题“AI 小说转剧本工具”出发。当前已完成 Phase 2 的改编工作流基础切片和 Phase 2.5 的工作台 UI 地基：核心 document、scene outline 确认、YAML 导出、中央手稿编辑区、基础语义块操作和前端测试护栏已经建立。Phase 3 已正式启动规划，下一步将进入模型调用 contract、structured output、mock fallback、trace 和 demo 收口。
 
 ## 产品定位
 
@@ -61,7 +61,7 @@ MVP 要完成一条可演示链路：
 - Phase 2：Adaptation Plan / Scene Outline / 确认写入 / YAML 复制下载链路已完成基础切片。
 - Phase 2.5：Workbench UI Foundation 已完成基础切片，包括 Tailwind、UI primitives、panel extraction、WorkbenchLayout、output tabs、document-backed reading surface、基础语义编辑控件和工业化手稿视觉收口。
 - Engineering：Vitest / Testing Library / Playwright 前端测试护栏已接入，作为横向质量轨道维护。
-- Phase 3：待启动，重点是真实模型调用层、prompt contract、mock fallback、导出体验和 demo 强化。
+- Phase 3：正式规划已启动，重点是真实模型调用层、structured prompt contract、mock fallback、trace / diagnostics、repair 和 demo 强化。
 - Demo：待录制和补充链接。
 
 ## 文档
@@ -75,6 +75,7 @@ MVP 要完成一条可演示链路：
 - [docs/planning/submission-fit-review.md](docs/planning/submission-fit-review.md)：brainstorm 与提交需求的适配审计。
 - [docs/planning/roadmap/README.md](docs/planning/roadmap/README.md)：阶段路线。
 - [docs/planning/roadmap/phase-2-5-workbench-ui-foundation.md](docs/planning/roadmap/phase-2-5-workbench-ui-foundation.md)：工作台 UI 地基规划。
+- [docs/planning/roadmap/phase-3-model-workflow.md](docs/planning/roadmap/phase-3-model-workflow.md)：真实模型调用、structured output、fallback、trace 和 demo hardening 规划。
 - [docs/planning/next-direction.md](docs/planning/next-direction.md)：下一阶段 PR 顺序和近期原则。
 - [docs/planning/engineering/frontend-test-harness.md](docs/planning/engineering/frontend-test-harness.md)：前端测试护栏和 e2e 运行边界。
 - [docs/planning/development-workflow.md](docs/planning/development-workflow.md)：PR、commit 和第一次提交后的开发流程。

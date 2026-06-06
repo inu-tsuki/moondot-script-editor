@@ -18,6 +18,7 @@
 - `planning/roadmap/README.md`
 - `planning/roadmap/phase-2-adaptation-workflow.md`
 - `planning/roadmap/phase-2-5-workbench-ui-foundation.md`
+- `planning/roadmap/phase-3-model-workflow.md`
 - `planning/engineering/frontend-test-harness.md`
 - `planning/development-workflow.md`
 - `planning/next-direction.md`
