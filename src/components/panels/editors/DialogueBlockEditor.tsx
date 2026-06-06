@@ -8,16 +8,19 @@ import type {
 
 type DialogueBlockEditorProps = {
   block: DialogueBlock;
-  characterName?: string;
   isSelected: boolean;
   allCharacters: CharacterProfile[];
   onChange: (text: string) => void;
   onEdit: (action: EditAction) => void;
 };
 
+const ghostSelect =
+  'appearance-none bg-transparent border border-transparent font-extrabold uppercase tracking-wide text-[#17211d]';
+const ghostInput = 'bg-transparent border border-transparent text-[13px] italic text-[#7b776b]';
+const activeControl = 'rounded border-[#cfc7ba] bg-white px-1';
+
 export function DialogueBlockEditor({
   block,
-  characterName,
   isSelected,
   allCharacters,
   onChange,
@@ -36,32 +39,35 @@ export function DialogueBlockEditor({
     adjustHeight();
   }, [block.text]);
 
+  const showParenthetical = !!block.parenthetical || isSelected;
+
   return (
     <div className="my-3">
       <div className="mx-auto max-w-full text-center min-[860px]:max-w-[65%]">
-        {isSelected ? (
-          <div className="mb-2 flex flex-wrap items-center justify-center gap-2">
-            <select
-              aria-label="Character"
-              className="rounded border border-[#cfc7ba] bg-white px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wide text-[#17211d]"
-              onChange={(e) =>
-                onEdit({
-                  type: 'update-block-character',
-                  blockId: block.id,
-                  characterId: e.target.value as CharacterId,
-                })
-              }
-              value={block.characterId}
-            >
-              {allCharacters.map((character) => (
-                <option key={character.id} value={character.id}>
-                  {character.name}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <select
+            aria-label="Character"
+            className={`${ghostSelect} ${isSelected ? activeControl : ''} cursor-pointer`}
+            onChange={(e) =>
+              onEdit({
+                type: 'update-block-character',
+                blockId: block.id,
+                characterId: e.target.value as CharacterId,
+              })
+            }
+            value={block.characterId}
+          >
+            {allCharacters.map((character) => (
+              <option key={character.id} value={character.id}>
+                {character.name}
+              </option>
+            ))}
+          </select>
+
+          {showParenthetical ? (
             <input
               aria-label="Parenthetical"
-              className="rounded border border-[#cfc7ba] bg-white px-1.5 py-0.5 text-[13px] italic text-[#7b776b] outline-none"
+              className={`${ghostInput} ${isSelected ? activeControl : ''} outline-none`}
               onChange={(e) =>
                 onEdit({
                   type: 'update-parenthetical',
@@ -73,21 +79,9 @@ export function DialogueBlockEditor({
               type="text"
               value={block.parenthetical ?? ''}
             />
-          </div>
-        ) : (
-          <>
-            {characterName ? (
-              <div className="font-extrabold uppercase tracking-wide text-[#17211d]">
-                {characterName}
-              </div>
-            ) : null}
-            {block.parenthetical ? (
-              <div className="mt-0.5 text-[13px] italic text-[#7b776b]">
-                ({block.parenthetical})
-              </div>
-            ) : null}
-          </>
-        )}
+          ) : null}
+        </div>
+
         <textarea
           ref={textareaRef}
           aria-label={`Dialogue ${block.id}`}
