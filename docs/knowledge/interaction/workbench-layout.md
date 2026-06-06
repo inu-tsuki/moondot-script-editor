@@ -55,6 +55,20 @@ Fountain-like 不作为主输入格式，但 preview 和中央语义块编辑区
 
 主编辑仍然编辑 document / AST 字段；fountain-like 是阅读投影和视觉语言。当前不引入 Fountain parser、反解析、Monaco 或完整 WYSIWYG 剧本编辑器。
 
+## 页面视觉风格
+
+如果中央编辑区采用工业化手稿风格，整页也应配合这一模式。
+
+整体气质应接近剧本审阅台、制片文档和批注工作台，而不是通用 SaaS dashboard。中央 `ScenePage` 是主稿纸；source、outline、YAML 和 diagnostics 是辅助托盘、索引或批注栏。
+
+设计原则：
+
+- 页面背景使用安静的纸面 / 桌面色，避免营销式渐变和高饱和装饰。
+- Panel 边框、tabs、button 和 badge 应更像工具控件，不像宣传卡片。
+- Diagnostics 可以像批注或审稿标记；source refs 和 outline cards 可以像索引卡或生产记录。
+- 辅助面板保持清晰可扫描，但视觉重量低于中央手稿。
+- UI polish 不改变 `ScreenplayDocument`、工作流、导出格式或布局持久化边界。
+
 ## Dock 系统取舍
 
 可以借鉴 `playground/kmd/apps/editor` 的 dock / workbench 思路，但不建议直接搬代码。
@@ -107,4 +121,6 @@ Phase 2.5 UI PR 应按这个顺序推进：
 4. 让 output 变成 tabbed panel：Scene Outline、YAML、Diagnostics，后续加入 Fountain-like。
 5. 扩大语义编辑区，让 scene 内容成为主阅读区域。
 6. 实现更像剧本排版的 block rendering。
-7. 再评估是否需要 resizable panel。
+7. 补齐基础语义编辑控件：add type menu、delete、move、dialogue 和 scene metadata 编辑。
+8. 做一次工业化手稿风格的整页 UI polish。
+9. 再评估是否需要 resizable panel。

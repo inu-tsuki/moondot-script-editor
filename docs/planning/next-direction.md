@@ -142,6 +142,44 @@ Tailwind foundation
 - 仍保持 document / AST semantic block editing。
 - 不把 Fountain-like 变成主输入格式。
 
+### PR F：Basic semantic editor controls
+
+目标：让中央 reading surface 能完成完整基础编辑流程，而不只是编辑 block 文本。
+
+建议内容：
+
+- 定义 editor UX spec：selected / focused、block toolbar、add block menu、dialogue editing、scene metadata editing。
+- 支持按类型新增 block：Action / Dialogue / Narration / Transition / Note。
+- 支持 delete、move up/down、可选 duplicate。
+- 支持 dialogue character selector 和 parenthetical input。
+- 支持 scene title / synopsis / heading 编辑。
+- 在 `src/core/screenplay/operations.ts` 补齐 insert、delete、move、duplicate、update dialogue、update scene metadata 等纯函数。
+
+完成标准：
+
+- 用户能完成一轮基础剧本打磨。
+- 编辑持续回写 `ScreenplayDocument`，YAML / diagnostics 自动更新。
+- 不引入 `contenteditable`、Fountain parser、拖拽排序或复杂 AI 工具条。
+
+### PR G：Industrial manuscript UI polish
+
+目标：让整页视觉跟随中央手稿，而不是只让 `ScenePage` 像剧本。
+
+建议内容：
+
+- 统一页面背景、panel、tabs、button、badge 和 diagnostics 的工业化手稿风格。
+- 让 source / outline / YAML / diagnostics 成为安静的辅助区，不和中央剧本正文争抢注意力。
+- 减少普通 dashboard 卡片感，强调审稿台、批注栏、制片文档和稿纸的秩序。
+- 使用中性色、纸面色、墨色和少量状态色，避免营销式高饱和界面。
+- 不改变 `ScreenplayDocument`、工作流或 projection，只做 UI polish。
+
+完成标准：
+
+- 页面整体看起来像剧本改编工作台。
+- 中央手稿是第一视觉中心。
+- 辅助面板更像工具托盘和批注栏。
+- 不引入重型设计系统或主题系统。
+
 ## 暂缓事项
 
 以下事项有价值，但不应抢在 Phase 2.5 前面：

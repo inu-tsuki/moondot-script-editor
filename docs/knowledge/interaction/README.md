@@ -7,6 +7,7 @@
 ## 当前入口
 
 - `semantic-block-editing.md`：MVP 主编辑体验是语义块编辑，Fountain-like 是预览/导出投影。
+- `screenplay-editor-ux.md`：Phase 2.5.5b 的基础编辑器流程、block toolbar、add block menu、dialogue 和 scene metadata 编辑规划。
 - `workbench-layout.md`：工作台布局、阅读/编辑区域、样式工具和 dock 取舍。
 
 ## 维护规则
