@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  Copy,
   Download,
   FileText,
   ListChecks,
@@ -82,6 +83,37 @@ const styleOptions: Array<{ value: AdaptationStyle; label: string }> = [
   { value: 'romantic', label: '浪漫' },
 ];
 
+const createYamlFileName = (title: string) => {
+  const normalizedTitle = title
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[\\/:*?"<>|]/g, '')
+    .toLowerCase();
+
+  return `${normalizedTitle || 'moondot-screenplay'}.yaml`;
+};
+
+const copyTextToClipboard = async (text: string) => {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.append(textarea);
+  textarea.select();
+  const copied = document.execCommand('copy');
+  textarea.remove();
+
+  if (!copied) {
+    throw new Error('clipboard unavailable');
+  }
+};
+
 const shouldSuppressParsedDiagnostic = (
   diagnostic: Diagnostic,
   documentDiagnostics: Diagnostic[],
@@ -105,6 +137,7 @@ function App() {
   const [adaptationDiagnostics, setAdaptationDiagnostics] = useState<Diagnostic[]>([]);
   const [adaptationPlan, setAdaptationPlan] = useState<AdaptationPlan>();
   const [adaptationTrace, setAdaptationTrace] = useState<NovelAdaptationTraceStep[]>([]);
+  const [exportFeedback, setExportFeedback] = useState('');
   const isCurrentPlanDrafted = adaptationTrace.some(
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
@@ -132,6 +165,20 @@ function App() {
       }),
     [workingDocument],
   );
+  const exportStatus = useMemo(() => {
+    const errorCount = documentDiagnostics.filter(
+      (diagnostic) => diagnostic.severity === 'error',
+    ).length;
+    const warningCount = documentDiagnostics.filter(
+      (diagnostic) => diagnostic.severity === 'warning',
+    ).length;
+
+    return {
+      errorCount,
+      warningCount,
+      isReady: errorCount === 0,
+    };
+  }, [documentDiagnostics]);
   const displayedDiagnostics = useMemo<Diagnostic[]>(
     () => [
       {
@@ -160,10 +207,12 @@ function App() {
 
   const addBlock = () => {
     setScreenplayDocument((currentDocument) => appendBlockToFirstScene(currentDocument));
+    setExportFeedback('');
   };
 
   const updateBlockText = (id: BlockId, text: string) => {
     setScreenplayDocument((currentDocument) => updateDocumentBlockText(currentDocument, id, text));
+    setExportFeedback('');
   };
 
   const updateSourceText = (text: string) => {
@@ -171,12 +220,14 @@ function App() {
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
+    setExportFeedback('');
   };
 
   const clearAdaptationRun = () => {
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
+    setExportFeedback('');
   };
 
   const updateAdaptationPreference = <Key extends keyof AdaptationPreferences>(
@@ -200,6 +251,7 @@ function App() {
     setAdaptationPlan(adaptationResult.plan);
     setAdaptationTrace(adaptationResult.trace);
     setAdaptationDiagnostics(adaptationResult.diagnostics);
+    setExportFeedback('');
   };
 
   const confirmSceneOutline = () => {
@@ -218,6 +270,40 @@ function App() {
       ...adaptationResult.trace,
     ]);
     setAdaptationDiagnostics(adaptationResult.diagnostics);
+    setExportFeedback('');
+  };
+
+  const copyYaml = async () => {
+    if (!exportStatus.isReady) {
+      setExportFeedback('存在 validation error，暂不复制。');
+      return;
+    }
+
+    try {
+      await copyTextToClipboard(yamlPreview);
+      setExportFeedback('YAML 已复制。');
+    } catch {
+      setExportFeedback('复制失败，请手动选择 YAML 文本。');
+    }
+  };
+
+  const downloadYaml = () => {
+    if (!exportStatus.isReady) {
+      setExportFeedback('存在 validation error，暂不下载。');
+      return;
+    }
+
+    const blob = new Blob([yamlPreview], { type: 'text/yaml;charset=utf-8' });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = downloadUrl;
+    link.download = createYamlFileName(workingDocument.project.title);
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(downloadUrl);
+    setExportFeedback('YAML 已下载。');
   };
 
   return (
@@ -254,7 +340,13 @@ function App() {
             <CheckCircle2 size={16} />
             写入
           </button>
-          <button className="button-secondary" type="button" title="导出 YAML">
+          <button
+            className="button-secondary"
+            type="button"
+            title="下载 YAML"
+            onClick={downloadYaml}
+            disabled={!exportStatus.isReady}
+          >
             <Download size={16} />
             YAML
           </button>
@@ -485,59 +577,94 @@ function App() {
             <span className="panel-meta">document v{workingDocument.documentVersion}</span>
           </div>
           <div className="panel-body side-tabs">
-            {adaptationPlan ? (
-              <section className="outline-panel" aria-label="改编大纲">
-                <div className="outline-header">
-                  <div className="panel-title">
-                    <ListChecks size={16} />
-                    Scene Outline
+            <div className="output-controls">
+              {adaptationPlan ? (
+                <section className="outline-panel" aria-label="改编大纲">
+                  <div className="outline-header">
+                    <div className="panel-title">
+                      <ListChecks size={16} />
+                      Scene Outline
+                    </div>
+                    <span className="panel-meta">{adaptationPlan.sceneOutline.length} scenes</span>
                   </div>
-                  <span className="panel-meta">{adaptationPlan.sceneOutline.length} scenes</span>
+                  <div className="outline-actions">
+                    <button
+                      className="button-primary"
+                      type="button"
+                      title="确认大纲并写入剧本"
+                      onClick={confirmSceneOutline}
+                      disabled={isCurrentPlanDrafted}
+                    >
+                      <CheckCircle2 size={16} />
+                      {isCurrentPlanDrafted ? '已写入' : '确认写入'}
+                    </button>
+                  </div>
+                  <div className="outline-preferences">
+                    <span>{adaptationPlan.preferences.targetMedium}</span>
+                    <span>{adaptationPlan.preferences.targetLength}</span>
+                    <span>{adaptationPlan.preferences.fidelity}</span>
+                    <span>{adaptationPlan.preferences.pacing}</span>
+                  </div>
+                  <div className="outline-list">
+                    {adaptationPlan.sceneOutline.map((sceneCard) => (
+                      <article className="outline-card" key={sceneCard.id}>
+                        <div className="outline-title">{sceneCard.title}</div>
+                        <div className="outline-purpose">{sceneCard.dramaticPurpose}</div>
+                        <div className="outline-meta">
+                          <span>{sceneCard.id}</span>
+                          <span>
+                            {sceneCard.sourceRefs
+                              .map((sourceRef) => sourceRef.sourceId)
+                              .join(' + ')}
+                          </span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                  {adaptationTrace.length ? (
+                    <div className="trace-list" aria-label="生成轨迹">
+                      {adaptationTrace.map((traceStep) => (
+                        <div className="trace-item" key={`${traceStep.label}-${traceStep.stage}`}>
+                          <span>{traceStep.label}</span>
+                          <span>{traceStep.detail}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
+              ) : null}
+              <section className="export-panel" aria-label="YAML 导出">
+                <div className="export-status">
+                  <span className={exportStatus.isReady ? 'status-ready' : 'status-error'}>
+                    {exportStatus.isReady ? 'export ready' : `${exportStatus.errorCount} errors`}
+                  </span>
+                  <span>{exportStatus.warningCount} warnings</span>
+                  {exportFeedback ? <span>{exportFeedback}</span> : null}
                 </div>
-                <div className="outline-actions">
+                <div className="export-actions">
+                  <button
+                    className="button-secondary"
+                    type="button"
+                    title="复制 YAML"
+                    onClick={copyYaml}
+                    disabled={!exportStatus.isReady}
+                  >
+                    <Copy size={16} />
+                    复制
+                  </button>
                   <button
                     className="button-primary"
                     type="button"
-                    title="确认大纲并写入剧本"
-                    onClick={confirmSceneOutline}
-                    disabled={isCurrentPlanDrafted}
+                    title="下载 YAML"
+                    onClick={downloadYaml}
+                    disabled={!exportStatus.isReady}
                   >
-                    <CheckCircle2 size={16} />
-                    {isCurrentPlanDrafted ? '已写入' : '确认写入'}
+                    <Download size={16} />
+                    下载
                   </button>
                 </div>
-                <div className="outline-preferences">
-                  <span>{adaptationPlan.preferences.targetMedium}</span>
-                  <span>{adaptationPlan.preferences.targetLength}</span>
-                  <span>{adaptationPlan.preferences.fidelity}</span>
-                  <span>{adaptationPlan.preferences.pacing}</span>
-                </div>
-                <div className="outline-list">
-                  {adaptationPlan.sceneOutline.map((sceneCard) => (
-                    <article className="outline-card" key={sceneCard.id}>
-                      <div className="outline-title">{sceneCard.title}</div>
-                      <div className="outline-purpose">{sceneCard.dramaticPurpose}</div>
-                      <div className="outline-meta">
-                        <span>{sceneCard.id}</span>
-                        <span>
-                          {sceneCard.sourceRefs.map((sourceRef) => sourceRef.sourceId).join(' + ')}
-                        </span>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-                {adaptationTrace.length ? (
-                  <div className="trace-list" aria-label="生成轨迹">
-                    {adaptationTrace.map((traceStep) => (
-                      <div className="trace-item" key={`${traceStep.label}-${traceStep.stage}`}>
-                        <span>{traceStep.label}</span>
-                        <span>{traceStep.detail}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
               </section>
-            ) : null}
+            </div>
             <pre className="yaml-preview">{yamlPreview}</pre>
             <div className="diagnostics">
               {displayedDiagnostics.map((diagnostic, index) => (

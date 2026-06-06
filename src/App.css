@@ -381,6 +381,11 @@ button:disabled {
   min-height: 0;
 }
 
+.output-controls {
+  display: grid;
+  gap: 10px;
+}
+
 .outline-panel {
   background: #f4fbf7;
   border: 1px solid #b8d8ce;
@@ -473,6 +478,52 @@ button:disabled {
 .trace-item span:first-child {
   color: #2f665c;
   font-weight: 800;
+}
+
+.export-panel {
+  align-items: center;
+  background: #fffaf2;
+  border: 1px solid #d9d1c4;
+  border-radius: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.export-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.export-status span {
+  background: #ffffff;
+  border: 1px solid #d9d1c4;
+  border-radius: 4px;
+  color: #5f6b64;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 6px;
+}
+
+.export-status .status-ready {
+  background: #e6f3ee;
+  border-color: #b8d8ce;
+  color: #2f665c;
+}
+
+.export-status .status-error {
+  background: #fff0e8;
+  border-color: #e2a27e;
+  color: #8a4b2d;
+}
+
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .yaml-preview {
