@@ -1,6 +1,6 @@
 # Phase 3: Model Workflow
 
-> 最近更新：2026-06-06  
+> 最近更新：2026-06-07  
 > 状态：正式规划启动，用于把 Phase 2 的 mock adaptation workflow 推进为可配置、可验证、可演示的真实模型调用层。
 
 Phase 3 是月点 MVP 中风险最高的一段。它不是简单地把 mock 替换成一次 LLM 调用；它要把真实模型接入已经建立的 typed workflow：
@@ -117,6 +117,17 @@ Trace 不只是 console log。Phase 3 的 trace 应能回答：
 
 短期 trace 可以继续是 UI state / lightweight `GenerationRun`；长期 trace history 仍属于 workspace / project 外层，不进入 `ScreenplayDocument` 本体。
 
+### 6. schema 属于 model envelope，prompt 只承载创作语义
+
+Structured output 的 schema 不应主要靠 prompt 文案重复。Phase 3 的模型边界应把 schema 作为代码资产和调用 envelope 的一部分：
+
+- Zod 或等价 schema 定义模型 artifact 的结构、必填字段和 enum 值域。
+- `ModelCallRequest` 或相邻 request envelope 携带 provider-neutral 的 structured output 配置。
+- app-side validator 复用同一份 schema 做 `safeParse`，再执行 sourceRefs、questionAnswers、sceneOutline 等 semantic validation。
+- prompt 只描述任务身份、输入上下文、创作目标和不容易写进 schema 的语义约束。
+
+这样 Phase 3.4 接真实 SDK 时，只需要把同一份 schema 映射到 provider 的 structured output 参数，而不是维护一份 prompt 字段清单和一份 runtime validator。
+
 ## 非目标
 
 Phase 3 暂不做：
@@ -160,17 +171,28 @@ Phase 3 暂不做：
 建议内容：
 
 - 定义 Architect request / response envelope。
-- 为 `SourceAnalysis`、`AdaptationQuestion[]`、`SceneCard[]` 和 `recommendedPlan` 建立 schema 或 runtime validator。
-- 让 prompt builder 明确输出 contract。
+- 引入窄范围 Zod schema（或等价 schema）作为 Architect output 的结构权威，不迁移整个 document validator。
+- 为 `SourceAnalysis`、`AdaptationQuestion[]`、`questionAnswers`、`SceneCard[]`、`recommendedPlan` 和 `preferences` 建立 schema / runtime parser。
+- 让 `ModelCallRequest` 或 Architect request envelope 能携带 provider-neutral structured output schema / response format。
+- 让 prompt builder 引用调用层提供的 structured output schema，只保留创作语义约束，不重复完整 JSON schema。
 - 分类处理 parse / schema / semantic validation failure。
 - 保持 mock Architect 使用同一 contract。
 
 完成标准：
 
+- Architect Zod schema 可单独测试，并与 `validateAdaptationPlan` 共用。
 - Architect 输出可以被单独测试。
 - 至少覆盖一个跨章节 scene 的 sourceRefs 校验。
 - schema failure 不会写入 `ScreenplayDocument`。
 - diagnostics 能解释失败或 fallback。
+- 真实 SDK 尚未接入时，schema 仍能作为 app-side validation 和 mock adapter contract 使用。
+
+范围边界：
+
+- 3.2 可以增加 `zod` 依赖，但只用于模型 artifact contract。
+- 3.2 不接 OpenAI SDK / local proxy，不读取 API key。
+- 3.2 不把 `validateScreenplayDocument()` 迁移到 Zod。
+- 3.2 若暂未映射真实 SDK structured output，也必须为 3.4 预留 provider-neutral envelope。
 
 ### Phase 3.3：WriterBrief and scene draft contract
 
@@ -179,7 +201,7 @@ Phase 3 暂不做：
 建议内容：
 
 - 定义 `WriterBrief` 的最小代码 contract。
-- 定义 Writer scene draft / scene patch 输出 schema。
+- 延续 Phase 3.2 的 schema 策略，定义 Writer scene draft / scene patch 输出 schema。
 - Writer prompt 明确禁止直接输出 YAML。
 - Writer 产物先进入 scene patch，再由 document operation 写入 `ScreenplayDocument.script`。
 - 保留 sourceRefs 和 character references。
@@ -199,6 +221,7 @@ Phase 3 暂不做：
 - 增加最小 local proxy 或 dev server endpoint。
 - 从环境变量读取模型配置。
 - 前端通过 adapter 调用 endpoint。
+- 将 Phase 3.2 / 3.3 的 provider-neutral structured output schema 映射到真实 SDK 参数。
 - 文档说明 `.env.local` 示例变量名，但不提交 secret。
 - 请求超时、取消、错误状态进入 `ModelCallError`。
 
