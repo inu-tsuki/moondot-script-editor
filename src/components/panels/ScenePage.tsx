@@ -27,21 +27,20 @@ type ScenePageProps = {
 // Manuscript tokens — stable class compositions shared across all editors
 // ---------------------------------------------------------------------------
 
-// Ghost control: always has 1px border + 2px padding — focus only changes color, never size
+// Ghost control: transparent border + padding always present, focus only changes color
 const manuscriptField =
   'bg-transparent border border-transparent outline-none px-0.5 hover:opacity-70 focus:rounded focus:border-[#cfc7ba] focus:bg-[#fffdf8] focus:opacity-100';
 
 const manuscriptSelect = `${manuscriptField} appearance-none cursor-pointer`;
 
-// Inline heading fields: width fits content, no forced stretch
-const manuscriptFieldInline = `${manuscriptField} w-auto`;
-
+// Textarea: no border at all — focus uses background change only, zero layout impact
 const manuscriptText =
-  'w-full resize-none overflow-hidden border border-transparent bg-transparent p-0 outline-none transition-colors focus:rounded-md focus:border-[#cfc7ba] focus:bg-[#fffdf8]';
+  'w-full resize-none overflow-hidden border-0 bg-transparent p-0 outline-none transition-colors focus:rounded-md focus:bg-[#fffdf8]';
 
-const manuscriptTextarea = `${manuscriptText} resize-none`;
+const manuscriptTextarea = `${manuscriptText}`;
 
-const headingInputClass = `${manuscriptFieldInline} font-extrabold uppercase tracking-wide text-[#7b6651] max-w-full`;
+// Heading inline inputs: explicit width per field, no w-auto to avoid browser size=20 default
+const headingInputBase = `${manuscriptField} font-extrabold uppercase tracking-wide text-[#7b6651] max-w-full`;
 
 const locationTypeOptions = [
   { value: 'INT', label: 'INT.' },
@@ -142,7 +141,7 @@ export function ScenePage({
 
         {/* Content area: auto-selects block when any child gains focus */}
         <div
-          className="min-w-0"
+          className="min-w-0 min-h-0 overflow-hidden"
           onFocus={() => {
             if (!isSelected) {
               onEdit({ type: 'select-block', blockId: block.id });
@@ -195,7 +194,7 @@ export function ScenePage({
           </select>
           <input
             aria-label="Location"
-            className={`${headingInputClass} w-[12ch]`}
+            className={`${headingInputBase} w-[12ch]`}
             onChange={(e) =>
               onEdit({
                 type: 'update-scene-heading',
@@ -203,13 +202,14 @@ export function ScenePage({
                 patch: { location: e.target.value },
               })
             }
+            size={12}
             type="text"
             value={scene.heading.location}
           />
           <span>-</span>
           <input
             aria-label="Time of day"
-            className={`${headingInputClass} w-[8ch]`}
+            className={`${headingInputBase} w-[8ch]`}
             onChange={(e) =>
               onEdit({
                 type: 'update-scene-heading',
@@ -217,6 +217,7 @@ export function ScenePage({
                 patch: { timeOfDay: e.target.value },
               })
             }
+            size={8}
             type="text"
             value={scene.heading.timeOfDay}
           />
