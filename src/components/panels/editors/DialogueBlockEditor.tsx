@@ -1,13 +1,28 @@
 import { useRef, useEffect } from 'react';
-import type { DialogueBlock } from '../../../core/screenplay';
+import type {
+  CharacterId,
+  CharacterProfile,
+  DialogueBlock,
+  EditAction,
+} from '../../../core/screenplay';
 
 type DialogueBlockEditorProps = {
   block: DialogueBlock;
   characterName?: string;
+  isSelected: boolean;
+  allCharacters: CharacterProfile[];
   onChange: (text: string) => void;
+  onEdit: (action: EditAction) => void;
 };
 
-export function DialogueBlockEditor({ block, characterName, onChange }: DialogueBlockEditorProps) {
+export function DialogueBlockEditor({
+  block,
+  characterName,
+  isSelected,
+  allCharacters,
+  onChange,
+  onEdit,
+}: DialogueBlockEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const adjustHeight = () => {
@@ -24,14 +39,55 @@ export function DialogueBlockEditor({ block, characterName, onChange }: Dialogue
   return (
     <div className="my-3">
       <div className="mx-auto max-w-full text-center min-[860px]:max-w-[65%]">
-        {characterName ? (
-          <div className="font-extrabold uppercase tracking-wide text-[#17211d]">
-            {characterName}
+        {isSelected ? (
+          <div className="mb-2 flex flex-wrap items-center justify-center gap-2">
+            <select
+              aria-label="Character"
+              className="rounded border border-[#cfc7ba] bg-white px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wide text-[#17211d]"
+              onChange={(e) =>
+                onEdit({
+                  type: 'update-block-character',
+                  blockId: block.id,
+                  characterId: e.target.value as CharacterId,
+                })
+              }
+              value={block.characterId}
+            >
+              {allCharacters.map((character) => (
+                <option key={character.id} value={character.id}>
+                  {character.name}
+                </option>
+              ))}
+            </select>
+            <input
+              aria-label="Parenthetical"
+              className="rounded border border-[#cfc7ba] bg-white px-1.5 py-0.5 text-[13px] italic text-[#7b776b] outline-none"
+              onChange={(e) =>
+                onEdit({
+                  type: 'update-parenthetical',
+                  blockId: block.id,
+                  parenthetical: e.target.value,
+                })
+              }
+              placeholder="(parenthetical)"
+              type="text"
+              value={block.parenthetical ?? ''}
+            />
           </div>
-        ) : null}
-        {block.parenthetical ? (
-          <div className="mt-0.5 text-[13px] italic text-[#7b776b]">({block.parenthetical})</div>
-        ) : null}
+        ) : (
+          <>
+            {characterName ? (
+              <div className="font-extrabold uppercase tracking-wide text-[#17211d]">
+                {characterName}
+              </div>
+            ) : null}
+            {block.parenthetical ? (
+              <div className="mt-0.5 text-[13px] italic text-[#7b776b]">
+                ({block.parenthetical})
+              </div>
+            ) : null}
+          </>
+        )}
         <textarea
           ref={textareaRef}
           aria-label={`Dialogue ${block.id}`}

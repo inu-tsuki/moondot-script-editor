@@ -19,10 +19,17 @@ import {
 } from './core/adaptation';
 import { serializeDocumentToYaml } from './core/serialization';
 import {
-  appendBlockToFirstScene,
+  appendBlockToScene,
+  deleteBlock,
   demoNovelText,
   demoScreenplayDocument,
+  insertBlockAfter,
+  moveBlock,
+  updateBlockCharacter,
   updateBlockText as updateDocumentBlockText,
+  updateDialogueParenthetical,
+  updateSceneHeading,
+  updateSceneMetadata,
 } from './core/screenplay';
 import { parseNovelChapters, withParsedNovelChapters } from './core/source-ingestion';
 import { validateScreenplayDocument } from './core/validation';
@@ -31,7 +38,7 @@ import type {
   AdaptationPreferences,
   NovelAdaptationTraceStep,
 } from './core/adaptation';
-import type { BlockId, ScreenplayDocument } from './core/screenplay';
+import type { BlockId, EditAction, ScreenplayDocument } from './core/screenplay';
 import type { Diagnostic } from './core/validation';
 
 const createYamlFileName = (title: string) => {
@@ -90,6 +97,7 @@ function App() {
   const [adaptationTrace, setAdaptationTrace] = useState<NovelAdaptationTraceStep[]>([]);
   const [exportFeedback, setExportFeedback] = useState('');
   const [outputTab, setOutputTab] = useState('outline');
+  const [selectedBlockId, setSelectedBlockId] = useState<BlockId | null>(null);
   const isCurrentPlanDrafted = adaptationTrace.some(
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
@@ -157,15 +165,65 @@ function App() {
     [generatedAt, workingDocument],
   );
 
-  const addBlock = () => {
-    setScreenplayDocument((currentDocument) => appendBlockToFirstScene(currentDocument));
-    setExportFeedback('');
+  // ---------------------------------------------------------------------------
+  // Unified edit dispatcher
+  // ---------------------------------------------------------------------------
+
+  const handleEdit = (action: EditAction) => {
+    switch (action.type) {
+      case 'select-block':
+        setSelectedBlockId(action.blockId);
+        break;
+      case 'delete-block':
+        setScreenplayDocument((prev) => deleteBlock(prev, action.sceneId, action.blockId));
+        setSelectedBlockId(null);
+        setExportFeedback('');
+        break;
+      case 'move-block':
+        setScreenplayDocument((prev) =>
+          moveBlock(prev, action.sceneId, action.blockId, action.direction),
+        );
+        setExportFeedback('');
+        break;
+      case 'insert-block-after':
+        setScreenplayDocument((prev) =>
+          insertBlockAfter(prev, action.sceneId, action.afterBlockId, action.draft),
+        );
+        setExportFeedback('');
+        break;
+      case 'append-block':
+        setScreenplayDocument((prev) => appendBlockToScene(prev, action.sceneId, action.draft));
+        setExportFeedback('');
+        break;
+      case 'update-block-character':
+        setScreenplayDocument((prev) =>
+          updateBlockCharacter(prev, action.blockId, action.characterId),
+        );
+        setExportFeedback('');
+        break;
+      case 'update-parenthetical':
+        setScreenplayDocument((prev) =>
+          updateDialogueParenthetical(prev, action.blockId, action.parenthetical),
+        );
+        setExportFeedback('');
+        break;
+      case 'update-scene-heading':
+        setScreenplayDocument((prev) => updateSceneHeading(prev, action.sceneId, action.patch));
+        setExportFeedback('');
+        break;
+      case 'update-scene-metadata':
+        setScreenplayDocument((prev) => updateSceneMetadata(prev, action.sceneId, action.patch));
+        setExportFeedback('');
+        break;
+    }
   };
 
-  const updateBlockText = (id: BlockId, text: string) => {
+  const handleUpdateBlockText = (id: BlockId, text: string) => {
     setScreenplayDocument((currentDocument) => updateDocumentBlockText(currentDocument, id, text));
     setExportFeedback('');
   };
+
+  const clearSelection = () => setSelectedBlockId(null);
 
   const updateSourceText = (text: string) => {
     setSourceText(text);
@@ -173,6 +231,7 @@ function App() {
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
     setExportFeedback('');
+    clearSelection();
   };
 
   const clearAdaptationRun = () => {
@@ -180,6 +239,7 @@ function App() {
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
     setExportFeedback('');
+    clearSelection();
   };
 
   const updateAdaptationPreference = <Key extends keyof AdaptationPreferences>(
@@ -205,6 +265,7 @@ function App() {
     setAdaptationDiagnostics(adaptationResult.diagnostics);
     setExportFeedback('');
     setOutputTab('outline');
+    clearSelection();
   };
 
   const confirmSceneOutline = () => {
@@ -224,6 +285,7 @@ function App() {
     ]);
     setAdaptationDiagnostics(adaptationResult.diagnostics);
     setExportFeedback('');
+    clearSelection();
   };
 
   const copyYaml = async () => {
@@ -300,8 +362,9 @@ function App() {
           <ScriptEditorPanel
             charactersById={charactersById}
             scene={activeScene}
-            onAddBlock={addBlock}
-            onUpdateBlockText={updateBlockText}
+            selectedBlockId={selectedBlockId}
+            onEdit={handleEdit}
+            onUpdateBlockText={handleUpdateBlockText}
           />
         }
         right={
