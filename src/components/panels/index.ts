@@ -1,5 +1,6 @@
 export { AdaptationPreferencesPanel } from './AdaptationPreferencesPanel';
 export { DiagnosticsPanel } from './DiagnosticsPanel';
+export { ScenePage } from './ScenePage';
 export { SceneOutlinePanel } from './SceneOutlinePanel';
 export { ScriptEditorPanel } from './ScriptEditorPanel';
 export { SourcePanel } from './SourcePanel';
