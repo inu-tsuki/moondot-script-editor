@@ -92,7 +92,7 @@ export function DialogueBlockEditor({
         <textarea
           ref={textareaRef}
           aria-label={`Dialogue ${block.id}`}
-          className={`${manuscriptText} mt-0.5 text-center text-[14px] leading-relaxed text-[#17211d] focus:text-left`}
+          className={`${manuscriptText} mt-0.5 text-center text-[14px] leading-relaxed text-[#17211d]`}
           rows={1}
           value={block.text}
           onChange={(event) => onChange(event.target.value)}

@@ -27,17 +27,21 @@ type ScenePageProps = {
 // Manuscript tokens — stable class compositions shared across all editors
 // ---------------------------------------------------------------------------
 
+// Ghost control: always has 1px border + 2px padding — focus only changes color, never size
 const manuscriptField =
-  'bg-transparent border border-transparent outline-none hover:opacity-70 focus:rounded focus:border-[#cfc7ba] focus:bg-[#fffdf8] focus:px-1 focus:opacity-100';
+  'bg-transparent border border-transparent outline-none px-0.5 hover:opacity-70 focus:rounded focus:border-[#cfc7ba] focus:bg-[#fffdf8] focus:opacity-100';
 
 const manuscriptSelect = `${manuscriptField} appearance-none cursor-pointer`;
+
+// Inline heading fields: width fits content, no forced stretch
+const manuscriptFieldInline = `${manuscriptField} w-auto`;
 
 const manuscriptText =
   'w-full resize-none overflow-hidden border border-transparent bg-transparent p-0 outline-none transition-colors focus:rounded-md focus:border-[#cfc7ba] focus:bg-[#fffdf8]';
 
 const manuscriptTextarea = `${manuscriptText} resize-none`;
 
-const headingFieldClass = `${manuscriptField} font-extrabold uppercase tracking-wide text-[#7b6651]`;
+const headingFieldClass = `${manuscriptFieldInline} font-extrabold uppercase tracking-wide text-[#7b6651]`;
 
 const locationTypeOptions = [
   { value: 'INT', label: 'INT.' },
@@ -122,7 +126,7 @@ export function ScenePage({
         {/* Left gutter: selection handle */}
         <button
           aria-label={`Select block ${block.id}`}
-          className={`mt-1 h-full min-h-[24px] cursor-pointer border-l-2 transition-colors ${
+          className={`mt-1 min-h-[24px] cursor-pointer self-stretch border-l-2 transition-colors ${
             isSelected
               ? 'border-l-[#7b6651]'
               : 'border-l-transparent group-hover:border-l-[#d9d1c4]'
@@ -136,8 +140,17 @@ export function ScenePage({
           type="button"
         />
 
-        {/* Content area: pure editing, no selection logic */}
-        <div className="min-w-0">{editor}</div>
+        {/* Content area: auto-selects block when any child gains focus */}
+        <div
+          className="min-w-0"
+          onFocus={() => {
+            if (!isSelected) {
+              onEdit({ type: 'select-block', blockId: block.id });
+            }
+          }}
+        >
+          {editor}
+        </div>
 
         {/* Right gutter: toolbar */}
         <div
