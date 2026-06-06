@@ -1,5 +1,6 @@
 import type { NovelSource, ScreenplayDocument } from '../screenplay';
-import type { PromptMessage } from './types';
+import { resolveAdaptationPreferences } from './preferences';
+import type { AdaptationPlan, AdaptationPreferences, PromptMessage } from './types';
 
 const isNovelSource = (source: ScreenplayDocument['source']): source is NovelSource =>
   source.type === 'novel';
@@ -43,6 +44,37 @@ const formatChapterBriefs = (document: ScreenplayDocument) => {
     .join('\n');
 };
 
+const formatAdaptationPreferences = (preferencesInput?: Partial<AdaptationPreferences>) => {
+  const preferences = resolveAdaptationPreferences(preferencesInput);
+
+  return [
+    `- targetMedium: ${preferences.targetMedium}`,
+    `- targetLength: ${preferences.targetLength}`,
+    `- fidelity: ${preferences.fidelity}`,
+    `- pacing: ${preferences.pacing}`,
+    `- style: ${preferences.style}`,
+    `- allowCharacterMerge: ${preferences.allowCharacterMerge}`,
+    `- allowSubplotCompression: ${preferences.allowSubplotCompression}`,
+    `- allowTimelineReorder: ${preferences.allowTimelineReorder}`,
+  ].join('\n');
+};
+
+const formatPlanSceneOutline = (plan: AdaptationPlan | undefined) => {
+  if (!plan) {
+    return '等待输入：Adaptation Architect 产出的 sceneOutline / writerBrief。';
+  }
+
+  return plan.sceneOutline
+    .map(
+      (sceneCard) => `- ${sceneCard.id}: ${sceneCard.title}
+  dramaticPurpose: ${sceneCard.dramaticPurpose}
+  sourceRefs: ${sceneCard.sourceRefs.map((sourceRef) => sourceRef.sourceId).join(', ')}
+  pacing: ${sceneCard.pacing}
+  writerBrief: ${sceneCard.writerBrief}`,
+    )
+    .join('\n');
+};
+
 const formatSourceCoverageRule = () =>
   [
     '来源映射规则：',
@@ -51,7 +83,10 @@ const formatSourceCoverageRule = () =>
     '- 如果为了节奏删减章节内容，应在 plan 中说明删减原因。',
   ].join('\n');
 
-export const buildNovelAdaptationPrompt = (document: ScreenplayDocument): PromptMessage[] => [
+export const buildNovelAdaptationPrompt = (
+  document: ScreenplayDocument,
+  preferences?: Partial<AdaptationPreferences>,
+): PromptMessage[] => [
   {
     role: 'system',
     stage: 'adaptation_planning',
@@ -69,6 +104,9 @@ export const buildNovelAdaptationPrompt = (document: ScreenplayDocument): Prompt
     content: [
       `项目标题：${document.project.title}`,
       `目标媒介：${document.project.targetMedium}`,
+      '',
+      '基础改编偏好：',
+      formatAdaptationPreferences(preferences),
       '',
       '现有角色表：',
       formatCharacterRoster(document),
@@ -89,7 +127,10 @@ export const buildNovelAdaptationPrompt = (document: ScreenplayDocument): Prompt
   },
 ];
 
-export const buildNovelSceneWriterPrompt = (document: ScreenplayDocument): PromptMessage[] => [
+export const buildNovelSceneWriterPrompt = (
+  document: ScreenplayDocument,
+  plan?: AdaptationPlan,
+): PromptMessage[] => [
   {
     role: 'system',
     stage: 'writer_brief',
@@ -114,7 +155,8 @@ export const buildNovelSceneWriterPrompt = (document: ScreenplayDocument): Promp
       '来源章节索引：',
       formatChapterBriefs(document),
       '',
-      '等待输入：Adaptation Architect 产出的 sceneOutline / writerBrief。',
+      'Scene outline / writer brief：',
+      formatPlanSceneOutline(plan),
       '收到后请输出 JSON object，要求：',
       '- 与 ScreenplayDocument v0.1 兼容。',
       '- 保留 documentVersion、project、source、characters。',
