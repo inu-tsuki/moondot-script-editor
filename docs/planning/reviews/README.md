@@ -17,6 +17,7 @@
 - [pr-009-yaml-export-actions.md](pr-009-yaml-export-actions.md)：PR #9 `feat/yaml-export-actions`（GitHub #16）的 review，关注 YAML 复制/下载导出、导出前 validation 状态和 projection 边界。
 - [pr-010-panel-extraction.md](pr-010-panel-extraction.md)：PR #10 `feat/panel-extraction`（GitHub #21）的 review，关注文档库指引下的 panel 拆分、布局回归风险和 Phase 2.5 后续动作。
 - [pr-011-workbench-layout-tabs.md](pr-011-workbench-layout-tabs.md)：PR #11 `feat/workbench-layout-tabs`（GitHub #23）的 review，关注 WorkbenchLayout、output tabs、中央编辑区权重和 2.5.5 方案衔接。
+- [pr-012-screenplay-reading-surface.md](pr-012-screenplay-reading-surface.md)：PR #12 `feat/screenplay-reading-surface`（GitHub #24）的 review，关注 document-backed Fountain-like reading surface、per-block editor 和手稿输入体验风险。
 
 ## 维护规则
 
