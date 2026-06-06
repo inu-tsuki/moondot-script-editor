@@ -54,11 +54,11 @@ Phase 2.5：Workbench UI Foundation。Phase 2 的 Adaptation Plan / Scene Outlin
 - [x] 实现 adaptation plan / scene outline 的预览与确认交互。
 - [x] 实现基础 YAML 导出交互。
 - [x] 插入 Phase 2.5 Workbench UI Foundation 规划。
+- [x] 接入 Tailwind CSS，建立全局样式地基。
+- [x] 抽出基础 UI primitives：Button、PanelShell、Badge、Tabs、Field、Toolbar。
 
 ## 下一步
 
-- [ ] 接入 Tailwind CSS，建立全局样式地基。
-- [ ] 抽出基础 UI primitives：Button、PanelShell、Badge、Tabs、Field、Toolbar。
 - [ ] 拆分 `App.tsx` 中的 source、preferences、outline、editor、YAML export 和 diagnostics panels。
 - [ ] 建立 `WorkbenchLayout`，让 semantic script editor 成为主区域。
 - [ ] 将 scene outline、YAML 和 diagnostics 整理进 output tabs。
