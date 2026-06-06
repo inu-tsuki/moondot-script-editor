@@ -306,8 +306,81 @@ select:focus-visible {
 .side-tabs {
   display: grid;
   gap: 10px;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-height: 0;
+}
+
+.outline-panel {
+  background: #f4fbf7;
+  border: 1px solid #b8d8ce;
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.outline-header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.outline-list {
+  display: grid;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.outline-card {
+  background: #ffffff;
+  border: 1px solid #cfe5dd;
+  border-radius: 6px;
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+}
+
+.outline-title {
+  color: #17211d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.outline-purpose {
+  color: #53635b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.outline-meta {
+  color: #2f665c;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.trace-list {
+  border-top: 1px solid #cfe5dd;
+  display: grid;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.trace-item {
+  color: #53635b;
+  display: grid;
+  font-size: 11px;
+  gap: 3px;
+  line-height: 1.35;
+}
+
+.trace-item span:first-child {
+  color: #2f665c;
+  font-weight: 800;
 }
 
 .yaml-preview {

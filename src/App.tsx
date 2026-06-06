@@ -1,4 +1,12 @@
-import { AlertTriangle, Download, FileText, Plus, Sparkles, WandSparkles } from 'lucide-react';
+import {
+  AlertTriangle,
+  Download,
+  FileText,
+  ListChecks,
+  Plus,
+  Sparkles,
+  WandSparkles,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import './App.css';
 import { adaptNovelToScreenplayMock } from './core/adaptation';
@@ -13,6 +21,7 @@ import {
 } from './core/screenplay';
 import { parseNovelChapters, withParsedNovelChapters } from './core/source-ingestion';
 import { validateScreenplayDocument } from './core/validation';
+import type { AdaptationPlan, NovelAdaptationTraceStep } from './core/adaptation';
 import type { BlockId, ScreenplayDocument, ScriptBlock } from './core/screenplay';
 import type { Diagnostic } from './core/validation';
 
@@ -42,6 +51,8 @@ function App() {
   const [screenplayDocument, setScreenplayDocument] =
     useState<ScreenplayDocument>(demoScreenplayDocument);
   const [adaptationDiagnostics, setAdaptationDiagnostics] = useState<Diagnostic[]>([]);
+  const [adaptationPlan, setAdaptationPlan] = useState<AdaptationPlan>();
+  const [adaptationTrace, setAdaptationTrace] = useState<NovelAdaptationTraceStep[]>([]);
 
   const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
   const workingDocument = useMemo<ScreenplayDocument>(
@@ -103,12 +114,16 @@ function App() {
   const updateSourceText = (text: string) => {
     setSourceText(text);
     setAdaptationDiagnostics([]);
+    setAdaptationPlan(undefined);
+    setAdaptationTrace([]);
   };
 
   const generateScreenplay = () => {
     const adaptationResult = adaptNovelToScreenplayMock({ document: workingDocument });
 
     setScreenplayDocument(adaptationResult.document);
+    setAdaptationPlan(adaptationResult.plan);
+    setAdaptationTrace(adaptationResult.trace);
     setAdaptationDiagnostics(adaptationResult.diagnostics);
   };
 
@@ -247,6 +262,41 @@ function App() {
             <span className="panel-meta">document v{workingDocument.documentVersion}</span>
           </div>
           <div className="panel-body side-tabs">
+            {adaptationPlan ? (
+              <section className="outline-panel" aria-label="改编大纲">
+                <div className="outline-header">
+                  <div className="panel-title">
+                    <ListChecks size={16} />
+                    Scene Outline
+                  </div>
+                  <span className="panel-meta">{adaptationPlan.sceneOutline.length} scenes</span>
+                </div>
+                <div className="outline-list">
+                  {adaptationPlan.sceneOutline.map((sceneCard) => (
+                    <article className="outline-card" key={sceneCard.id}>
+                      <div className="outline-title">{sceneCard.title}</div>
+                      <div className="outline-purpose">{sceneCard.dramaticPurpose}</div>
+                      <div className="outline-meta">
+                        <span>{sceneCard.id}</span>
+                        <span>
+                          {sceneCard.sourceRefs.map((sourceRef) => sourceRef.sourceId).join(' + ')}
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                {adaptationTrace.length ? (
+                  <div className="trace-list" aria-label="生成轨迹">
+                    {adaptationTrace.map((traceStep) => (
+                      <div className="trace-item" key={`${traceStep.label}-${traceStep.stage}`}>
+                        <span>{traceStep.label}</span>
+                        <span>{traceStep.detail}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
             <pre className="yaml-preview">{yamlPreview}</pre>
             <div className="diagnostics">
               {displayedDiagnostics.map((diagnostic, index) => (

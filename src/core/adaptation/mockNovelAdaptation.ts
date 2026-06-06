@@ -7,17 +7,19 @@ import type {
   SceneNode,
   ScreenplayDocument,
   ScriptBlock,
-  SourceRef,
 } from '../screenplay';
 import type { Diagnostic } from '../validation';
 import {
   buildNovelAdaptationPrompt,
   buildNovelSceneWriterPrompt,
 } from './buildNovelAdaptationPrompt';
+import { createMockAdaptationPlan } from './createMockAdaptationPlan';
+import { resolveAdaptationPreferences } from './preferences';
 import type {
   NovelAdaptationRequest,
   NovelAdaptationResult,
   NovelAdaptationTraceStep,
+  SceneCard,
 } from './types';
 
 const isNovelSource = (source: ScreenplayDocument['source']): source is NovelSource =>
@@ -37,20 +39,6 @@ const createDiagnostic = (
   suggestion,
 });
 
-const compactText = (text: string | undefined, maxLength = 70) => {
-  const normalizedText = text?.replace(/\s+/g, ' ').trim() ?? '';
-
-  if (!normalizedText) {
-    return '这一章缺少正文，等待模型补全可拍摄事件。';
-  }
-
-  if (normalizedText.length <= maxLength) {
-    return normalizedText;
-  }
-
-  return `${normalizedText.slice(0, maxLength)}...`;
-};
-
 const createSceneId = (index: number): SceneId =>
   `scene_${String(index).padStart(3, '0')}` as SceneId;
 
@@ -60,30 +48,28 @@ const getPrimaryCharacterId = (document: ScreenplayDocument): CharacterId | unde
 const getCounterpartCharacterId = (document: ScreenplayDocument): CharacterId | undefined =>
   document.characters[1]?.id ?? document.characters[0]?.id;
 
-const createChapterScene = (
-  source: NovelSource,
+const createSceneFromCard = (
+  sceneCard: SceneCard,
   document: ScreenplayDocument,
-  chapterIndex: number,
+  sceneIndex: number,
   nextBlockId: () => BlockId,
 ): SceneNode => {
-  const chapter = source.chapters[chapterIndex];
-  const sourceRefs: SourceRef[] = [{ kind: 'chapter', sourceId: chapter.id }];
   const primaryCharacterId = getPrimaryCharacterId(document);
   const counterpartCharacterId = getCounterpartCharacterId(document);
-  const chapterExcerpt = compactText(chapter.text);
+  const sourceRefText = sceneCard.sourceRefs.map((sourceRef) => sourceRef.sourceId).join('、');
   const blocks: ScriptBlock[] = [
     {
       id: nextBlockId(),
       type: 'action',
-      text: `${chapter.title} 的故事被压缩成一个可拍摄场面：${chapterExcerpt}`,
-      sourceRefs,
+      text: `【${sceneCard.id}】${sceneCard.dramaticPurpose}`,
+      sourceRefs: sceneCard.sourceRefs,
     },
     {
       id: nextBlockId(),
       type: 'narration',
       voice: 'narrator',
-      text: '场面围绕本章核心事件展开，人物的犹豫被外化为动作、停顿和视线交换。',
-      sourceRefs,
+      text: `Writer brief：${sceneCard.writerBrief}`,
+      sourceRefs: sceneCard.sourceRefs,
     },
   ];
 
@@ -92,8 +78,8 @@ const createChapterScene = (
       id: nextBlockId(),
       type: 'dialogue',
       characterId: primaryCharacterId,
-      text: `这一章的关键选择，不能只停在心里。`,
-      sourceRefs,
+      text: `这不是复述 ${sourceRefText}，我们得把它变成能看见的选择。`,
+      sourceRefs: sceneCard.sourceRefs,
     });
   }
 
@@ -102,46 +88,50 @@ const createChapterScene = (
       id: nextBlockId(),
       type: 'dialogue',
       characterId: counterpartCharacterId,
-      text: `那就把它变成我们能看见、能听见的一场戏。`,
-      sourceRefs,
+      text: `那就把冲突放到台面上，让这一场真的往前走。`,
+      sourceRefs: sceneCard.sourceRefs,
     });
   }
 
   blocks.push({
     id: nextBlockId(),
     type: 'note',
-    text: '待改编修订：补充人物目标、冲突推进和更具体的场面调度。',
-    sourceRefs,
+    text: `待确认：${sceneCard.title} 仍是 mock scene card，后续应允许用户在 outline 阶段调整。`,
+    sourceRefs: sceneCard.sourceRefs,
   });
 
   return {
-    id: createSceneId(chapterIndex + 1),
-    title: chapter.title,
-    synopsis: chapter.summary ?? `根据“${chapter.title}”生成的 mock 场景草稿。`,
-    sourceRefs,
-    heading: {
-      locationType: chapterIndex % 2 === 0 ? 'INT' : 'EXT',
-      location: chapter.title || `第 ${chapter.index} 章核心场景`,
-      timeOfDay: chapterIndex % 2 === 0 ? '夜' : '日',
-    },
+    id: createSceneId(sceneIndex + 1),
+    title: sceneCard.title,
+    synopsis: sceneCard.dramaticPurpose,
+    sourceRefs: sceneCard.sourceRefs,
+    heading: sceneCard.headingSuggestion,
     blocks,
   };
 };
 
 export const adaptNovelToScreenplayMock = ({
   document,
+  preferences: preferencesInput,
 }: NovelAdaptationRequest): NovelAdaptationResult => {
+  const preferences = resolveAdaptationPreferences(preferencesInput);
   const promptMessages = [
-    ...buildNovelAdaptationPrompt(document),
+    ...buildNovelAdaptationPrompt(document, preferences),
     ...buildNovelSceneWriterPrompt(document),
   ];
 
   if (!isNovelSource(document.source)) {
+    const trace: NovelAdaptationTraceStep[] = [];
+
     return {
       mode: 'mock',
       document,
       promptMessages,
-      trace: [],
+      trace,
+      generationRun: {
+        mode: 'mock',
+        steps: trace,
+      },
       diagnostics: [
         createDiagnostic(
           'error',
@@ -154,11 +144,17 @@ export const adaptNovelToScreenplayMock = ({
   }
 
   if (!document.source.chapters.length) {
+    const trace: NovelAdaptationTraceStep[] = [];
+
     return {
       mode: 'mock',
       document,
       promptMessages,
-      trace: [],
+      trace,
+      generationRun: {
+        mode: 'mock',
+        steps: trace,
+      },
       diagnostics: [
         createDiagnostic(
           'error',
@@ -170,36 +166,52 @@ export const adaptNovelToScreenplayMock = ({
     };
   }
 
+  const plan = createMockAdaptationPlan(document, document.source, preferences);
+  const planPromptMessages = [
+    ...buildNovelAdaptationPrompt(document, preferences),
+    ...buildNovelSceneWriterPrompt(document, plan),
+  ];
   const nextBlockId = createBlockIdFactory(document);
-  const scenes = document.source.chapters.map((_, chapterIndex) =>
-    createChapterScene(document.source as NovelSource, document, chapterIndex, nextBlockId),
+  const scenes = plan.sceneOutline.map((sceneCard, sceneIndex) =>
+    createSceneFromCard(sceneCard, document, sceneIndex, nextBlockId),
+  );
+  const planSourceIds = plan.sceneOutline.flatMap((sceneCard) =>
+    sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
   );
   const trace: NovelAdaptationTraceStep[] = [
     {
       label: 'source-ingestion',
       detail: `读取 ${document.source.chapters.length} 个小说章节作为 agent 输入。`,
       stage: 'source_analysis',
+      artifactType: 'source_analysis',
       sourceIds: document.source.chapters.map((chapter) => chapter.id),
     },
     {
       label: 'mock-planning',
-      detail:
-        '本地 mock 暂以章节为粗略锚点生成场景；真实流程应先生成可跨章节合并/拆分的 scene outline。',
+      detail: `生成 ${plan.sceneOutline.length} 张 scene cards；scene 可以引用多个章节，不再把章节机械映射为场景。`,
       stage: 'adaptation_planning',
-      sourceIds: document.source.chapters.map((chapter) => chapter.id),
+      artifactType: 'adaptation_plan',
+      sourceIds: planSourceIds,
     },
     {
       label: 'mock-writing',
-      detail: '根据 mock scene outline 写入 ScreenplayAst 草稿。',
+      detail: '根据 mock SceneCard.writerBrief 写入 ScreenplayAst 草稿。',
       stage: 'scene_draft',
-      sourceIds: document.source.chapters.map((chapter) => chapter.id),
+      artifactType: 'writer_draft',
+      sourceIds: planSourceIds,
     },
   ];
 
   return {
     mode: 'mock',
-    promptMessages,
+    promptMessages: planPromptMessages,
+    plan,
     trace,
+    generationRun: {
+      mode: 'mock',
+      planId: plan.id,
+      steps: trace,
+    },
     diagnostics: [
       createDiagnostic(
         'info',
