@@ -12,4 +12,5 @@ export type {
   ModelStagePayloadMap,
   ModelTraceEvent,
   ModelTraceOutcome,
+  StructuredOutputContract,
 } from './types';

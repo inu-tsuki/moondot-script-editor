@@ -1,12 +1,12 @@
 # 月点 TODO
 
-> 最近更新：2026-06-06
+> 最近更新：2026-06-07
 
 本文件是月点 AI 协作期任务池。阶段权威以 `roadmap/` 为准，官方约束以 `../knowledge/requirements/` 为准。
 
 ## 当前阶段
 
-Phase 3 正式规划已启动。当前重点是把 Phase 2 的 mock adaptation workflow 推进为 mock fallback 和真实模型共用的 typed model workflow：先落 model adapter contract，再落 Architect / Writer structured output、server-side 调用边界、trace、repair 和 demo hardening。
+Phase 3 正式规划已启动。当前重点是把 Phase 2 的 mock adaptation workflow 推进为 mock fallback 和真实模型共用的 typed model workflow：先落 model adapter contract，再落 Architect / Writer structured output schema、server-side 调用边界、trace、repair 和 demo hardening。
 
 ## 已完成
 
@@ -70,7 +70,7 @@ Phase 3 正式规划已启动。当前重点是把 Phase 2 的 mock adaptation w
 ## 下一步
 
 - [ ] 实现 Phase 3.1 model adapter contract，让 mock fallback 和未来真实模型共用 `ModelCallRequest` / `ModelCallResult` / `ModelCallError`。
-- [ ] 实现 Phase 3.2 Structured Architect contract，为 `SourceAnalysis`、`AdaptationQuestion[]`、`SceneCard[]` 和 `recommendedPlan` 建立 schema / runtime validation。
+- [ ] 实现 Phase 3.2 Structured Architect contract，为 `SourceAnalysis`、`AdaptationQuestion[]`、`questionAnswers`、`SceneCard[]` 和 `recommendedPlan` 建立 Zod schema / runtime validation，并预留 model structured output envelope。
 - [ ] 实现 Phase 3.3 WriterBrief and scene draft contract，让 Writer 只根据确认后的 scene-level brief 生成可验证 scene patch。
 - [ ] 建立 Phase 3.4 local model proxy / server boundary，避免 API key 暴露在浏览器端。
 - [ ] 设计 Phase 3.5 model trace / diagnostics 在 output tabs 中的展示方式，避免和 YAML、outline 互相挤压。

@@ -72,6 +72,11 @@ export type ModelStagePayloadMap = {
 // Request / Result envelopes
 // ---------------------------------------------------------------------------
 
+export type StructuredOutputContract = {
+  /** Stable identifier for the response schema (e.g. 'adaptation_plan_v1'). */
+  schemaId: string;
+};
+
 export type ModelCallRequest<S extends ModelStage = ModelStage> = {
   messages: PromptMessage[];
   stage: S;
@@ -80,6 +85,16 @@ export type ModelCallRequest<S extends ModelStage = ModelStage> = {
    * The adapter echoes it back unchanged in `ModelCallResult.runId`.
    */
   runId?: string;
+  /**
+   * Provider-neutral structured output descriptor.
+   * Set by the adaptation layer; consumed by real providers in Phase 3.4
+   * to select the correct response schema.  Mock adapter ignores this field.
+   *
+   * This is intentionally a serializable data contract, not a runtime
+   * schema object — it can cross the browser / local-proxy boundary
+   * without carrying implementation details.
+   */
+  structuredOutput?: StructuredOutputContract;
 };
 
 export type ModelCallResult<TData = unknown> = {
