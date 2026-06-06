@@ -11,6 +11,7 @@
 - [pr-003-screenplay-model.md](pr-003-screenplay-model.md)：PR #3 `feat/screenplay-model` 的 review，关注类型层设计、ID 稳定性、YAML serializer 内联和 source ingestion 分离 Gap。
 - [pr-004-screenplay-validation-yaml.md](pr-004-screenplay-validation-yaml.md)：PR #4 `feat/screenplay-validation-yaml` 的 review，关注校验层设计、YAML serializer 抽取和遗留 source ingestion Gap。
 - [pr-005-novel-adaptation-workflow.md](pr-005-novel-adaptation-workflow.md)：PR #5 `feat/novel-adaptation-workflow` 的 review，关注改编管线设计、mock fallback 边界和来源归因风险。
+- [pr-006-adaptation-plan-core.md](pr-006-adaptation-plan-core.md)：PR #6 `feat/adaptation-plan-core` 的 review，关注 AdaptationPlan 模型引入、UI 呈现和 mock 两阶段重构。
 
 ## 维护规则
 
