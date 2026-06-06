@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-Phase 2.5：Workbench UI Foundation。Phase 2 的 Adaptation Plan / Scene Outline / YAML 导出链路已经完成基础切片；当前重点是在真实模型调用前整理工作台 UI 地基，让剧本编辑区成为主区域，并为 Fountain-like preview、diagnostics 和模型 trace 留出清晰面板。
+Phase 2.5 的 Workbench UI Foundation 已完成基础切片。当前处于 Phase 3 启动前的状态同步和质量收口：先确保文档、测试护栏和真实代码一致，再进入真实模型调用层、prompt contract、mock fallback 和 demo 强化。
 
 ## 已完成
 
@@ -56,16 +56,23 @@ Phase 2.5：Workbench UI Foundation。Phase 2 的 Adaptation Plan / Scene Outlin
 - [x] 插入 Phase 2.5 Workbench UI Foundation 规划。
 - [x] 接入 Tailwind CSS，建立全局样式地基。
 - [x] 抽出基础 UI primitives：Button、PanelShell、Badge、Tabs、Field、Toolbar。
+- [x] 拆分 `App.tsx` 中的 source、preferences、outline、editor、YAML export 和 diagnostics panels。
+- [x] 建立 `WorkbenchLayout`，让 semantic script editor 成为主区域。
+- [x] 将 scene outline、YAML 和 diagnostics 整理进 output tabs。
+- [x] 建立 document-backed screenplay reading surface，让中央编辑区呈现剧本手稿阅读节奏。
+- [x] 实现基础语义编辑控件：按类型新增、删除、移动 block，编辑 dialogue 字段和 scene metadata。
+- [x] 完成工业化手稿 UI polish，让 source / outline / YAML / diagnostics 成为辅助区。
+- [x] 作为 phase 外 engineering track，引入前端测试护栏：Vitest / Testing Library / Playwright。
+- [x] 更新 README、roadmap、next direction、review 索引和测试说明，让文档与 #24-#27 合并后的代码状态一致。
 
 ## 下一步
 
-- [ ] 作为 phase 外 engineering track，引入前端测试护栏：Vitest / Testing Library / Playwright。
-- [ ] 拆分 `App.tsx` 中的 source、preferences、outline、editor、YAML export 和 diagnostics panels。
-- [ ] 建立 `WorkbenchLayout`，让 semantic script editor 成为主区域。
-- [ ] 将 scene outline、YAML 和 diagnostics 整理进 output tabs。
-- [ ] 改善语义块剧本阅读视觉。
-- [ ] 实现可选 `exportDocumentToFountainLike` 预览投影。
-- [ ] 接入轻量模型调用层，将 mock fallback 替换为可配置 LLM agent。
+- [ ] 复核 `pnpm e2e` 的本地运行路径：确保 5173 由当前分支的 Vite server 提供，并记录任何环境可见性问题。
+- [ ] 启动 Phase 3 规划：定义模型调用层的配置边界、请求/响应 envelope、mock fallback 和错误恢复策略。
+- [ ] 固化 Architect / Writer prompt contract：Architect 负责解析、提问和 writer brief，Writer 根据确认后的 brief 生成剧本初稿。
+- [ ] 设计模型 trace / diagnostics 在 output tabs 中的展示方式，避免和 YAML、outline 互相挤压。
+- [ ] 评估是否在 Phase 3 内补 `exportDocumentToFountainLike` 预览投影，或继续作为非必要 projection 暂缓。
+- [ ] 准备正式 demo 路径：3+ 章节输入、改编方案确认、语义块编辑、YAML 导出、Schema 文档链接。
 
 ## 提交前检查
 
@@ -73,7 +80,9 @@ Phase 2.5：Workbench UI Foundation。Phase 2 的 Adaptation Plan / Scene Outlin
 - [ ] README 包含运行方式、依赖、原创范围、demo 视频链接和 Schema 文档链接。
 - [ ] demo 视频可播放，且包含声音讲解。
 - [ ] 主分支可运行。
-- [ ] 关键编辑器链路有单元 / 组件 / e2e 测试或明确测试缺口。
+- [ ] 普通改动按 `AGENTS.md` 运行 `pnpm format:check`、`pnpm lint`、`pnpm build`、`pnpm test`。
+- [ ] UI、editor、toolbar、output panel 或 responsive layout 改动额外运行 `pnpm e2e`，或明确说明无法运行的环境原因。
+- [ ] 关键编辑器链路有单元 / 组件 / e2e 测试，或在 PR 中明确测试缺口。
 - [ ] 每个 PR 只做一件事，标题和描述完整。
 - [ ] commit 时间均在第三批次窗口内。
 - [ ] 如复用旧代码或参考第三方实现，已在 PR 和 README 中说明。

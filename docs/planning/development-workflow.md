@@ -1,6 +1,6 @@
 # Development Workflow
 
-> 最近更新：2026-06-05
+> 最近更新：2026-06-06
 
 本文定义月点第一次提交后的开发流程。目标是留下清晰、可追溯的工程轨迹，让评审能看到项目如何从需求、架构、实现、验证一步步长出来。
 
@@ -153,6 +153,16 @@ git push -u origin main
 - 如有运行命令，PR 中写明验证结果。
 - 如有复用代码，PR 中披露来源。
 - 主分支不会因为该 PR 进入不可运行状态。
+
+## 验证分层
+
+按 `AGENTS.md` 中的仓库约定执行验证：
+
+- 普通改动运行 `pnpm format:check`、`pnpm lint`、`pnpm build` 和 `pnpm test`。
+- UI、editor、toolbar、output panel 或 responsive layout 改动额外运行 `pnpm e2e`。
+- Playwright 固定使用 `127.0.0.1:5173` 和系统 Chromium `/usr/bin/chromium`；不要运行 `pnpm exec playwright install`。
+- 运行 e2e 前，确认 5173 空闲，或已经由当前分支的 `pnpm dev --host 127.0.0.1 --port 5173 --strictPort` 提供服务。
+- 如果 e2e 因本地 server 可见性、端口或浏览器环境失败，PR 中要说明失败原因和已经完成的替代验证。
 
 第一次公开仓库前额外检查：
 

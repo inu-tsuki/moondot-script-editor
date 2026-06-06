@@ -98,6 +98,8 @@ Phase 0: 文档和范围锁定
 - 让工作台以剧本编辑区为中心，source、outline、YAML 和 diagnostics 成为辅助 panel。
 - 让 output 进入 tabs，为 Fountain-like preview 和真实模型 trace 留出位置。
 - 改善语义块的剧本阅读视觉，保持 AST semantic block editing 作为主编辑方式。
+- 补齐基础语义编辑控件，并用工业化手稿视觉统一工作台。
+- 作为横向工程质量轨道接入 Vitest / Testing Library / Playwright 测试护栏。
 
 完成标准：
 
@@ -108,12 +110,14 @@ Phase 0: 文档和范围锁定
 
 详细计划见 `phase-2-5-workbench-ui-foundation.md`。
 
-状态：当前启动。
+状态：基础切片已完成，进入 Phase 3 前只保留文档同步、e2e 运行路径确认和质量收口。
 
 ### Phase 3：真实模型调用、导出体验和 demo 强化
 
 - 接入真实模型调用层，mock fallback 保留。
 - 强化 prompt contract 和输出修复策略。
+- 将 Architect 解析 / 提问 / writer brief 与 Writer 初稿生成的 contract 固化到代码。
+- 在 output tabs 中展示模型 trace、失败恢复和 diagnostics。
 - 完成导出交互和提交演示路径。
 - README 链接到 Schema 文档、运行方式和 demo 视频。
 - 检查 README、Schema 文档和 demo 没有把长期 IDE 能力写成当前 MVP 承诺。
@@ -123,6 +127,8 @@ Phase 0: 文档和范围锁定
 - 真实模型调用或 mock fallback 都有稳定演示路径。
 - 生成结果通过 validation。
 - Schema 文档解释字段设计原因，并与 YAML projection 保持一致。
+
+状态：下一产品阶段。
 
 ### Phase 4：Demo、README、提交材料和质量收口
 

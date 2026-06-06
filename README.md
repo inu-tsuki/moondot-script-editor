@@ -2,7 +2,7 @@
 
 月点是一款 AI 剧本创作工作台。它面向故事创作者、短剧创作者和互动叙事创作者；当前 MVP 从小说改编切入，把多章节小说文本转换为可编辑的结构化剧本，并导出符合说明文档的 YAML 剧本数据。
 
-本仓库从七牛云 XEngineer 第三批次第三题“AI 小说转剧本工具”出发。当前已进入 Workbench UI Foundation 阶段：核心 document、改编工作流、YAML 导出和基础工作台布局已建立，正在整理中央剧本编辑体验。
+本仓库从七牛云 XEngineer 第三批次第三题“AI 小说转剧本工具”出发。当前已完成 Phase 2 的改编工作流基础切片和 Phase 2.5 的工作台 UI 地基：核心 document、scene outline 确认、YAML 导出、中央手稿编辑区、基础语义块操作和前端测试护栏已经建立。下一阶段将进入真实模型调用、prompt contract 和 demo 收口。
 
 ## 产品定位
 
@@ -59,8 +59,10 @@ MVP 要完成一条可演示链路：
 - Phase 0：需求、范围、文档库和开发流程已建立。
 - Phase 1：React + TypeScript + Vite 脚手架、`ScreenplayDocument`、validation、source ingestion、YAML projection 和基础语义块编辑已建立。
 - Phase 2：Adaptation Plan / Scene Outline / 确认写入 / YAML 复制下载链路已完成基础切片。
-- Phase 2.5：Workbench UI Foundation 已推进到工作台布局和 output tabs；下一步是 document-backed Fountain-like central reading surface。
-- Demo：待实现。
+- Phase 2.5：Workbench UI Foundation 已完成基础切片，包括 Tailwind、UI primitives、panel extraction、WorkbenchLayout、output tabs、document-backed reading surface、基础语义编辑控件和工业化手稿视觉收口。
+- Engineering：Vitest / Testing Library / Playwright 前端测试护栏已接入，作为横向质量轨道维护。
+- Phase 3：待启动，重点是真实模型调用层、prompt contract、mock fallback、导出体验和 demo 强化。
+- Demo：待录制和补充链接。
 
 ## 文档
 
@@ -74,6 +76,7 @@ MVP 要完成一条可演示链路：
 - [docs/planning/roadmap/README.md](docs/planning/roadmap/README.md)：阶段路线。
 - [docs/planning/roadmap/phase-2-5-workbench-ui-foundation.md](docs/planning/roadmap/phase-2-5-workbench-ui-foundation.md)：工作台 UI 地基规划。
 - [docs/planning/next-direction.md](docs/planning/next-direction.md)：下一阶段 PR 顺序和近期原则。
+- [docs/planning/engineering/frontend-test-harness.md](docs/planning/engineering/frontend-test-harness.md)：前端测试护栏和 e2e 运行边界。
 - [docs/planning/development-workflow.md](docs/planning/development-workflow.md)：PR、commit 和第一次提交后的开发流程。
 - [docs/knowledge/architecture/screenplay-ast-contract.md](docs/knowledge/architecture/screenplay-ast-contract.md)：`ScreenplayDocument` / `ScreenplayAst` 核心模型契约。
 - [docs/knowledge/architecture/document-workspace-boundary.md](docs/knowledge/architecture/document-workspace-boundary.md)：`ScreenplayDocument` 与未来 workspace / project 层边界。
@@ -97,9 +100,10 @@ MVP 要完成一条可演示链路：
 2. `feat/screenplay-*`：定义文档模型、validation、YAML projection、source ingestion 和基础语义块编辑。
 3. `feat/adaptation-*`：建立 Adaptation Plan、生成前偏好、scene outline 确认和 Writer 写入链路。
 4. `feat/yaml-export-actions`：实现 YAML 复制、下载和导出前 validation 状态。
-5. `feat/workbench-*`：接入 Tailwind、抽出 UI primitives / panels、建立 WorkbenchLayout 和 output tabs。
+5. `feat/workbench-*`：接入 Tailwind、抽出 UI primitives / panels、建立 WorkbenchLayout、output tabs、中央手稿阅读面和基础语义编辑控件。
+6. `chore/frontend-test-harness`：接入 Vitest / Testing Library / Playwright，建立核心操作、组件和浏览器布局回归测试。
 
-接下来优先推进 `Phase 2.5.5 Screenplay reading surface`，把中央编辑器整理成由 `ScreenplayDocument` 支撑的 Fountain-like 阅读面；之后再进入真实模型调用层。
+接下来优先进入 Phase 3：接入轻量模型调用层，强化 Architect / Writer 的 prompt contract、错误恢复和 mock fallback，并把 demo 路径收紧到可提交状态。
 
 完整流程见 [docs/planning/development-workflow.md](docs/planning/development-workflow.md)。
 
@@ -123,18 +127,18 @@ pnpm install
 pnpm dev
 ```
 
-检查代码和构建：
+检查代码和构建。普通改动按 `AGENTS.md` 的约定优先运行：
 
 ```sh
+pnpm format:check
 pnpm lint
 pnpm build
-pnpm format:check
+pnpm test
 ```
 
-运行自动化测试：
+涉及 UI、editor、toolbar、output panel 或响应式布局时，额外运行浏览器测试：
 
 ```sh
-pnpm test
 pnpm e2e
 ```
 

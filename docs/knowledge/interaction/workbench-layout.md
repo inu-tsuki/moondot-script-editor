@@ -1,25 +1,25 @@
 # Workbench Layout
 
 > 最近更新：2026-06-06  
-> 状态：交互设计方向，用于约束后续 UI PR。
+> 状态：Workbench UI Foundation 基础切片已落地。本文记录当前布局契约和后续 dock 能力边界。
 
-本文记录月点工作台布局的长期方向。当前脚手架中的三栏 UI 只是可运行骨架，不是最终编辑体验。
+本文记录月点工作台布局的长期方向。早期三栏 UI 只是可运行骨架；Phase 2.5 已将它整理为以中央手稿编辑区为主的 lightweight workbench。
 
 ## 核心结论
 
 月点需要的是剧本工作台，不是固定三栏表单页。
 
-MVP 可以先用左中右三栏证明产品结构：
+当前 MVP 使用左中右工作台证明产品结构：
 
 - 左侧：source 输入和章节识别。
 - 中间：语义块编辑。
 - 右侧：YAML、diagnostics 和预览。
 
-但功能完善时，主阅读和编辑区域必须获得更大的空间。中部区域应成为真正的剧本编辑舞台，而不是被左右两侧长期挤压。
+主阅读和编辑区域必须获得最大的视觉权重。中部区域是剧本编辑舞台，左右两侧是来源、偏好、输出和诊断辅助区。
 
 ## 推荐布局方向
 
-基础阶段保留简单布局，但为后续演进留下结构：
+当前基础布局：
 
 ```text
 Top: project actions / generate / export
@@ -33,17 +33,17 @@ Main workbench:
     - Diagnostics
 ```
 
-建议演进：
+后续演进：
 
 - Source panel 可折叠。
-- YAML / Fountain-like / Diagnostics 放在 tabs 中。
+- YAML / Fountain-like / Diagnostics 放在 tabs 中；当前已落地 Scene Outline / YAML / Diagnostics。
 - Semantic editor 占据最大可用面积。
 - 场景列表可以成为窄 sidebar，scene 内容在主编辑区展开。
 - 移动端按 source、editor、output 分段堆叠。
 
 ## Fountain-like 阅读排版
 
-Fountain-like 不作为主输入格式，但 preview 和中央语义块编辑区都应该借鉴剧本阅读格式。Phase 2.5.5 的目标是建立由 `ScreenplayDocument` 支撑的 Fountain-like reading surface：底层依赖 project metadata、source refs、character registry 和 `script: ScreenplayAst`，表层呈现为更像剧本稿的阅读面。
+Fountain-like 不作为主输入格式，但 preview 和中央语义块编辑区都应该借鉴剧本阅读格式。Phase 2.5.5 已建立由 `ScreenplayDocument` 支撑的 Fountain-like reading surface：底层依赖 project metadata、source refs、character registry 和 `script: ScreenplayAst`，表层呈现为更像剧本稿的阅读面。
 
 后续 UI 应做到：
 
@@ -111,9 +111,9 @@ Tailwind 优于 UnoCSS 的原因：
 
 在当前项目节奏下，Tailwind 更适合作为 Phase 2.5 的样式工具。现有手写 CSS 不需要一次性删除；后续 UI PR 可以逐步把重复样式迁移到 Tailwind class 和小型 UI primitives。
 
-## 对后续 PR 的影响
+## 已落地顺序和后续影响
 
-Phase 2.5 UI PR 应按这个顺序推进：
+Phase 2.5 UI PR 已按这个顺序落地：
 
 1. 接入 Tailwind CSS。
 2. 抽出基础 UI primitives。
@@ -123,4 +123,6 @@ Phase 2.5 UI PR 应按这个顺序推进：
 6. 实现更像剧本排版的 block rendering。
 7. 补齐基础语义编辑控件：add type menu、delete、move、dialogue 和 scene metadata 编辑。
 8. 做一次工业化手稿风格的整页 UI polish。
-9. 再评估是否需要 resizable panel。
+9. 接入前端测试护栏。
+
+后续进入 Phase 3 时，模型 trace、错误恢复、真实 API 状态和 mock fallback 应复用现有 output tabs / diagnostics 结构。是否需要 resizable panel，可以在真实模型调用和 demo 压力出现后再评估。
