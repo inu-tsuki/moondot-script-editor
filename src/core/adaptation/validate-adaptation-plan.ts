@@ -131,7 +131,7 @@ const validateSceneCard = (
   const card = candidate as Record<string, unknown>;
 
   // Required string fields
-  for (const field of ['id', 'title', 'dramaticPurpose', 'writerBrief'] as const) {
+  for (const field of ['id', 'title', 'dramaticPurpose', 'writerBrief', 'pacing'] as const) {
     const fieldErr = ensureString(card[field], field, cardPath);
     if (fieldErr) return fieldErr;
   }
@@ -153,21 +153,36 @@ const validateSceneCard = (
       `${cardPath}.sourceRefs`,
     );
   }
+  if ((card.sourceRefs as unknown[]).length === 0) {
+    return schemaFail(
+      'empty_source_refs',
+      'sourceRefs must contain at least one reference.',
+      `${cardPath}.sourceRefs`,
+    );
+  }
   for (let i = 0; i < (card.sourceRefs as unknown[]).length; i++) {
     const ref = (card.sourceRefs as unknown[])[i];
     if (!isObject(ref)) {
       return schemaFail(
         'invalid_source_ref',
-        `sourceRefs[${i}] must be an object with sourceId.`,
+        `sourceRefs[${i}] must be an object with sourceId and kind.`,
         `${cardPath}.sourceRefs[${i}]`,
       );
     }
-    const sourceId = (ref as Record<string, unknown>).sourceId;
+    const refObj = ref as Record<string, unknown>;
+    const sourceId = refObj.sourceId;
     if (typeof sourceId !== 'string') {
       return schemaFail(
         'invalid_source_ref',
         `sourceRefs[${i}].sourceId must be a string.`,
         `${cardPath}.sourceRefs[${i}].sourceId`,
+      );
+    }
+    if (typeof refObj.kind !== 'string') {
+      return schemaFail(
+        'invalid_source_ref',
+        `sourceRefs[${i}].kind must be a string.`,
+        `${cardPath}.sourceRefs[${i}].kind`,
       );
     }
     if (!knownChapterIds.has(sourceId)) {
@@ -259,21 +274,36 @@ const validateAdaptationQuestion = (
       `${qPath}.sourceRefs`,
     );
   }
+  if ((q.sourceRefs as unknown[]).length === 0) {
+    return schemaFail(
+      'empty_source_refs',
+      'sourceRefs must contain at least one reference.',
+      `${qPath}.sourceRefs`,
+    );
+  }
   for (let i = 0; i < (q.sourceRefs as unknown[]).length; i++) {
     const ref = (q.sourceRefs as unknown[])[i];
     if (!isObject(ref)) {
       return schemaFail(
         'invalid_source_ref',
-        `sourceRefs[${i}] must be an object with sourceId.`,
+        `sourceRefs[${i}] must be an object with sourceId and kind.`,
         `${qPath}.sourceRefs[${i}]`,
       );
     }
-    const sourceId = (ref as Record<string, unknown>).sourceId;
+    const refObj = ref as Record<string, unknown>;
+    const sourceId = refObj.sourceId;
     if (typeof sourceId !== 'string') {
       return schemaFail(
         'invalid_source_ref',
         `sourceRefs[${i}].sourceId must be a string.`,
         `${qPath}.sourceRefs[${i}].sourceId`,
+      );
+    }
+    if (typeof refObj.kind !== 'string') {
+      return schemaFail(
+        'invalid_source_ref',
+        `sourceRefs[${i}].kind must be a string.`,
+        `${qPath}.sourceRefs[${i}].kind`,
       );
     }
     if (!knownChapterIds.has(sourceId)) {
@@ -424,6 +454,65 @@ export const validateAdaptationPlan = (
         'invalid_question_answer',
         `questionAnswers[${i}] must have string questionId and optionId.`,
         `adaptationPlan.questionAnswers[${i}]`,
+      );
+    }
+  }
+
+  // -- question / answer reference integrity --
+  const questionMap = new Map<string, Set<string>>();
+  for (let i = 0; i < adaptationQuestions.length; i++) {
+    const q = adaptationQuestions[i] as Record<string, unknown>;
+    const qId = q.id as string;
+    const optionIds = new Set<string>();
+    for (const opt of q.options as unknown[]) {
+      const optObj = opt as Record<string, unknown>;
+      if (typeof optObj.id === 'string') {
+        optionIds.add(optObj.id);
+      }
+    }
+    questionMap.set(qId, optionIds);
+
+    // recommendedOptionId must exist in this question's options
+    const recommendedId = q.recommendedOptionId as string;
+    if (!optionIds.has(recommendedId)) {
+      return semanticFail(
+        'invalid_recommended_option',
+        `adaptationQuestions[${i}].recommendedOptionId "${recommendedId}" does not match any option id.`,
+        `adaptationPlan.adaptationQuestions[${i}].recommendedOptionId`,
+      );
+    }
+  }
+
+  for (let i = 0; i < questionAnswers.length; i++) {
+    const ans = questionAnswers[i] as Record<string, unknown>;
+    const ansQuestionId = ans.questionId as string;
+    const ansOptionId = ans.optionId as string;
+
+    // answer.source must be 'recommended' | 'user'
+    if (ans.source !== 'recommended' && ans.source !== 'user') {
+      return schemaFail(
+        'invalid_answer_source',
+        `questionAnswers[${i}].source must be "recommended" or "user".`,
+        `adaptationPlan.questionAnswers[${i}].source`,
+      );
+    }
+
+    // answer must reference an existing question
+    const targetOptions = questionMap.get(ansQuestionId);
+    if (!targetOptions) {
+      return semanticFail(
+        'unknown_question_ref',
+        `questionAnswers[${i}].questionId "${ansQuestionId}" does not match any adaptationQuestion id.`,
+        `adaptationPlan.questionAnswers[${i}].questionId`,
+      );
+    }
+
+    // answer must reference an option in that question
+    if (!targetOptions.has(ansOptionId)) {
+      return semanticFail(
+        'unknown_option_ref',
+        `questionAnswers[${i}].optionId "${ansOptionId}" does not match any option in question "${ansQuestionId}".`,
+        `adaptationPlan.questionAnswers[${i}].optionId`,
       );
     }
   }

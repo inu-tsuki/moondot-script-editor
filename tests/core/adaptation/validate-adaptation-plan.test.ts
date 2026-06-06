@@ -280,4 +280,124 @@ describe('validateAdaptationPlan', () => {
       expect(result.error?.reason).toBe('schema');
     });
   });
+
+  describe('SceneCard required fields', () => {
+    it('rejects a SceneCard missing pacing', () => {
+      const plan = makeValidPlan();
+      const brokenCards = plan.sceneOutline.map((card) => {
+        const rest = { ...card };
+        delete (rest as Record<string, unknown>).pacing;
+        return rest;
+      });
+      const result = validateAdaptationPlan(
+        { ...plan, sceneOutline: brokenCards },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('schema');
+    });
+
+    it('rejects a SceneCard with empty sourceRefs', () => {
+      const plan = makeValidPlan();
+      const brokenCards = plan.sceneOutline.map((card) => ({
+        ...card,
+        sourceRefs: [],
+      }));
+      const result = validateAdaptationPlan(
+        { ...plan, sceneOutline: brokenCards },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('schema');
+    });
+
+    it('rejects a SceneCard with sourceRef missing kind', () => {
+      const plan = makeValidPlan();
+      const brokenCards = [
+        {
+          ...plan.sceneOutline[0],
+          sourceRefs: [{ sourceId: plan.sceneOutline[0].sourceRefs[0].sourceId }],
+        },
+        ...plan.sceneOutline.slice(1),
+      ];
+      const result = validateAdaptationPlan(
+        { ...plan, sceneOutline: brokenCards },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('schema');
+    });
+  });
+
+  describe('question / answer reference integrity', () => {
+    it('rejects a recommendedOptionId not in options', () => {
+      const plan = makeValidPlan();
+      const brokenQuestions = plan.adaptationQuestions.map((q) => ({
+        ...q,
+        recommendedOptionId: 'nonexistent_option',
+      }));
+      const result = validateAdaptationPlan(
+        { ...plan, adaptationQuestions: brokenQuestions },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('semantic');
+    });
+
+    it('rejects an answer with invalid source', () => {
+      const plan = makeValidPlan();
+      const brokenAnswers = plan.questionAnswers.map((a) => ({
+        ...a,
+        source: 'unknown',
+      }));
+      const result = validateAdaptationPlan(
+        { ...plan, questionAnswers: brokenAnswers },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('schema');
+    });
+
+    it('rejects an answer referencing a non-existent question', () => {
+      const plan = makeValidPlan();
+      const brokenAnswers = [
+        {
+          questionId: 'question_ghost',
+          optionId: 'compress_for_conflict',
+          source: 'recommended' as const,
+        },
+      ];
+      const result = validateAdaptationPlan(
+        { ...plan, questionAnswers: brokenAnswers },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('semantic');
+    });
+
+    it('rejects an answer referencing a non-existent option', () => {
+      const plan = makeValidPlan();
+      const answerQuestionId = plan.adaptationQuestions[0]?.id ?? 'question_001';
+      const brokenAnswers = [
+        {
+          questionId: answerQuestionId,
+          optionId: 'option_ghost',
+          source: 'recommended' as const,
+        },
+      ];
+      const result = validateAdaptationPlan(
+        { ...plan, questionAnswers: brokenAnswers },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('semantic');
+    });
+  });
 });

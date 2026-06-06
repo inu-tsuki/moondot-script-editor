@@ -302,6 +302,9 @@ function App() {
   const generateSceneOutline = async () => {
     const runId = crypto.randomUUID();
     latestRunIdRef.current = runId;
+    // Clear previous plan immediately so stale outline is not displayed or confirmed.
+    setAdaptationPlan(undefined);
+    setAdaptationTrace([]);
 
     try {
       const messages = buildNovelAdaptationPrompt(workingDocument, adaptationPreferences);
@@ -326,6 +329,9 @@ function App() {
 
       if (!validated.plan) {
         // Schema or semantic failure — plan is NOT written to state.
+        // Clear any previous plan so stale outline is not displayed.
+        setAdaptationPlan(undefined);
+        setAdaptationTrace([]);
         setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
         setExportFeedback('');
         setOutputTab('outline');
