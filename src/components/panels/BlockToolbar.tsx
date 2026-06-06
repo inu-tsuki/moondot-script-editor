@@ -48,7 +48,7 @@ export function BlockToolbar({
   };
 
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-row gap-0.5">
       <Button
         disabled={blockIndex === 0}
         onClick={() => onEdit({ type: 'move-block', sceneId, blockId, direction: 'up' })}
@@ -78,7 +78,7 @@ export function BlockToolbar({
           <Plus size={14} />
         </Button>
         {showInsertMenu ? (
-          <div className="absolute right-full top-0 z-10 mr-1 flex flex-col rounded-md border border-[#cfc7ba] bg-white py-1 shadow-sm">
+          <div className="absolute left-0 top-full z-10 mt-1 flex flex-col rounded-md border border-[#cfc7ba] bg-white py-1 shadow-sm">
             {blockTypes.map((type) => {
               const disabled = type === 'dialogue' && hasNoCharacters(characters);
               return (

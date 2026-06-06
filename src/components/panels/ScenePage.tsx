@@ -41,7 +41,7 @@ const manuscriptText =
 
 const manuscriptTextarea = `${manuscriptText} resize-none`;
 
-const headingFieldClass = `${manuscriptFieldInline} font-extrabold uppercase tracking-wide text-[#7b6651]`;
+const headingInputClass = `${manuscriptFieldInline} font-extrabold uppercase tracking-wide text-[#7b6651] max-w-full`;
 
 const locationTypeOptions = [
   { value: 'INT', label: 'INT.' },
@@ -119,9 +119,9 @@ export function ScenePage({
     return (
       <div
         key={block.id}
-        className={`group grid grid-cols-[32px_1fr_auto] items-start gap-x-2 ${
+        className={`group grid grid-cols-[24px_1fr] min-[761px]:grid-cols-[32px_1fr_auto] items-start gap-x-2 ${
           isSelected ? 'bg-[#f4f1ea]' : ''
-        } -mx-10 rounded px-10 transition-colors`}
+        } -mx-4 rounded px-4 min-[761px]:-mx-10 min-[761px]:px-10 transition-colors`}
       >
         {/* Left gutter: selection handle */}
         <button
@@ -152,9 +152,9 @@ export function ScenePage({
           {editor}
         </div>
 
-        {/* Right gutter: toolbar */}
+        {/* Right gutter: toolbar (spans full width below content on narrow screens) */}
         <div
-          className={`pt-0.5 transition-opacity ${
+          className={`col-span-full min-[761px]:col-span-1 pt-0.5 transition-opacity ${
             isSelected ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
           }`}
         >
@@ -195,7 +195,7 @@ export function ScenePage({
           </select>
           <input
             aria-label="Location"
-            className={headingFieldClass}
+            className={`${headingInputClass} w-[12ch]`}
             onChange={(e) =>
               onEdit({
                 type: 'update-scene-heading',
@@ -209,7 +209,7 @@ export function ScenePage({
           <span>-</span>
           <input
             aria-label="Time of day"
-            className={headingFieldClass}
+            className={`${headingInputClass} w-[8ch]`}
             onChange={(e) =>
               onEdit({
                 type: 'update-scene-heading',

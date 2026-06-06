@@ -15,7 +15,9 @@ export function ManuscriptSurface({ children, header, ...props }: ManuscriptSurf
           {header}
         </header>
       ) : null}
-      <div className="flex-1 overflow-auto px-10 py-6">{children}</div>
+      <div className="flex-1 overflow-auto px-4 py-4 min-[761px]:px-10 min-[761px]:py-6">
+        {children}
+      </div>
     </article>
   );
 }
