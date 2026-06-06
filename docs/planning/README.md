@@ -8,6 +8,7 @@
 
 - `submission-fit-review.md`：brainstorm 与官方提交需求的适配审计、MVP 收口和开放问题。
 - `development-workflow.md`：PR、commit、第一次提交和后续开发节奏。
+- `engineering/frontend-test-harness.md`：phase 外的前端测试护栏规划，覆盖单元、组件和浏览器级 UI 回归测试。
 - `engineering/phase-1-technology-selection.md`：Phase 1 技术栈和脚手架边界。
 - `next-direction.md`：PR #9 之后的近期开发方向，优先级和 PR 拆分建议。
 - `reviews/README.md`：已合并 PR 的 review、回顾和后续动作。
@@ -19,7 +20,7 @@
 ## 子目录
 
 - `roadmap/`：阶段路线。这里只放阶段级文档，不按具体文件或组件拆。
-- `engineering/`：当前工程搭建、技术栈、目录结构和 PR 拆分建议。
+- `engineering/`：当前工程搭建、测试护栏、技术栈、目录结构和 PR 拆分建议。
 - `reviews/`：已合并 PR 的 review 和 follow-up 记录。
 
 ## 维护规则

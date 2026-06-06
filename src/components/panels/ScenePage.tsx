@@ -119,6 +119,7 @@ export function ScenePage({
         className={`group grid grid-cols-[24px_1fr] min-[761px]:grid-cols-[32px_1fr_auto] items-start gap-x-2 ${focusContainer} ${
           isSelected ? 'bg-[#f4f1ea]' : ''
         } -mx-4 rounded px-4 min-[761px]:-mx-10 min-[761px]:px-10`}
+        data-testid={`script-block-${block.id}`}
       >
         {/* Left gutter: selection handle */}
         <button
@@ -154,6 +155,7 @@ export function ScenePage({
           className={`col-span-full min-[761px]:col-span-1 pt-0.5 transition-opacity ${
             isSelected ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
           }`}
+          data-testid={`block-toolbar-${block.id}`}
         >
           <BlockToolbar
             blockId={block.id}
