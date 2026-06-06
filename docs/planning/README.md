@@ -9,6 +9,7 @@
 - `submission-fit-review.md`：brainstorm 与官方提交需求的适配审计、MVP 收口和开放问题。
 - `development-workflow.md`：PR、commit、第一次提交和后续开发节奏。
 - `engineering/phase-1-technology-selection.md`：Phase 1 技术栈和脚手架边界。
+- `next-direction.md`：PR #8 之后的近期开发方向，优先级和 PR 拆分建议。
 - `reviews/README.md`：已合并 PR 的 review、回顾和后续动作。
 - `roadmap/README.md`：72 小时作品挑战的阶段路线。
 - `TODO.md`：任务池和提交前检查。
@@ -24,6 +25,7 @@
 - 当前阶段权威顺序放在 `roadmap/`。
 - 开发节奏、PR 拆分和 commit 规范放在 `development-workflow.md`。
 - 当前工程选型和脚手架边界放在 `engineering/`。
+- 下一两个 PR 的优先级和实现切片放在 `next-direction.md`。
 - 已合并 PR 的不足、取舍和后续动作放在 `reviews/`。
 - 具体任务、PR 拆分和检查项放在 `TODO.md`。
 - 官方约束变化时，先更新 `../knowledge/requirements/`，再调整计划。

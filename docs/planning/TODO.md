@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-Phase 1：工程脚手架、基础 UI、`ScreenplayDocument` 类型、runtime validation 和 YAML projection 已建立。当前重点进入 source ingestion、改编 agent 骨架和基础导出交互。
+Phase 1：工程脚手架、基础 UI、`ScreenplayDocument` 类型、runtime validation、YAML projection、source ingestion 和 mock adaptation scaffold 已建立。当前重点从 review follow-up 转入 adaptation plan / scene outline 的中间层建设。
 
 ## 已完成
 
@@ -41,13 +41,17 @@ Phase 1：工程脚手架、基础 UI、`ScreenplayDocument` 类型、runtime va
 - [x] 建立小说改编 prompt / mock fallback 骨架。
 - [x] 明确 AI 改编应先生成 source analysis / scene outline / writer brief，再委托 Writer 写剧本初稿。
 - [x] 实现增加语义块的基础 UI。
+- [x] 建立长期版本控制方向，明确版本历史属于 workspace / project 外层。
+- [x] 建立 source ingestion 完整体规划，明确 chapter、segment、beat 和 coverage 的边界。
+- [x] 建立 PR #8 之后的下一阶段规划。
 
 ## 下一步
 
-- [ ] 以 PR 方式拆分第一组开发任务：脚手架、document / AST、文本输入、YAML 导出、语义块编辑。
-- [ ] 实现基础 YAML 导出交互。
+- [ ] 定义 `AdaptationPlan` / `SceneCard` / `AdaptationQuestion` 类型和 mock plan builder。
+- [ ] 让 mock screenplay generation 基于 adaptation plan，而不是直接从章节生成场景。
 - [ ] 设计生成前配置 UI：目标长度、风格、忠实度、目标媒介、是否压缩支线。
 - [ ] 实现 adaptation plan / scene outline 的预览与确认交互。
+- [ ] 实现基础 YAML 导出交互。
 - [ ] 实现可选 `exportDocumentToFountainLike` 预览投影。
 - [ ] 接入轻量模型调用层，将 mock fallback 替换为可配置 LLM agent。
 

@@ -223,3 +223,7 @@ function compileToRenpy(project: ScreenplayProject): string {
 **|怎么选型？**
 
 需要：模型调用，语法解析，“DSL编译”，编辑器体验……不同的领域加起来，适合怎么选型？或者说不同的领域本身就需要不同的选型？
+
+版本控制？
+
+-> 已沉淀到 `../architecture/version-control-direction.md`，长期放在 workspace / project 外层，不进入当前 `ScreenplayDocument` MVP。
