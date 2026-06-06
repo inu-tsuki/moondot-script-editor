@@ -1,6 +1,6 @@
 # Knowledge Base
 
-> 最近更新：2026-06-05
+> 最近更新：2026-06-06
 
 这里放长期事实、外部约束、Schema 设计和维护者需要反复查阅的上下文。它回答“系统必须满足什么，以及为什么可以这样理解”。
 
@@ -11,6 +11,7 @@
 - `product/vision.md`：月点长期产品愿景，以及它和当前 MVP 的边界。
 - `brainstorm/README.md`：产品脑暴和调研底稿索引。
 - `architecture/document-workspace-boundary.md`：`ScreenplayDocument` 与未来 workspace/project/store 的长期拆分边界。
+- `architecture/agent-workflow-research.md`：主流 agent / workflow 框架调研，以及它对月点分阶段改编工作流的影响。
 - `architecture/screenplay-ast-contract.md`：`ScreenplayDocument` 是核心模型，`script: ScreenplayAst` 是脚本树，YAML 是官方要求的序列化表示。
 - `architecture/screenplay-ast-structure.md`：`ScreenplayDocument` v0.1 与内部 `ScreenplayAst` 的节点结构和实现切片。
 - `architecture/screenplay-model-direction.md`：从 brainstorm 收敛出的剧本数据模型和导出方向。

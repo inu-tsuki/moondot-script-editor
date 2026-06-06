@@ -1,9 +1,9 @@
 # Next Direction
 
 > 最近更新：2026-06-06  
-> 状态：PR #8 之后的近期规划。
+> 状态：Phase 2 启动规划，吸收 agent workflow 调研结论。
 
-本文用于承接 review follow-up 之后的下一阶段开发。它不替代 roadmap；它只回答“下一两个 PR 先做什么”。
+本文用于承接 review follow-up 与 agent workflow 调研之后的下一阶段开发。它不替代 roadmap；它只回答“下一两个 PR 先做什么”。阶段级边界见 `roadmap/phase-2-adaptation-workflow.md`。
 
 ## 当前基线
 
@@ -17,10 +17,9 @@
 - mock adaptation scaffold。
 - 基础语义块编辑。
 - PR #3-#5 review 文档。
-
-正在处理：
-
-- PR #8：review follow-up 修正，包括 diagnostics 去重、source guard、YAML 换行标准化、block ID factory 统一。
+- PR #8 review follow-up 修正。
+- PR #9 长期版本控制、source ingestion 完整体和下一阶段规划文档。
+- Phase 2 adaptation workflow 规划。
 
 ## 近期原则
 
@@ -32,7 +31,7 @@
 - 用户还没有机会确认目标长度、风格、忠实度和删减策略。
 - 当前 mock 直接写剧本，仍不足以体现“先规划，再写作”的产品形态。
 
-更稳的方向是先把 Adaptation Architect 的中间产物做出来。
+更稳的方向是先把 Adaptation Architect 的中间产物做出来。外部 agent workflow 调研也强化了这个判断：成熟 agent 产品通常把 LLM 放进显式 workflow、human review、trace 和 guardrail 边界里，而不是让一个万能 agent 一步到位。
 
 推荐近期主线：
 
@@ -46,6 +45,8 @@ sourceText
   -> writer draft
 ```
 
+本阶段暂不引入完整 agent framework。先用 TypeScript typed functions、prompt builders、mock / future model adapter 和 validation 组成轻量工作流；等出现后端长任务、checkpoint、跨会话审批或外部工具执行，再评估 LangGraph、Microsoft Agent Framework 等 runtime。
+
 ## 推荐 PR 顺序
 
 ### PR A：Adaptation Plan 类型与 mock
@@ -55,6 +56,7 @@ sourceText
 建议内容：
 
 - 新增 `AdaptationPlan`、`SceneCard`、`AdaptationQuestion` 类型。
+- 新增轻量 `GenerationTrace` / `GenerationRun` 结构，至少记录 plan 和 writer 两阶段。
 - 新增 `createMockAdaptationPlan(document)`。
 - `adaptNovelToScreenplayMock` 改为使用 mock plan 生成场景。
 - trace 中显式保留 plan / writer 两阶段。
@@ -64,6 +66,7 @@ sourceText
 - build / lint 通过。
 - mock 仍可生成剧本。
 - 代码中能单独拿到 scene outline。
+- mock trace 能解释场景来自哪些 source refs。
 
 ### PR B：生成前配置 UI
 
@@ -152,5 +155,6 @@ sourceText
 - 分章器只是 source anchor。
 - scene outline 才是改编中间层。
 - Writer 不直接面对整部小说，而是面对 scene-level brief。
+- Human review 的第一个自然暂停点是 scene outline 确认。
 
 这一步完成后，再做配置 UI 和 outline 预览会很自然。

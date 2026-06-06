@@ -1,9 +1,11 @@
 # AI Adaptation Workflow
 
 > 最近更新：2026-06-06  
-> 状态：Phase 1 改编链路规划，用于后续模型调用层和 UI 工作流。
+> 状态：Phase 2 改编工作流规划，用于后续模型调用层和 UI 工作流。
 
 本文定义月点从创作来源到剧本 AST 的 AI 工作流。它参考了父目录 `ai-visual-novel-engine` 的分阶段叙事生成方式，但目标不是 VN runtime scene，而是可编辑、可校验、可导出的 `ScreenplayDocument`。
+
+外部 agent / workflow 框架调研见 `agent-workflow-research.md`。本工作流吸收其中的共识：workflow 优先于万能 agent，human review 是工作流节点，trace 和 validation 是生成链路的一部分。
 
 ## 核心判断
 
@@ -16,7 +18,9 @@
 - 用户往往还没有决定目标长度、风格、忠实度、目标媒介、保留/删减支线等关键约束。
 - 长文本直接交给 Writer 容易产出“像摘要的剧本”或“带对白的小说”，而不是可拍摄场景。
 
-因此 Phase 1 应采用分阶段工作流：先分析和规划，再由 Writer 根据更窄的 brief 写初稿。
+因此当前改编链路应采用分阶段工作流：先分析和规划，再由 Writer 根据更窄的 brief 写初稿。
+
+本工作流采用混合决策：用户先给少量基础偏好，Architect 再根据小说内容提出少量关键问题。基础偏好提供稳定方向，Architect questions 补足文本特定的创作取舍。
 
 ## 分章器是否仍有用
 
@@ -51,6 +55,46 @@ Novel text
 
 `scene.sourceRefs` 和 `block.sourceRefs` 是多对多关系。一个 scene 可以引用多个章节，多个 scene 也可以引用同一个章节。
 
+## 配置与提问的关系
+
+月点不应在“生成前配置”和“Architect 提问”之间二选一。两者职责不同：
+
+- `AdaptationPreferences` 是用户主动给出的基础方向。
+- `AdaptationQuestion` 是 Architect 读完来源后提出的文本相关问题。
+- `WriterBrief` 是确认过 plan 之后，交给 Writer 执行的单场写作指令。
+
+`AdaptationPreferences` 不只是 Writer 配置。目标媒介、目标长度、忠实度、风格、是否允许合并角色、删减支线和重排时间线，都会影响 scene 边界和改编策略，因此应在 Architect 生成 plan 前进入工作流。
+
+建议的基础偏好：
+
+- 目标媒介：短剧/影视剧本、舞台化对白、视觉小说分支等。
+- 目标长度：3 分钟短剧、10 场左右、一集大纲等。
+- 忠实度：忠于原文、保留核心重写、自由改编。
+- 风格与节奏：现实主义、悬疑、轻喜剧、冷峻、浪漫、快节奏、慢节奏等。
+- 改编权限：是否允许合并角色、删减支线、压缩时间线、重排事件顺序。
+
+Architect questions 则只处理“读过文本后才知道该问什么”的判断。例如：
+
+- 是否保留某条支线。
+- 是否把两个章节合并成同一场情绪冲突。
+- 是否提前揭示某个秘密。
+- 是否把内心独白改成角色之间的对抗。
+
+这些问题必须有默认推荐答案。用户可以逐条回答，也可以直接采用推荐方案继续。MVP 中 questions 建议控制在 0-3 个，避免把工作流变成漫长问答。
+
+混合方案的收益：
+
+- UI 和 mock 更稳定，不依赖 agent 临场发挥才能开始。
+- 关键创作判断能被 trace 记录和复盘。
+- Architect 能提出文本相关问题，避免固定表单过于模板化。
+- Writer 拿到的是已确认的 scene-level brief，而不是完整小说和一堆未决问题。
+
+代价与约束：
+
+- 固定配置太多会让创作体验变成表单填报，因此 Phase 2 只保留少量高影响选项。
+- Architect 问题质量依赖模型能力，因此每个问题都要带推荐答案，且不能阻塞用户继续。
+- 如果用户跳过 questions，系统必须能用推荐方案生成可解释的 plan。
+
 ## 推荐工作流
 
 ### 1. Source Ingestion
@@ -62,9 +106,25 @@ Novel text
 - `NovelSource.chapters`
 - 章节数、空章节、未识别标题等 diagnostics。
 
-### 2. Source Analysis
+### 2. Baseline Preferences
 
-由 Adaptation Architect 读取章节，提取改编所需的语义材料。
+用户给出基础改编方向。这一步可以是轻量控件，不必做完整 wizard。
+
+输出建议：
+
+- `AdaptationPreferences`
+- 默认值来源和用户修改记录
+
+推荐默认值应服务于提交 MVP：
+
+- 目标媒介：短剧/影视线性剧本。
+- 目标长度：短片 / 少量场景。
+- 忠实度：保留核心重写。
+- 改编权限：允许压缩、合并和删减，但保留主要人物关系。
+
+### 3. Source Analysis
+
+由 Adaptation Architect 读取章节和 `AdaptationPreferences`，提取改编所需的语义材料。
 
 输出建议：
 
@@ -76,9 +136,9 @@ Novel text
 - 可外化的心理描写。
 - 潜在场景素材。
 
-### 3. Adaptation Questions
+### 4. Adaptation Questions
 
-先问用户，而不是急着写。
+Architect 提出少量文本相关问题，而不是急着写。
 
 常见问题：
 
@@ -89,18 +149,26 @@ Novel text
 - 重点：人物关系、反转、情绪爆发、世界观揭示。
 - 是否允许合并角色、删减支线、重排时间线。
 
-这些问题可以在 UI 中做成“生成前配置”，也可以由 agent 根据文本自动提出 2-3 个关键开放问题。
+基础方向应优先由 `AdaptationPreferences` 承担。Architect questions 只保留需要结合具体小说判断的问题，并且每个问题都应包含：
 
-### 4. Adaptation Plan / Scene Outline
+- `question`
+- `whyItMatters`
+- `options`
+- `recommendedAnswer`
+- `impact`
 
-Architect 根据来源分析和用户选择，生成剧本大纲，而不是最终剧本文本。
+### 5. Adaptation Plan / Scene Outline
+
+Architect 根据来源分析、基础偏好和用户回答生成剧本大纲，而不是最终剧本文本。
 
 输出建议：
 
 ```ts
 type AdaptationPlan = {
+  preferences: AdaptationPreferences;
   sourceAnalysis: SourceAnalysis;
   adaptationQuestions: AdaptationQuestion[];
+  questionAnswers: AdaptationQuestionAnswer[];
   adaptationOptions: AdaptationOption[];
   recommendedPlan: string;
   sceneOutline: SceneCard[];
@@ -126,9 +194,9 @@ sourceRefs: [ch_001, ch_002]
 dramaticPurpose: 把等待、信件真相和第一次情绪冲突压缩到同一场咖啡厅戏。
 ```
 
-### 5. Writer Delegation
+### 6. Writer Delegation
 
-Writer 不直接面对整部小说，而是面对 scene-level brief。
+Writer 不直接面对整部小说，也不负责解决未决的改编问题，而是面对已确认 plan 中的 scene-level brief。
 
 Writer brief 应包含：
 
@@ -143,7 +211,7 @@ Writer brief 应包含：
 
 输出为 `ScreenplayAst` 的 scene 或 scene patch。
 
-### 6. Validation / Revision
+### 7. Validation / Revision
 
 生成后运行校验和质量审查。
 
@@ -182,21 +250,39 @@ Writer brief 应包含：
 - 把 VN 的 `WorldState` / graph 简化为 `ScreenplayDocument`、source coverage map、characters 和 generation trace。
 - 暂不引入完整后端图谱，但保留 typed trace，为未来 agent 工具调用做准备。
 
-## Phase 1 实现边界
+## Phase 2 实现边界
 
 当前可做：
 
 - 保留 `parseNovelChapters`。
+- 建立 `AdaptationPreferences`、`AdaptationQuestion`、`AdaptationPlan` 和 `SceneCard` 的轻量类型。
 - 建立 adaptation prompt builder。
 - 建立 mock fallback，使 demo 可复现。
 - UI 中让“生成”触发 mock，并在 diagnostics 中标记 mock。
 - 文档明确真实流程需要“先规划，再写作”。
+- 增加 scene outline 确认点，避免 Writer 直接消费整部小说。
 
 后续模型调用层再做：
 
-- `generateAdaptationPlan(document, userPreference)`。
+- `generateAdaptationPlan(document, preferences, questionAnswers)`。
 - 让用户确认 plan 或调整目标。
 - `generateSceneDraft(sceneCard, document)`。
 - `validateAndRepairGeneratedDocument(document)`。
 
 MVP 可以先把 plan / writer 的 JSON contract 做轻，避免在第一版引入过重后端。
+
+## Agent runtime 边界
+
+当前提交阶段暂不引入完整 agent graph runtime。月点当前更需要稳定的 typed artifact，而不是后端 checkpoint 和多 agent 调度。
+
+当前实现可以先保持：
+
+```text
+typed function
+  -> prompt builder
+  -> mock / model adapter
+  -> validation
+  -> visible workflow state
+```
+
+后续只有在出现可恢复长任务、跨会话审批、外部工具执行或多人协作时，再评估 LangGraph、Microsoft Agent Framework 或类似 workflow runtime。

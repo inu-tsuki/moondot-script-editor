@@ -1,12 +1,13 @@
 # Architecture Knowledge
 
-> 最近更新：2026-06-05
+> 最近更新：2026-06-06
 
 这里收纳系统边界、数据模型方向和长期架构原则。它回答“这个工具的核心形状是什么”。
 
 ## 当前入口
 
 - `adaptation-workflow.md`：从小说/灵感来源到剧本 AST 的分阶段 AI 改编工作流。
+- `agent-workflow-research.md`：对 CrewAI、LangGraph、OpenAI Agents SDK、Microsoft Agent Framework / AutoGen 的 agent workflow 调研和对月点的架构结论。
 - `document-workspace-boundary.md`：`ScreenplayDocument` 与未来 workspace/project/store 的长期拆分边界。
 - `screenplay-ast-contract.md`：`ScreenplayDocument` 是核心模型，`script: ScreenplayAst` 是脚本树，YAML 是官方要求的序列化表示。
 - `screenplay-ast-structure.md`：`ScreenplayDocument` v0.1 与内部 `ScreenplayAst` 的节点结构和实现切片。

@@ -1,6 +1,6 @@
 # Roadmap
 
-> 最近更新：2026-06-05
+> 最近更新：2026-06-06
 
 这里保存 72 小时作品挑战的阶段路线。当前目标是围绕月点做出可运行、可演示、可提交的 AI 小说转剧本 MVP。
 
@@ -24,9 +24,9 @@
 
 ```text
 Phase 0: 文档和范围锁定
-  -> Phase 1: 工程脚手架与基础 UI
-  -> Phase 2: 小说输入、章节解析和 YAML 输出
-  -> Phase 3: AI 改编链路和 Schema 文档
+  -> Phase 1: 工程脚手架、文档模型、ingestion、YAML projection 和 mock scaffold
+  -> Phase 2: Adaptation Plan / Scene Outline 工作流
+  -> Phase 3: 真实模型调用、导出体验和 demo 强化
   -> Phase 4: Demo、README、提交材料和质量收口
 ```
 
@@ -45,11 +45,16 @@ Phase 0: 文档和范围锁定
 
 - README、docs 索引、需求文档、提交规则、产品愿景和开发流程可公开提交。
 
-### Phase 1：工程脚手架与基础 UI
+### Phase 1：工程脚手架、文档模型和基础能力
 
 - 建立可运行项目。
 - 支持输入或上传小说文本。
-- 展示章节识别结果和生成状态。
+- 展示章节识别结果、生成状态和 diagnostics。
+- 定义 `ScreenplayDocument` / `ScreenplayAst`。
+- 建立 runtime validation。
+- 建立 YAML projection。
+- 建立 mock adaptation scaffold。
+- 实现基础语义块编辑。
 - UI 命名保留 source / input 概念，但默认入口是 novel。
 - 主分支保持可运行。
 
@@ -58,35 +63,45 @@ Phase 0: 文档和范围锁定
 - 本地可以启动。
 - 首页直接进入月点工作台，而不是 landing page。
 - UI 有小说输入区、剧本工作区和输出/诊断区的基本布局。
-- 代码结构不要把未来灵感生成入口排除在外。
-
-### Phase 2：小说输入、章节解析和 YAML 输出
-
-- 支持 3 个章节以上文本，证明长文本和多章节改编能力；普通试跑不限制只能使用 3+ 章节。
-- 识别章节边界。
-- 生成最小结构化剧本 YAML。
-- 提供复制或下载 YAML 的能力。
-- 在 document/YAML 中保留 `sourceType: "novel"`，为未来 `inspiration_seed`、`outline` 等入口留扩展空间。
-
-完成标准：
-
 - 输入样例能解析出章节。
 - 可以生成最小 `ScreenplayDocument`。
-- 可以导出符合草案结构的 YAML。
+- 可以生成符合草案结构的 YAML projection。
+- 代码结构不要把未来灵感生成入口排除在外。
 
-### Phase 3：AI 改编链路和 Schema 文档
+状态：已完成基础切片，后续只做必要 follow-up。
 
-- 接入 AI 生成或可替代的本地 mock 管线。
-- 生成场景、人物、对白、动作等结构。
-- 完成 `docs/knowledge/schema/script-yaml-schema.md`。
-- README 链接到 Schema 文档。
-- 检查 README 和 Schema 文档没有把长期 IDE 能力写成当前 MVP 承诺。
+### Phase 2：Adaptation Plan / Scene Outline 工作流
+
+- 建立 `AdaptationPreferences`、`SourceAnalysis`、`AdaptationQuestion`、`AdaptationPlan`、`SceneCard` 和 `GenerationTrace` 的轻量 contract。
+- 让 mock adaptation 先生成 scene outline，再由 Writer 根据 scene-level brief 写初稿。
+- 支持一个 scene 引用多个章节，证明 scene 不是 chapter 的机械映射。
+- 建立 scene outline 的 human review 确认点。
+- 提供复制或下载 YAML 的能力，保证最终产物仍来自 `ScreenplayDocument`。
 
 完成标准：
 
-- 真实模型调用或 mock fallback 至少一条链路稳定可演示。
-- 生成结果进入 `ScreenplayDocument`，而不是直接拼 YAML。
-- Schema 文档解释字段设计原因。
+- 用户可以先看到改编方案，再生成剧本初稿。
+- 生成结果进入 `ScreenplayDocument.script`，而不是直接拼 YAML。
+- trace 能解释 plan 和 writer 两阶段。
+- demo 能展示三章以上小说输入、跨章节场景计划、语义块编辑和 YAML 导出。
+
+详细计划见 `phase-2-adaptation-workflow.md`。
+
+状态：当前启动。
+
+### Phase 3：真实模型调用、导出体验和 demo 强化
+
+- 接入真实模型调用层，mock fallback 保留。
+- 强化 prompt contract 和输出修复策略。
+- 完成导出交互和提交演示路径。
+- README 链接到 Schema 文档、运行方式和 demo 视频。
+- 检查 README、Schema 文档和 demo 没有把长期 IDE 能力写成当前 MVP 承诺。
+
+完成标准：
+
+- 真实模型调用或 mock fallback 都有稳定演示路径。
+- 生成结果通过 validation。
+- Schema 文档解释字段设计原因，并与 YAML projection 保持一致。
 
 ### Phase 4：Demo、README、提交材料和质量收口
 
@@ -121,4 +136,7 @@ Phase 0: 文档和范围锁定
 - `../../knowledge/product/vision.md`
 - `../../knowledge/architecture/source-ingestion-complete.md`
 - `../../knowledge/architecture/version-control-direction.md`
+- `../../knowledge/architecture/adaptation-workflow.md`
+- `../../knowledge/architecture/agent-workflow-research.md`
+- `phase-2-adaptation-workflow.md`
 - `../../planning/submission-fit-review.md`

@@ -118,7 +118,7 @@ Fountain-like text
 
 `parseNovelChapters` 只负责把自由文本摄取为可追溯的章节来源。它可以识别章节标题、保留章节正文，并产生章节数 diagnostics；它不负责把小说“解析”为场景、对白或动作块。
 
-小说到剧本的转换属于改编问题，不是文本语法解析问题。Phase 1 应建立 prompt / agent 输入输出协议，并保留 mock fallback 让 demo 可复现；真实转换需要由 LLM 完成规划、改写、结构化输出和修复。
+小说到剧本的转换属于改编问题，不是文本语法解析问题。当前改编工作流应建立 prompt / agent 输入输出协议，并保留 mock fallback 让 demo 可复现；真实转换需要由 LLM 完成规划、改写、结构化输出和修复。
 
 只有当输入本身已经是结构化剧本格式，例如 Fountain-like 文本时，才适合使用确定性 parser 直接导入为 AST。这个 parser 应放在 importer 边界，而不是复用小说 source ingestion。
 
@@ -278,12 +278,7 @@ type SourceRef = {
 MVP 使用 discriminated union。
 
 ```ts
-type ScriptBlock =
-  | ActionBlock
-  | DialogueBlock
-  | NarrationBlock
-  | TransitionBlock
-  | NoteBlock;
+type ScriptBlock = ActionBlock | DialogueBlock | NarrationBlock | TransitionBlock | NoteBlock;
 
 type BaseBlock = {
   id: BlockId;
