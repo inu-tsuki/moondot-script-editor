@@ -122,7 +122,7 @@ export const buildNovelAdaptationPrompt = (
         '关键创作约束：',
         '- sourceRefs[].sourceId 只能引用上方「来源章节」列表中的 chapter id。',
         '- sceneOutline 至少包含 1 个 scene card；鼓励跨章节合并（1 个 scene 引用多个章节）。',
-        '- 如果不能形成可执行 scene outline，返回 schema 内允许的最小有效 plan。',
+        '- 如果无法为来源章节形成可执行 scene outline，不要编造计划。',
         '- 不要输出解释文字，只输出 JSON。',
       ].join('\n'),
     },

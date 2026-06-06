@@ -13,7 +13,7 @@ import {
   YamlExportPanel,
 } from './components/panels';
 import {
-  adaptationPlanSchema,
+  ADAPTATION_PLAN_SCHEMA_ID,
   buildNovelAdaptationPrompt,
   buildNovelSceneWriterPrompt,
   defaultAdaptationPreferences,
@@ -313,7 +313,7 @@ function App() {
         messages,
         stage: 'adaptation_planning',
         runId,
-        responseSchema: adaptationPlanSchema,
+        structuredOutput: { schemaId: ADAPTATION_PLAN_SCHEMA_ID },
       });
 
       // Discard stale results (user changed source while request was in flight).
