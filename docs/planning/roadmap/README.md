@@ -110,13 +110,15 @@ Phase 0: 文档和范围锁定
 
 详细计划见 `phase-2-5-workbench-ui-foundation.md`。
 
-状态：基础切片已完成，进入 Phase 3 前只保留文档同步、e2e 运行路径确认和质量收口。
+状态：基础切片已完成，文档同步、e2e 运行路径确认和 Phase 3 正式规划已完成。
 
 ### Phase 3：真实模型调用、导出体验和 demo 强化
 
+- 定义 mock fallback 和真实模型共用的 model adapter contract。
 - 接入真实模型调用层，mock fallback 保留。
-- 强化 prompt contract 和输出修复策略。
+- 强化 structured prompt contract、输出解析和修复策略。
 - 将 Architect 解析 / 提问 / writer brief 与 Writer 初稿生成的 contract 固化到代码。
+- 建立安全 server-side / local proxy 边界，避免 API key 暴露在浏览器端。
 - 在 output tabs 中展示模型 trace、失败恢复和 diagnostics。
 - 完成导出交互和提交演示路径。
 - README 链接到 Schema 文档、运行方式和 demo 视频。
@@ -128,7 +130,9 @@ Phase 0: 文档和范围锁定
 - 生成结果通过 validation。
 - Schema 文档解释字段设计原因，并与 YAML projection 保持一致。
 
-状态：下一产品阶段。
+详细计划见 `phase-3-model-workflow.md`。
+
+状态：正式规划启动。
 
 ### Phase 4：Demo、README、提交材料和质量收口
 
@@ -167,4 +171,5 @@ Phase 0: 文档和范围锁定
 - `../../knowledge/architecture/agent-workflow-research.md`
 - `phase-2-adaptation-workflow.md`
 - `phase-2-5-workbench-ui-foundation.md`
+- `phase-3-model-workflow.md`
 - `../../planning/submission-fit-review.md`

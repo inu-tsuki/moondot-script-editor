@@ -10,11 +10,12 @@
 - `development-workflow.md`：PR、commit、第一次提交和后续开发节奏。
 - `engineering/frontend-test-harness.md`：phase 外的前端测试护栏规划，覆盖单元、组件和浏览器级 UI 回归测试。
 - `engineering/phase-1-technology-selection.md`：Phase 1 技术栈和脚手架边界。
-- `next-direction.md`：Phase 2.5 完成后的近期开发方向、Phase 3 启动前收口和 PR 拆分建议。
+- `next-direction.md`：Phase 3 启动后的近期开发方向和第一组模型工作流 PR 拆分建议。
 - `reviews/README.md`：已合并 PR 的 review、回顾和后续动作。
 - `roadmap/README.md`：72 小时作品挑战的阶段路线。
 - `roadmap/phase-2-adaptation-workflow.md`：Phase 2 的 Adaptation Plan / Scene Outline 工作流规划。
 - `roadmap/phase-2-5-workbench-ui-foundation.md`：Phase 2.5 工作台 UI 地基规划，位于真实模型调用层之前。
+- `roadmap/phase-3-model-workflow.md`：Phase 3 模型调用、structured output、mock fallback、trace 和 demo hardening 规划。
 - `TODO.md`：任务池和提交前检查。
 
 ## 子目录

@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-Phase 2.5 的 Workbench UI Foundation 已完成基础切片。当前处于 Phase 3 启动前的状态同步和质量收口：先确保文档、测试护栏和真实代码一致，再进入真实模型调用层、prompt contract、mock fallback 和 demo 强化。
+Phase 3 正式规划已启动。当前重点是把 Phase 2 的 mock adaptation workflow 推进为 mock fallback 和真实模型共用的 typed model workflow：先落 model adapter contract，再落 Architect / Writer structured output、server-side 调用边界、trace、repair 和 demo hardening。
 
 ## 已完成
 
@@ -64,14 +64,17 @@ Phase 2.5 的 Workbench UI Foundation 已完成基础切片。当前处于 Phase
 - [x] 完成工业化手稿 UI polish，让 source / outline / YAML / diagnostics 成为辅助区。
 - [x] 作为 phase 外 engineering track，引入前端测试护栏：Vitest / Testing Library / Playwright。
 - [x] 更新 README、roadmap、next direction、review 索引和测试说明，让文档与 #24-#27 合并后的代码状态一致。
+- [x] 复核 `pnpm e2e` 的本地运行路径，明确代理环境下使用 `NO_PROXY=127.0.0.1,localhost`。
+- [x] 启动 Phase 3 正式规划，定义模型调用层、structured output、mock fallback、server-side secret 边界、trace 和 demo hardening 的 PR 顺序。
 
 ## 下一步
 
-- [ ] 复核 `pnpm e2e` 的本地运行路径：确保 5173 由当前分支的 Vite server 提供，并记录任何环境可见性问题。
-- [ ] 启动 Phase 3 规划：定义模型调用层的配置边界、请求/响应 envelope、mock fallback 和错误恢复策略。
-- [ ] 固化 Architect / Writer prompt contract：Architect 负责解析、提问和 writer brief，Writer 根据确认后的 brief 生成剧本初稿。
-- [ ] 设计模型 trace / diagnostics 在 output tabs 中的展示方式，避免和 YAML、outline 互相挤压。
-- [ ] 评估是否在 Phase 3 内补 `exportDocumentToFountainLike` 预览投影，或继续作为非必要 projection 暂缓。
+- [ ] 实现 Phase 3.1 model adapter contract，让 mock fallback 和未来真实模型共用 `ModelCallRequest` / `ModelCallResult` / `ModelCallError`。
+- [ ] 实现 Phase 3.2 Structured Architect contract，为 `SourceAnalysis`、`AdaptationQuestion[]`、`SceneCard[]` 和 `recommendedPlan` 建立 schema / runtime validation。
+- [ ] 实现 Phase 3.3 WriterBrief and scene draft contract，让 Writer 只根据确认后的 scene-level brief 生成可验证 scene patch。
+- [ ] 建立 Phase 3.4 local model proxy / server boundary，避免 API key 暴露在浏览器端。
+- [ ] 设计 Phase 3.5 model trace / diagnostics 在 output tabs 中的展示方式，避免和 YAML、outline 互相挤压。
+- [ ] 做 Phase 3.6 repair and fallback hardening，覆盖 parse、schema、semantic validation、network 和 config failures。
 - [ ] 准备正式 demo 路径：3+ 章节输入、改编方案确认、语义块编辑、YAML 导出、Schema 文档链接。
 
 ## 提交前检查
