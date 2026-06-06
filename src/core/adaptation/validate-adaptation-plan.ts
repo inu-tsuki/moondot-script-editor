@@ -1,6 +1,7 @@
 import type { ModelCallError, ModelCallErrorReason } from '../model';
 import type { Diagnostic } from '../validation';
-import type { AdaptationPlan, SourceAnalysis } from './types';
+import { adaptationPlanSchema } from './adaptation-plan-schema';
+import type { AdaptationPlan } from './types';
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -22,306 +23,158 @@ export type ValidateAdaptationPlanOptions = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const diag = (code: string, message: string, path: string): Diagnostic => ({
-  severity: 'error',
-  code,
-  message,
-  path,
-});
-
-const fail = (
-  reason: ModelCallErrorReason,
+const diag = (
+  severity: Diagnostic['severity'],
   code: string,
   message: string,
   path: string,
+): Diagnostic => ({ severity, code, message, path });
+
+const fail = (
+  reason: ModelCallErrorReason,
+  diagnostics: Diagnostic[],
+  message: string,
 ): ValidateAdaptationPlanResult => ({
   plan: null,
-  diagnostics: [diag(code, message, path)],
+  diagnostics,
   error: { reason, message },
 });
 
-const schemaFail = (code: string, message: string, path: string) =>
-  fail('schema', code, message, path);
-
-const semanticFail = (code: string, message: string, path: string) =>
-  fail('semantic', code, message, path);
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((item) => typeof item === 'string');
-
-const ensureArray = (value: unknown, field: string, path: string) => {
-  if (!Array.isArray(value)) {
-    return schemaFail(
-      'invalid_adaptation_plan_field',
-      `${field} must be an array.`,
-      `${path}.${field}`,
-    );
-  }
-  return null;
-};
-
-const ensureString = (value: unknown, field: string, path: string) => {
-  if (typeof value !== 'string') {
-    return schemaFail(
-      'invalid_adaptation_plan_field',
-      `${field} must be a string.`,
-      `${path}.${field}`,
-    );
-  }
-  return null;
-};
-
-const ensureObject = (value: unknown, field: string, path: string) => {
-  if (!isObject(value)) {
-    return schemaFail(
-      'invalid_adaptation_plan_field',
-      `${field} must be an object.`,
-      `${path}.${field}`,
-    );
-  }
-  return null;
-};
-
 // ---------------------------------------------------------------------------
-// Shared sourceRef validator for novel Architect
+// Zod error → diagnostics
 // ---------------------------------------------------------------------------
 
-const VALID_CHAPTER_KINDS = new Set(['chapter']);
-
-const validateChapterSourceRefs = (
-  refs: unknown[],
-  knownChapterIds: Set<string>,
-  itemPath: string,
-  itemLabel: string,
-): ValidateAdaptationPlanResult | null => {
-  for (let i = 0; i < refs.length; i++) {
-    const ref = refs[i];
-    if (!isObject(ref)) {
-      return schemaFail(
-        'invalid_source_ref',
-        `${itemLabel} sourceRefs[${i}] must be an object with sourceId and kind.`,
-        `${itemPath}.sourceRefs[${i}]`,
-      );
-    }
-    const refObj = ref as Record<string, unknown>;
-    const sourceId = refObj.sourceId;
-    if (typeof sourceId !== 'string') {
-      return schemaFail(
-        'invalid_source_ref',
-        `${itemLabel} sourceRefs[${i}].sourceId must be a string.`,
-        `${itemPath}.sourceRefs[${i}].sourceId`,
-      );
-    }
-    if (!VALID_CHAPTER_KINDS.has(refObj.kind as string)) {
-      return schemaFail(
-        'invalid_source_ref_kind',
-        `${itemLabel} sourceRefs[${i}].kind must be "chapter" for novel Architect.`,
-        `${itemPath}.sourceRefs[${i}].kind`,
-      );
-    }
-    if (!knownChapterIds.has(sourceId)) {
-      return semanticFail(
-        'unknown_source_ref',
-        `${itemLabel} "${itemPath}" references unknown chapter: ${sourceId}`,
-        `${itemPath}.sourceRefs[${i}].sourceId`,
-      );
-    }
-  }
-  return null;
-};
-
-// ---------------------------------------------------------------------------
-// Sub-validators
-// ---------------------------------------------------------------------------
-
-const VALID_PACING_VALUES = new Set(['slow', 'balanced', 'fast']);
-const VALID_LOCATION_TYPES = new Set(['INT', 'EXT', 'INT_EXT']);
-
-const validateSourceAnalysis = (
-  candidate: unknown,
-  path: string,
-): ValidateAdaptationPlanResult | null => {
-  const err = ensureObject(candidate, 'sourceAnalysis', path);
-  if (err) return err;
-
-  const obj = candidate as Record<string, unknown>;
-  const arrayFields: (keyof SourceAnalysis)[] = [
-    'coreEvents',
-    'characterArcs',
-    'timeline',
-    'mustKeeps',
-    'compressibleParts',
-    'exteriorizationNotes',
-  ];
-
-  for (const field of arrayFields) {
-    if (!isStringArray(obj[field])) {
-      return schemaFail(
-        'invalid_source_analysis_field',
-        `sourceAnalysis.${field} must be a string array.`,
-        `${path}.${field}`,
-      );
-    }
-  }
-
-  return null;
-};
-
-const validateSceneCard = (
-  candidate: unknown,
-  index: number,
-  knownChapterIds: Set<string>,
-): ValidateAdaptationPlanResult | null => {
-  const cardPath = `sceneOutline[${index}]`;
-  const err = ensureObject(candidate, `sceneOutline[${index}]`, cardPath);
-  if (err) return err;
-
-  const card = candidate as Record<string, unknown>;
-
-  // Required string fields
-  for (const field of ['id', 'title', 'dramaticPurpose', 'writerBrief'] as const) {
-    const fieldErr = ensureString(card[field], field, cardPath);
-    if (fieldErr) return fieldErr;
-  }
-
-  // pacing (union check)
-  if (typeof card.pacing !== 'string' || !VALID_PACING_VALUES.has(card.pacing)) {
-    return schemaFail(
-      'invalid_pacing',
-      `pacing must be one of: ${[...VALID_PACING_VALUES].join(', ')}.`,
-      `${cardPath}.pacing`,
-    );
-  }
-
-  // estimatedBlocks
-  if (typeof card.estimatedBlocks !== 'number' || !Number.isFinite(card.estimatedBlocks)) {
-    return schemaFail(
-      'invalid_scene_card_field',
-      `estimatedBlocks must be a finite number.`,
-      `${cardPath}.estimatedBlocks`,
-    );
-  }
-
-  // sourceRefs
-  if (!Array.isArray(card.sourceRefs)) {
-    return schemaFail(
-      'invalid_scene_card_field',
-      'sourceRefs must be an array.',
-      `${cardPath}.sourceRefs`,
-    );
-  }
-  if ((card.sourceRefs as unknown[]).length === 0) {
-    return schemaFail(
-      'empty_source_refs',
-      'sourceRefs must contain at least one reference.',
-      `${cardPath}.sourceRefs`,
-    );
-  }
-  const srcErr = validateChapterSourceRefs(
-    card.sourceRefs as unknown[],
-    knownChapterIds,
-    cardPath,
-    `SceneCard "${card.title ?? card.id ?? 'unknown'}"`,
+const zodIssuesToDiagnostics = (
+  issues: ReadonlyArray<{ code: string; message: string; path: PropertyKey[] }>,
+): Diagnostic[] =>
+  issues.map((issue) =>
+    diag(
+      'error',
+      `zod_${issue.code}`,
+      issue.message,
+      `adaptationPlan.${issue.path.map(String).join('.')}`,
+    ),
   );
-  if (srcErr) return srcErr;
 
-  // headingSuggestion
-  const headingErr = ensureObject(card.headingSuggestion, 'headingSuggestion', cardPath);
-  if (headingErr) return headingErr;
-  const heading = card.headingSuggestion as Record<string, unknown>;
-  if (typeof heading.locationType !== 'string' || !VALID_LOCATION_TYPES.has(heading.locationType)) {
-    return schemaFail(
-      'invalid_scene_heading',
-      `headingSuggestion.locationType must be one of: ${[...VALID_LOCATION_TYPES].join(', ')}.`,
-      `${cardPath}.headingSuggestion.locationType`,
-    );
-  }
-  if (typeof heading.location !== 'string') {
-    return schemaFail(
-      'invalid_scene_heading',
-      'headingSuggestion.location must be a string.',
-      `${cardPath}.headingSuggestion.location`,
-    );
-  }
-  if (typeof heading.timeOfDay !== 'string') {
-    return schemaFail(
-      'invalid_scene_heading',
-      'headingSuggestion.timeOfDay must be a string.',
-      `${cardPath}.headingSuggestion.timeOfDay`,
-    );
-  }
+// ---------------------------------------------------------------------------
+// Semantic checks (post-Zod, depend on runtime data)
+// ---------------------------------------------------------------------------
 
-  return null;
-};
-
-const validateAdaptationQuestion = (
-  candidate: unknown,
-  index: number,
-  knownChapterIds: Set<string>,
+const runSemanticChecks = (
+  plan: AdaptationPlan,
+  options: ValidateAdaptationPlanOptions,
+  diagnostics: Diagnostic[],
 ): ValidateAdaptationPlanResult | null => {
-  const qPath = `adaptationQuestions[${index}]`;
-  const err = ensureObject(candidate, `adaptationQuestions[${index}]`, qPath);
-  if (err) return err;
-
-  const q = candidate as Record<string, unknown>;
-
-  for (const field of ['id', 'question', 'whyItMatters', 'recommendedOptionId'] as const) {
-    const fieldErr = ensureString(q[field], field, qPath);
-    if (fieldErr) return fieldErr;
-  }
-
-  // options
-  if (!Array.isArray(q.options)) {
-    return schemaFail(
-      'invalid_adaptation_question',
-      'options must be an array.',
-      `${qPath}.options`,
-    );
-  }
-  for (let i = 0; i < (q.options as unknown[]).length; i++) {
-    const opt = (q.options as unknown[])[i];
-    if (!isObject(opt)) {
-      return schemaFail(
-        'invalid_adaptation_question_option',
-        `options[${i}] must be an object.`,
-        `${qPath}.options[${i}]`,
-      );
-    }
-    const optObj = opt as Record<string, unknown>;
-    if (typeof optObj.id !== 'string' || typeof optObj.label !== 'string') {
-      return schemaFail(
-        'invalid_adaptation_question_option',
-        `options[${i}] must have string id and label.`,
-        `${qPath}.options[${i}]`,
-      );
+  // -- sourceRefs must reference known chapters --
+  for (let i = 0; i < plan.sceneOutline.length; i++) {
+    const card = plan.sceneOutline[i];
+    for (let j = 0; j < card.sourceRefs.length; j++) {
+      const sourceId = card.sourceRefs[j].sourceId;
+      if (!options.knownChapterIds.has(sourceId)) {
+        return fail(
+          'semantic',
+          [
+            diag(
+              'error',
+              'unknown_source_ref',
+              `SceneCard "${card.title}" references unknown chapter: ${sourceId}`,
+              `adaptationPlan.sceneOutline[${i}].sourceRefs[${j}].sourceId`,
+            ),
+          ],
+          `SceneCard "${card.title}" references unknown chapter: ${sourceId}`,
+        );
+      }
     }
   }
 
-  // sourceRefs
-  if (!Array.isArray(q.sourceRefs)) {
-    return schemaFail(
-      'invalid_adaptation_question',
-      'sourceRefs must be an array.',
-      `${qPath}.sourceRefs`,
+  for (let i = 0; i < plan.adaptationQuestions.length; i++) {
+    const q = plan.adaptationQuestions[i];
+    for (let j = 0; j < q.sourceRefs.length; j++) {
+      const sourceId = q.sourceRefs[j].sourceId;
+      if (!options.knownChapterIds.has(sourceId)) {
+        return fail(
+          'semantic',
+          [
+            diag(
+              'error',
+              'unknown_source_ref',
+              `AdaptationQuestion "${q.id}" references unknown chapter: ${sourceId}`,
+              `adaptationPlan.adaptationQuestions[${i}].sourceRefs[${j}].sourceId`,
+            ),
+          ],
+          `AdaptationQuestion "${q.id}" references unknown chapter: ${sourceId}`,
+        );
+      }
+    }
+  }
+
+  // -- question / answer reference integrity --
+  const questionMap = new Map<string, { optionIds: Set<string>; recommended: string }>();
+  for (const q of plan.adaptationQuestions) {
+    const optionIds = new Set(q.options.map((o) => o.id));
+    questionMap.set(q.id, { optionIds, recommended: q.recommendedOptionId });
+
+    if (!optionIds.has(q.recommendedOptionId)) {
+      return fail(
+        'semantic',
+        [
+          diag(
+            'error',
+            'invalid_recommended_option',
+            `recommendedOptionId "${q.recommendedOptionId}" does not match any option in question "${q.id}".`,
+            `adaptationPlan.adaptationQuestions.${q.id}.recommendedOptionId`,
+          ),
+        ],
+        `recommendedOptionId "${q.recommendedOptionId}" not found in question "${q.id}" options.`,
+      );
+    }
+  }
+
+  for (let i = 0; i < plan.questionAnswers.length; i++) {
+    const ans = plan.questionAnswers[i];
+    const qEntry = questionMap.get(ans.questionId);
+    if (!qEntry) {
+      return fail(
+        'semantic',
+        [
+          diag(
+            'error',
+            'unknown_question_ref',
+            `questionAnswers[${i}].questionId "${ans.questionId}" does not match any adaptationQuestion id.`,
+            `adaptationPlan.questionAnswers[${i}].questionId`,
+          ),
+        ],
+        `questionAnswers[${i}] references unknown question "${ans.questionId}".`,
+      );
+    }
+    if (!qEntry.optionIds.has(ans.optionId)) {
+      return fail(
+        'semantic',
+        [
+          diag(
+            'error',
+            'unknown_option_ref',
+            `questionAnswers[${i}].optionId "${ans.optionId}" not found in question "${ans.questionId}".`,
+            `adaptationPlan.questionAnswers[${i}].optionId`,
+          ),
+        ],
+        `questionAnswers[${i}] references unknown option "${ans.optionId}".`,
+      );
+    }
+  }
+
+  // -- cross-chapter scene warning (non-fatal) --
+  const hasCrossChapter = plan.sceneOutline.some((card) => card.sourceRefs.length >= 2);
+  if (!hasCrossChapter && plan.sceneOutline.length > 0) {
+    diagnostics.push(
+      diag(
+        'warning',
+        'no_cross_chapter_scene',
+        'No scene card references multiple chapters. Cross-chapter merging is recommended for screenplay adaptation.',
+        'adaptationPlan.sceneOutline',
+      ),
     );
   }
-  if ((q.sourceRefs as unknown[]).length === 0) {
-    return schemaFail(
-      'empty_source_refs',
-      'sourceRefs must contain at least one reference.',
-      `${qPath}.sourceRefs`,
-    );
-  }
-  const srcErr = validateChapterSourceRefs(
-    q.sourceRefs as unknown[],
-    knownChapterIds,
-    qPath,
-    `AdaptationQuestion "${q.id ?? 'unknown'}"`,
-  );
-  if (srcErr) return srcErr;
 
   return null;
 };
@@ -334,216 +187,22 @@ export const validateAdaptationPlan = (
   candidate: unknown,
   options: ValidateAdaptationPlanOptions,
 ): ValidateAdaptationPlanResult => {
+  // -- Zod structural validation --
+  const parsed = adaptationPlanSchema.safeParse(candidate);
+  if (!parsed.success) {
+    return fail(
+      'schema',
+      zodIssuesToDiagnostics(parsed.error.issues),
+      'Adaptation plan does not match the required schema.',
+    );
+  }
+
+  const plan = parsed.data as AdaptationPlan;
   const diagnostics: Diagnostic[] = [];
 
-  // -- null / non-object guard --
-  if (candidate === null || candidate === undefined) {
-    return schemaFail(
-      'null_adaptation_plan',
-      'Adaptation plan is null or undefined.',
-      'adaptationPlan',
-    );
-  }
-  if (!isObject(candidate)) {
-    return schemaFail(
-      'invalid_adaptation_plan_type',
-      `Expected object, got ${typeof candidate}.`,
-      'adaptationPlan',
-    );
-  }
+  // -- Semantic checks --
+  const semanticErr = runSemanticChecks(plan, options, diagnostics);
+  if (semanticErr) return semanticErr;
 
-  const c = candidate as Record<string, unknown>;
-
-  // -- top-level required fields --
-  const topStringFields = ['id', 'recommendedPlan'] as const;
-  for (const field of topStringFields) {
-    const err = ensureString(c[field], field, 'adaptationPlan');
-    if (err) return err;
-  }
-
-  // -- sourceAnalysis --
-  const saErr = validateSourceAnalysis(c.sourceAnalysis, 'adaptationPlan');
-  if (saErr) return { ...saErr, diagnostics: [...diagnostics, ...saErr.diagnostics] };
-
-  // -- preferences (light check — just an object) --
-  const prefsErr = ensureObject(c.preferences, 'preferences', 'adaptationPlan');
-  if (prefsErr) return prefsErr;
-
-  // -- adaptationOptions (array of objects with id/title) --
-  const aoErr = ensureArray(c.adaptationOptions, 'adaptationOptions', 'adaptationPlan');
-  if (aoErr) return aoErr;
-  const adaptationOptions = c.adaptationOptions as unknown[];
-  for (let i = 0; i < adaptationOptions.length; i++) {
-    const opt = adaptationOptions[i];
-    if (!isObject(opt)) {
-      return schemaFail(
-        'invalid_adaptation_option',
-        `adaptationOptions[${i}] must be an object.`,
-        `adaptationPlan.adaptationOptions[${i}]`,
-      );
-    }
-    const optObj = opt as Record<string, unknown>;
-    if (typeof optObj.id !== 'string' || typeof optObj.title !== 'string') {
-      return schemaFail(
-        'invalid_adaptation_option',
-        `adaptationOptions[${i}] must have string id and title.`,
-        `adaptationPlan.adaptationOptions[${i}]`,
-      );
-    }
-  }
-
-  // -- characterUpdates (array of strings) --
-  const cuErr = ensureArray(c.characterUpdates, 'characterUpdates', 'adaptationPlan');
-  if (cuErr) return cuErr;
-  const characterUpdates = c.characterUpdates as unknown[];
-  for (let i = 0; i < characterUpdates.length; i++) {
-    if (typeof characterUpdates[i] !== 'string') {
-      return schemaFail(
-        'invalid_character_update',
-        `characterUpdates[${i}] must be a string.`,
-        `adaptationPlan.characterUpdates[${i}]`,
-      );
-    }
-  }
-
-  // -- risks (array of strings) --
-  const risksErr = ensureArray(c.risks, 'risks', 'adaptationPlan');
-  if (risksErr) return risksErr;
-  const risks = c.risks as unknown[];
-  for (let i = 0; i < risks.length; i++) {
-    if (typeof risks[i] !== 'string') {
-      return schemaFail(
-        'invalid_risk',
-        `risks[${i}] must be a string.`,
-        `adaptationPlan.risks[${i}]`,
-      );
-    }
-  }
-
-  // -- sceneOutline --
-  const soErr = ensureArray(c.sceneOutline, 'sceneOutline', 'adaptationPlan');
-  if (soErr) return soErr;
-  const sceneOutline = c.sceneOutline as unknown[];
-  let hasCrossChapterScene = false;
-  for (let i = 0; i < sceneOutline.length; i++) {
-    const scErr = validateSceneCard(sceneOutline[i], i, options.knownChapterIds);
-    if (scErr) return { ...scErr, diagnostics: [...diagnostics, ...scErr.diagnostics] };
-    const card = sceneOutline[i] as Record<string, unknown>;
-    if (Array.isArray(card.sourceRefs) && card.sourceRefs.length >= 2) {
-      hasCrossChapterScene = true;
-    }
-  }
-
-  // -- empty sceneOutline (semantic failure for novel source) --
-  if (sceneOutline.length === 0) {
-    return semanticFail(
-      'empty_scene_outline',
-      'sceneOutline must contain at least one scene card for novel adaptation.',
-      'adaptationPlan.sceneOutline',
-    );
-  }
-
-  // -- adaptationQuestions --
-  const aqErr = ensureArray(c.adaptationQuestions, 'adaptationQuestions', 'adaptationPlan');
-  if (aqErr) return aqErr;
-  const adaptationQuestions = c.adaptationQuestions as unknown[];
-  for (let i = 0; i < adaptationQuestions.length; i++) {
-    const aqSubErr = validateAdaptationQuestion(adaptationQuestions[i], i, options.knownChapterIds);
-    if (aqSubErr) return { ...aqSubErr, diagnostics: [...diagnostics, ...aqSubErr.diagnostics] };
-  }
-
-  // -- questionAnswers (array of objects) --
-  const qaErr = ensureArray(c.questionAnswers, 'questionAnswers', 'adaptationPlan');
-  if (qaErr) return qaErr;
-  const questionAnswers = c.questionAnswers as unknown[];
-  for (let i = 0; i < questionAnswers.length; i++) {
-    const ans = questionAnswers[i];
-    if (!isObject(ans)) {
-      return schemaFail(
-        'invalid_question_answer',
-        `questionAnswers[${i}] must be an object.`,
-        `adaptationPlan.questionAnswers[${i}]`,
-      );
-    }
-    const ansObj = ans as Record<string, unknown>;
-    if (typeof ansObj.questionId !== 'string' || typeof ansObj.optionId !== 'string') {
-      return schemaFail(
-        'invalid_question_answer',
-        `questionAnswers[${i}] must have string questionId and optionId.`,
-        `adaptationPlan.questionAnswers[${i}]`,
-      );
-    }
-  }
-
-  // -- question / answer reference integrity --
-  const questionMap = new Map<string, Set<string>>();
-  for (let i = 0; i < adaptationQuestions.length; i++) {
-    const q = adaptationQuestions[i] as Record<string, unknown>;
-    const qId = q.id as string;
-    const optionIds = new Set<string>();
-    for (const opt of q.options as unknown[]) {
-      const optObj = opt as Record<string, unknown>;
-      if (typeof optObj.id === 'string') {
-        optionIds.add(optObj.id);
-      }
-    }
-    questionMap.set(qId, optionIds);
-
-    // recommendedOptionId must exist in this question's options
-    const recommendedId = q.recommendedOptionId as string;
-    if (!optionIds.has(recommendedId)) {
-      return semanticFail(
-        'invalid_recommended_option',
-        `adaptationQuestions[${i}].recommendedOptionId "${recommendedId}" does not match any option id.`,
-        `adaptationPlan.adaptationQuestions[${i}].recommendedOptionId`,
-      );
-    }
-  }
-
-  for (let i = 0; i < questionAnswers.length; i++) {
-    const ans = questionAnswers[i] as Record<string, unknown>;
-    const ansQuestionId = ans.questionId as string;
-    const ansOptionId = ans.optionId as string;
-
-    // answer.source must be 'recommended' | 'user'
-    if (ans.source !== 'recommended' && ans.source !== 'user') {
-      return schemaFail(
-        'invalid_answer_source',
-        `questionAnswers[${i}].source must be "recommended" or "user".`,
-        `adaptationPlan.questionAnswers[${i}].source`,
-      );
-    }
-
-    // answer must reference an existing question
-    const targetOptions = questionMap.get(ansQuestionId);
-    if (!targetOptions) {
-      return semanticFail(
-        'unknown_question_ref',
-        `questionAnswers[${i}].questionId "${ansQuestionId}" does not match any adaptationQuestion id.`,
-        `adaptationPlan.questionAnswers[${i}].questionId`,
-      );
-    }
-
-    // answer must reference an option in that question
-    if (!targetOptions.has(ansOptionId)) {
-      return semanticFail(
-        'unknown_option_ref',
-        `questionAnswers[${i}].optionId "${ansOptionId}" does not match any option in question "${ansQuestionId}".`,
-        `adaptationPlan.questionAnswers[${i}].optionId`,
-      );
-    }
-  }
-
-  // -- cross-chapter scene warning (non-fatal) --
-  if (!hasCrossChapterScene && sceneOutline.length > 0) {
-    diagnostics.push({
-      severity: 'warning',
-      code: 'no_cross_chapter_scene',
-      message:
-        'No scene card references multiple chapters. Cross-chapter merging is recommended for screenplay adaptation.',
-      path: 'adaptationPlan.sceneOutline',
-    });
-  }
-
-  return { plan: candidate as AdaptationPlan, diagnostics };
+  return { plan, diagnostics };
 };

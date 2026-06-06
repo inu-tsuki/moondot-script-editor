@@ -8,6 +8,8 @@ export {
   draftNovelAdaptationFromPlanMock,
   planNovelAdaptationMock,
 } from './mockNovelAdaptation';
+export { adaptationPlanSchema } from './adaptation-plan-schema';
+export type { AdaptationPlanParsed } from './adaptation-plan-schema';
 export { defaultAdaptationPreferences, resolveAdaptationPreferences } from './preferences';
 export { validateAdaptationPlan } from './validate-adaptation-plan';
 export type {

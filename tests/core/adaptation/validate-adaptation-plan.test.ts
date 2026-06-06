@@ -418,7 +418,8 @@ describe('validateAdaptationPlan', () => {
 
       expect(result.plan).toBeNull();
       expect(result.error?.reason).toBe('schema');
-      expect(result.diagnostics[0].code).toBe('invalid_source_ref_kind');
+      // Zod z.literal('chapter') rejects non-chapter kinds.
+      expect(result.diagnostics[0].code).toMatch(/^zod_/);
     });
 
     it('rejects an AdaptationQuestion with kind: "outline" instead of "chapter"', () => {
@@ -438,13 +439,14 @@ describe('validateAdaptationPlan', () => {
   });
 
   describe('sceneOutline non-emptiness', () => {
-    it('rejects an empty sceneOutline as semantic failure', () => {
+    it('rejects an empty sceneOutline (Zod min(1) catches as schema)', () => {
       const plan = makeValidPlan();
       const result = validateAdaptationPlan({ ...plan, sceneOutline: [] }, { knownChapterIds });
 
       expect(result.plan).toBeNull();
-      expect(result.error?.reason).toBe('semantic');
-      expect(result.diagnostics[0].code).toBe('empty_scene_outline');
+      // Zod .min(1) rejects empty arrays as schema failures.
+      expect(result.error?.reason).toBe('schema');
+      expect(result.diagnostics[0].code).toMatch(/^zod_/);
     });
   });
 
@@ -462,7 +464,8 @@ describe('validateAdaptationPlan', () => {
 
       expect(result.plan).toBeNull();
       expect(result.error?.reason).toBe('schema');
-      expect(result.diagnostics[0].code).toBe('invalid_pacing');
+      // Zod z.enum rejects invalid union values.
+      expect(result.diagnostics[0].code).toMatch(/^zod_/);
     });
 
     it('rejects an invalid locationType', () => {

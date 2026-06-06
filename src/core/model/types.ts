@@ -80,6 +80,13 @@ export type ModelCallRequest<S extends ModelStage = ModelStage> = {
    * The adapter echoes it back unchanged in `ModelCallResult.runId`.
    */
   runId?: string;
+  /**
+   * Provider-neutral structured output schema.
+   * Set by the adaptation layer for the given stage; consumed by real
+   * providers in Phase 3.4 to enable SDK-level structured output.
+   * Mock adapter ignores this field.
+   */
+  responseSchema?: object;
 };
 
 export type ModelCallResult<TData = unknown> = {
