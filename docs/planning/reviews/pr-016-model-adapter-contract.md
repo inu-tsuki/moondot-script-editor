@@ -1,7 +1,7 @@
 # PR #16: Model Adapter Contract
 
-> 最近更新：2026-06-06  
-> 对应分支：`phase-3.1-model-adapter-contract`  
+> 最近更新：2026-06-06
+> 对应分支：`phase-3.1-model-adapter-contract`
 > 对应阶段：Phase 3.1 `Model adapter contract`
 
 ## 结论
