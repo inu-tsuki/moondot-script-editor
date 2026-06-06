@@ -9,6 +9,7 @@ export {
   planNovelAdaptationMock,
 } from './mockNovelAdaptation';
 export { defaultAdaptationPreferences, resolveAdaptationPreferences } from './preferences';
+export { validateAdaptationPlan } from './validate-adaptation-plan';
 export type {
   AdaptationFidelity,
   AdaptationOption,
@@ -32,3 +33,7 @@ export type {
   SceneCard,
   SourceAnalysis,
 } from './types';
+export type {
+  ValidateAdaptationPlanOptions,
+  ValidateAdaptationPlanResult,
+} from './validate-adaptation-plan';

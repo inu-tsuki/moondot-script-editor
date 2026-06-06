@@ -16,6 +16,7 @@ import {
   buildNovelAdaptationPrompt,
   buildNovelSceneWriterPrompt,
   defaultAdaptationPreferences,
+  validateAdaptationPlan,
 } from './core/adaptation';
 import { createMockModelAdapter } from './core/model';
 import { serializeDocumentToYaml } from './core/serialization';
@@ -315,29 +316,45 @@ function App() {
         return;
       }
 
-      setAdaptationPlan(result.data ?? undefined);
+      // Validate the Architect output before accepting it into state.
+      const knownChapterIds = new Set(
+        workingDocument.source.type === 'novel'
+          ? workingDocument.source.chapters.map((c) => c.id)
+          : [],
+      );
+      const validated = validateAdaptationPlan(result.data, { knownChapterIds });
+
+      if (!validated.plan) {
+        // Schema or semantic failure — plan is NOT written to state.
+        setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
+        setExportFeedback('');
+        setOutputTab('outline');
+        return;
+      }
+
+      setAdaptationPlan(validated.plan);
       setAdaptationTrace(
-        result.data
+        validated.plan
           ? [
               {
                 label: 'source-ingestion',
                 detail: `读取 ${chapterCount} 个小说章节作为模型输入。`,
                 stage: 'source_analysis',
                 artifactType: 'source_analysis',
-                sourceIds: result.data.sceneOutline.flatMap((sceneCard) =>
+                sourceIds: validated.plan.sceneOutline.flatMap((sceneCard) =>
                   sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
                 ),
               },
               {
                 label: 'model-planning',
-                detail: `通过 ${result.trace.provider} provider 生成 ${result.data.sceneOutline.length} 张 scene cards；scene 可以引用多个章节。`,
+                detail: `通过 ${result.trace.provider} provider 生成 ${validated.plan.sceneOutline.length} 张 scene cards；scene 可以引用多个章节。`,
                 stage: 'adaptation_planning',
                 artifactType: 'adaptation_plan',
               },
             ]
           : [],
       );
-      setAdaptationDiagnostics(result.diagnostics);
+      setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
       setExportFeedback('');
       setOutputTab('outline');
       clearSelection();
