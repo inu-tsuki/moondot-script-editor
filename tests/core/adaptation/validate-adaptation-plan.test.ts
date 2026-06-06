@@ -400,4 +400,98 @@ describe('validateAdaptationPlan', () => {
       expect(result.error?.reason).toBe('semantic');
     });
   });
+
+  describe('sourceRef.kind enforcement', () => {
+    it('rejects a SceneCard with kind: "seed" instead of "chapter"', () => {
+      const plan = makeValidPlan();
+      const brokenCards = [
+        {
+          ...plan.sceneOutline[0],
+          sourceRefs: [{ kind: 'seed', sourceId: plan.sceneOutline[0].sourceRefs[0].sourceId }],
+        },
+        ...plan.sceneOutline.slice(1),
+      ];
+      const result = validateAdaptationPlan(
+        { ...plan, sceneOutline: brokenCards },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('schema');
+      expect(result.diagnostics[0].code).toBe('invalid_source_ref_kind');
+    });
+
+    it('rejects an AdaptationQuestion with kind: "outline" instead of "chapter"', () => {
+      const plan = makeValidPlan();
+      const brokenQuestions = plan.adaptationQuestions.map((q) => ({
+        ...q,
+        sourceRefs: [{ kind: 'outline', sourceId: q.sourceRefs[0].sourceId }],
+      }));
+      const result = validateAdaptationPlan(
+        { ...plan, adaptationQuestions: brokenQuestions },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('schema');
+    });
+  });
+
+  describe('sceneOutline non-emptiness', () => {
+    it('rejects an empty sceneOutline as semantic failure', () => {
+      const plan = makeValidPlan();
+      const result = validateAdaptationPlan({ ...plan, sceneOutline: [] }, { knownChapterIds });
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('semantic');
+      expect(result.diagnostics[0].code).toBe('empty_scene_outline');
+    });
+  });
+
+  describe('union value enforcement', () => {
+    it('rejects an invalid pacing value', () => {
+      const plan = makeValidPlan();
+      const brokenCards = plan.sceneOutline.map((card) => ({
+        ...card,
+        pacing: 'ultra_fast',
+      }));
+      const result = validateAdaptationPlan(
+        { ...plan, sceneOutline: brokenCards },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('schema');
+      expect(result.diagnostics[0].code).toBe('invalid_pacing');
+    });
+
+    it('rejects an invalid locationType', () => {
+      const plan = makeValidPlan();
+      const brokenCards = plan.sceneOutline.map((card) => ({
+        ...card,
+        headingSuggestion: { ...card.headingSuggestion, locationType: 'INDOOR' },
+      }));
+      const result = validateAdaptationPlan(
+        { ...plan, sceneOutline: brokenCards },
+        { knownChapterIds },
+      );
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('schema');
+    });
+
+    it('accepts valid pacing and locationType values', () => {
+      const plan = makeValidPlan();
+      // The mock plan already generates valid values. Verify they pass.
+      const result = validateAdaptationPlan(plan, { knownChapterIds });
+
+      expect(result.plan).not.toBeNull();
+      expect(result.error).toBeUndefined();
+      // Check known valid values are in the plan
+      for (const card of result.plan!.sceneOutline) {
+        expect(['slow', 'balanced', 'fast']).toContain(card.pacing);
+        expect(['INT', 'EXT', 'INT_EXT']).toContain(card.headingSuggestion.locationType);
+      }
+    });
+  });
 });

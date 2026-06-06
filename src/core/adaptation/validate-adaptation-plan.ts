@@ -86,8 +86,59 @@ const ensureObject = (value: unknown, field: string, path: string) => {
 };
 
 // ---------------------------------------------------------------------------
+// Shared sourceRef validator for novel Architect
+// ---------------------------------------------------------------------------
+
+const VALID_CHAPTER_KINDS = new Set(['chapter']);
+
+const validateChapterSourceRefs = (
+  refs: unknown[],
+  knownChapterIds: Set<string>,
+  itemPath: string,
+  itemLabel: string,
+): ValidateAdaptationPlanResult | null => {
+  for (let i = 0; i < refs.length; i++) {
+    const ref = refs[i];
+    if (!isObject(ref)) {
+      return schemaFail(
+        'invalid_source_ref',
+        `${itemLabel} sourceRefs[${i}] must be an object with sourceId and kind.`,
+        `${itemPath}.sourceRefs[${i}]`,
+      );
+    }
+    const refObj = ref as Record<string, unknown>;
+    const sourceId = refObj.sourceId;
+    if (typeof sourceId !== 'string') {
+      return schemaFail(
+        'invalid_source_ref',
+        `${itemLabel} sourceRefs[${i}].sourceId must be a string.`,
+        `${itemPath}.sourceRefs[${i}].sourceId`,
+      );
+    }
+    if (!VALID_CHAPTER_KINDS.has(refObj.kind as string)) {
+      return schemaFail(
+        'invalid_source_ref_kind',
+        `${itemLabel} sourceRefs[${i}].kind must be "chapter" for novel Architect.`,
+        `${itemPath}.sourceRefs[${i}].kind`,
+      );
+    }
+    if (!knownChapterIds.has(sourceId)) {
+      return semanticFail(
+        'unknown_source_ref',
+        `${itemLabel} "${itemPath}" references unknown chapter: ${sourceId}`,
+        `${itemPath}.sourceRefs[${i}].sourceId`,
+      );
+    }
+  }
+  return null;
+};
+
+// ---------------------------------------------------------------------------
 // Sub-validators
 // ---------------------------------------------------------------------------
+
+const VALID_PACING_VALUES = new Set(['slow', 'balanced', 'fast']);
+const VALID_LOCATION_TYPES = new Set(['INT', 'EXT', 'INT_EXT']);
 
 const validateSourceAnalysis = (
   candidate: unknown,
@@ -131,9 +182,18 @@ const validateSceneCard = (
   const card = candidate as Record<string, unknown>;
 
   // Required string fields
-  for (const field of ['id', 'title', 'dramaticPurpose', 'writerBrief', 'pacing'] as const) {
+  for (const field of ['id', 'title', 'dramaticPurpose', 'writerBrief'] as const) {
     const fieldErr = ensureString(card[field], field, cardPath);
     if (fieldErr) return fieldErr;
+  }
+
+  // pacing (union check)
+  if (typeof card.pacing !== 'string' || !VALID_PACING_VALUES.has(card.pacing)) {
+    return schemaFail(
+      'invalid_pacing',
+      `pacing must be one of: ${[...VALID_PACING_VALUES].join(', ')}.`,
+      `${cardPath}.pacing`,
+    );
   }
 
   // estimatedBlocks
@@ -160,48 +220,22 @@ const validateSceneCard = (
       `${cardPath}.sourceRefs`,
     );
   }
-  for (let i = 0; i < (card.sourceRefs as unknown[]).length; i++) {
-    const ref = (card.sourceRefs as unknown[])[i];
-    if (!isObject(ref)) {
-      return schemaFail(
-        'invalid_source_ref',
-        `sourceRefs[${i}] must be an object with sourceId and kind.`,
-        `${cardPath}.sourceRefs[${i}]`,
-      );
-    }
-    const refObj = ref as Record<string, unknown>;
-    const sourceId = refObj.sourceId;
-    if (typeof sourceId !== 'string') {
-      return schemaFail(
-        'invalid_source_ref',
-        `sourceRefs[${i}].sourceId must be a string.`,
-        `${cardPath}.sourceRefs[${i}].sourceId`,
-      );
-    }
-    if (typeof refObj.kind !== 'string') {
-      return schemaFail(
-        'invalid_source_ref',
-        `sourceRefs[${i}].kind must be a string.`,
-        `${cardPath}.sourceRefs[${i}].kind`,
-      );
-    }
-    if (!knownChapterIds.has(sourceId)) {
-      return semanticFail(
-        'unknown_source_ref',
-        `SceneCard "${card.title ?? card.id ?? 'unknown'}" references unknown chapter: ${sourceId}`,
-        `${cardPath}.sourceRefs[${i}].sourceId`,
-      );
-    }
-  }
+  const srcErr = validateChapterSourceRefs(
+    card.sourceRefs as unknown[],
+    knownChapterIds,
+    cardPath,
+    `SceneCard "${card.title ?? card.id ?? 'unknown'}"`,
+  );
+  if (srcErr) return srcErr;
 
   // headingSuggestion
   const headingErr = ensureObject(card.headingSuggestion, 'headingSuggestion', cardPath);
   if (headingErr) return headingErr;
   const heading = card.headingSuggestion as Record<string, unknown>;
-  if (typeof heading.locationType !== 'string' || !heading.locationType) {
+  if (typeof heading.locationType !== 'string' || !VALID_LOCATION_TYPES.has(heading.locationType)) {
     return schemaFail(
       'invalid_scene_heading',
-      'headingSuggestion.locationType must be a non-empty string.',
+      `headingSuggestion.locationType must be one of: ${[...VALID_LOCATION_TYPES].join(', ')}.`,
       `${cardPath}.headingSuggestion.locationType`,
     );
   }
@@ -281,39 +315,13 @@ const validateAdaptationQuestion = (
       `${qPath}.sourceRefs`,
     );
   }
-  for (let i = 0; i < (q.sourceRefs as unknown[]).length; i++) {
-    const ref = (q.sourceRefs as unknown[])[i];
-    if (!isObject(ref)) {
-      return schemaFail(
-        'invalid_source_ref',
-        `sourceRefs[${i}] must be an object with sourceId and kind.`,
-        `${qPath}.sourceRefs[${i}]`,
-      );
-    }
-    const refObj = ref as Record<string, unknown>;
-    const sourceId = refObj.sourceId;
-    if (typeof sourceId !== 'string') {
-      return schemaFail(
-        'invalid_source_ref',
-        `sourceRefs[${i}].sourceId must be a string.`,
-        `${qPath}.sourceRefs[${i}].sourceId`,
-      );
-    }
-    if (typeof refObj.kind !== 'string') {
-      return schemaFail(
-        'invalid_source_ref',
-        `sourceRefs[${i}].kind must be a string.`,
-        `${qPath}.sourceRefs[${i}].kind`,
-      );
-    }
-    if (!knownChapterIds.has(sourceId)) {
-      return semanticFail(
-        'unknown_source_ref',
-        `AdaptationQuestion "${q.id ?? 'unknown'}" references unknown chapter: ${sourceId}`,
-        `${qPath}.sourceRefs[${i}].sourceId`,
-      );
-    }
-  }
+  const srcErr = validateChapterSourceRefs(
+    q.sourceRefs as unknown[],
+    knownChapterIds,
+    qPath,
+    `AdaptationQuestion "${q.id ?? 'unknown'}"`,
+  );
+  if (srcErr) return srcErr;
 
   return null;
 };
@@ -424,6 +432,15 @@ export const validateAdaptationPlan = (
     if (Array.isArray(card.sourceRefs) && card.sourceRefs.length >= 2) {
       hasCrossChapterScene = true;
     }
+  }
+
+  // -- empty sceneOutline (semantic failure for novel source) --
+  if (sceneOutline.length === 0) {
+    return semanticFail(
+      'empty_scene_outline',
+      'sceneOutline must contain at least one scene card for novel adaptation.',
+      'adaptationPlan.sceneOutline',
+    );
   }
 
   // -- adaptationQuestions --
