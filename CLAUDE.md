@@ -49,7 +49,22 @@ Before coding:
 - Read nearby code before introducing abstractions.
 - Check current roadmap and TODO when choosing the next slice.
 
-Expected local verification is whatever the repository exposes through package scripts. At minimum, run formatting, lint, and build checks when touching code. If the change is UI-facing, also start the dev server and verify the app loads.
+Expected local verification is whatever the repository exposes through package scripts. At minimum, run formatting, lint, build, and unit/component tests when touching code:
+
+```sh
+pnpm format:check
+pnpm lint
+pnpm build
+pnpm test
+```
+
+If the change is UI-facing, editor-facing, toolbar-related, output-panel-related, or responsive-layout-related, also run Playwright e2e:
+
+```sh
+pnpm e2e
+```
+
+Playwright is configured for system Chromium at `/usr/bin/chromium` and fixed `127.0.0.1:5173`. Do not run `pnpm exec playwright install`; this repository should not download Playwright-managed browser binaries into the pnpm environment. Before e2e, ensure 5173 is free or already served by this branch via `pnpm dev --host 127.0.0.1 --port 5173 --strictPort`.
 
 ## Development Rhythm
 

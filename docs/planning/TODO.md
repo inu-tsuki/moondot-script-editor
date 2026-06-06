@@ -59,6 +59,7 @@ Phase 2.5：Workbench UI Foundation。Phase 2 的 Adaptation Plan / Scene Outlin
 
 ## 下一步
 
+- [ ] 作为 phase 外 engineering track，引入前端测试护栏：Vitest / Testing Library / Playwright。
 - [ ] 拆分 `App.tsx` 中的 source、preferences、outline、editor、YAML export 和 diagnostics panels。
 - [ ] 建立 `WorkbenchLayout`，让 semantic script editor 成为主区域。
 - [ ] 将 scene outline、YAML 和 diagnostics 整理进 output tabs。
@@ -72,6 +73,7 @@ Phase 2.5：Workbench UI Foundation。Phase 2 的 Adaptation Plan / Scene Outlin
 - [ ] README 包含运行方式、依赖、原创范围、demo 视频链接和 Schema 文档链接。
 - [ ] demo 视频可播放，且包含声音讲解。
 - [ ] 主分支可运行。
+- [ ] 关键编辑器链路有单元 / 组件 / e2e 测试或明确测试缺口。
 - [ ] 每个 PR 只做一件事，标题和描述完整。
 - [ ] commit 时间均在第三批次窗口内。
 - [ ] 如复用旧代码或参考第三方实现，已在 PR 和 README 中说明。

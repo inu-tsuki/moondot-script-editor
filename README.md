@@ -123,13 +123,24 @@ pnpm install
 pnpm dev
 ```
 
-检查代码：
+检查代码和构建：
 
 ```sh
 pnpm lint
 pnpm build
 pnpm format:check
 ```
+
+运行自动化测试：
+
+```sh
+pnpm test
+pnpm e2e
+```
+
+`pnpm test` 使用 Vitest + Testing Library 覆盖核心 screenplay 操作和 React 组件行为。`pnpm e2e` 使用 Playwright 覆盖工作台 smoke、output tabs、中央剧本块工具栏和窄屏布局回退。
+
+Playwright 固定使用 `127.0.0.1:5173`，并通过系统 Chromium 运行浏览器测试。Arch / pacman 环境下应使用 `/usr/bin/chromium`，不要运行 `pnpm exec playwright install` 下载 Playwright 托管浏览器。运行 e2e 前请确认 5173 空闲，或已经由当前分支的 `pnpm dev --host 127.0.0.1 --port 5173 --strictPort` 提供服务。
 
 ## Demo
 
