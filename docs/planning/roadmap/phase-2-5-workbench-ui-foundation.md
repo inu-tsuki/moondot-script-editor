@@ -264,6 +264,23 @@ Sections
 - 让 diagnostics、source refs、outline cards 更像批注、索引和生产记录。
 - 保持密度适中：能扫描，但不要压迫中央手稿的阅读节奏。
 
+执行切片：
+
+1. `ManuscriptSurface`：把中央 `ScenePage` 从普通 panel card 中解放出来，形成稳定稿纸版心、纸面背景和右侧工具 gutter。`ScriptEditorPanel` 可以保留轻量 header，但正文应像一张主稿纸。
+2. Block selection：移除“整个 block 是 button”的混合命中区，改成 block row + 独立选择 handle。`textarea` / `select` / `input` 只负责编辑，选择态由 row 或 gutter 明确承载。
+3. Block toolbar：采用右侧小气泡工具条，锚在 selected block 的右侧 gutter，不覆盖正文。第一版不引入 Floating UI，用 CSS 定位和响应式回退即可。
+4. Manuscript tokens：抽出正文、字段、行距、focus、纸面、辅助区等稳定 class 组合，避免各 block editor 自己拼样式导致页面气质分裂。
+5. Assistant panels：降低 source、outline、YAML、diagnostics 的视觉权重，让它们更像工具托盘、批注栏和生产记录，而不是同等主卡片。
+6. Manual QA：检查桌面、窄屏、长文本、dialogue、transition、空 title / synopsis、toolbar 展开菜单和键盘 Tab 顺序。
+
+Toolbar 规格：
+
+- 默认位置：selected block 右侧 gutter，优先右对齐，不放在左侧正文起点。
+- 主体大小：高度约 32px，icon button 28x28px，最多 4 个主动作；超过的动作进入菜单。
+- 主动作：Move up、Move down、Add after、Delete。Duplicate 可以暂缓，或放进 more menu。
+- Add after 菜单：宽度约 132-160px，列出 Action / Dialogue / Narration / Transition / Note；窄屏下改为 block 下方 inline menu。
+- Floating UI：暂不引入。只有当出现 viewport 碰撞检测、自动翻转、portal layering、复杂嵌套菜单或 resizable panel 溢出问题时，再评估 `@floating-ui/react`。
+
 完成标准：
 
 - 用户一眼能感到这是剧本审阅 / 改编工作台，而不是通用表单页。
