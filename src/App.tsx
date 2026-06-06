@@ -1,15 +1,20 @@
 import { AlertTriangle, Download, FileText, Plus, Sparkles, WandSparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import './App.css';
-import { demoNovelText, demoScreenplayDocument } from './core/screenplay';
-import type {
-  BlockId,
-  CharacterId,
-  NovelSource,
-  ScreenplayDocument,
-  ScriptBlock,
-  SourceBundle,
+import { adaptNovelToScreenplayMock } from './core/adaptation';
+import { serializeDocumentToYaml } from './core/serialization';
+import {
+  appendBlockToFirstScene,
+  demoNovelText,
+  demoScreenplayDocument,
+  formatSceneHeading,
+  getBlockCharacterId,
+  updateBlockText as updateDocumentBlockText,
 } from './core/screenplay';
+import { parseNovelChapters } from './core/source-ingestion';
+import { validateScreenplayDocument } from './core/validation';
+import type { BlockId, ScreenplayDocument, ScriptBlock } from './core/screenplay';
+import type { Diagnostic } from './core/validation';
 
 const blockTypeLabels: Record<ScriptBlock['type'], string> = {
   action: 'ACTION',
@@ -19,174 +24,85 @@ const blockTypeLabels: Record<ScriptBlock['type'], string> = {
   note: 'NOTE',
 };
 
-const locationTypeLabels: Record<
-  ScreenplayDocument['script']['scenes'][number]['heading']['locationType'],
-  string
-> = {
-  INT: 'INT',
-  EXT: 'EXT',
-  INT_EXT: 'INT/EXT',
-};
-
-const isNovelSource = (source: SourceBundle): source is NovelSource => source.type === 'novel';
-
-const countChaptersInText = (sourceText: string) => {
-  const matches = sourceText.match(/(^|\n)\s*(第.{1,9}章|Chapter\s+\d+)/gi);
-
-  return Math.max(matches?.length ?? 0, 1);
-};
-
-const escapeYamlString = (value: string) =>
-  value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-
-const yamlString = (value: string) => `"${escapeYamlString(value)}"`;
-
-const yamlStringList = (values: string[]) => `[${values.map(yamlString).join(', ')}]`;
-
-const createNextBlockId = (blocks: ScriptBlock[]): BlockId =>
-  `blk_${String(blocks.length + 1).padStart(3, '0')}` as BlockId;
-
-const getBlockCharacterId = (block: ScriptBlock): CharacterId | undefined =>
-  block.type === 'dialogue' ? block.characterId : undefined;
-
-const formatSceneHeading = (heading: ScreenplayDocument['script']['scenes'][number]['heading']) =>
-  `${locationTypeLabels[heading.locationType]}. ${heading.location} - ${heading.timeOfDay}`;
-
 function App() {
   const [sourceText, setSourceText] = useState(demoNovelText);
+  const [generatedAt] = useState(() => new Date().toISOString());
   const [screenplayDocument, setScreenplayDocument] =
     useState<ScreenplayDocument>(demoScreenplayDocument);
+  const [adaptationDiagnostics, setAdaptationDiagnostics] = useState<Diagnostic[]>([]);
 
-  const sourceChapters = useMemo(
-    () => (isNovelSource(screenplayDocument.source) ? screenplayDocument.source.chapters : []),
-    [screenplayDocument.source],
+  const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
+  const workingDocument = useMemo<ScreenplayDocument>(
+    () => ({
+      ...screenplayDocument,
+      source: {
+        type: 'novel',
+        title:
+          screenplayDocument.source.type === 'novel'
+            ? screenplayDocument.source.title
+            : screenplayDocument.project.title,
+        chapters: parsedNovel.chapters,
+      },
+    }),
+    [parsedNovel.chapters, screenplayDocument],
   );
-  const activeScene = screenplayDocument.script.scenes[0];
-  const chapterCount = Math.max(countChaptersInText(sourceText), sourceChapters.length, 1);
+  const activeScene = workingDocument.script.scenes[0];
+  const chapterCount = parsedNovel.chapters.length;
 
   const charactersById = useMemo(
-    () => new Map(screenplayDocument.characters.map((character) => [character.id, character])),
-    [screenplayDocument.characters],
+    () => new Map(workingDocument.characters.map((character) => [character.id, character])),
+    [workingDocument.characters],
+  );
+  const documentDiagnostics = useMemo(
+    () =>
+      validateScreenplayDocument(workingDocument, {
+        requireChapterText: true,
+        requireSubmissionReady: true,
+      }),
+    [workingDocument],
+  );
+  const displayedDiagnostics = useMemo<Diagnostic[]>(
+    () => [
+      {
+        severity: sourceText.trim() ? (chapterCount >= 3 ? 'info' : 'warning') : 'error',
+        code: sourceText.trim() ? 'source_text_chapter_count' : 'empty_source_text',
+        message: sourceText.trim()
+          ? chapterCount >= 3
+            ? '提交样例满足 3+ 章节检查。'
+            : '当前输入少于 3 章，普通转换允许继续。'
+          : '小说文本不能为空。',
+        path: 'sourceText',
+      },
+      ...parsedNovel.diagnostics,
+      ...adaptationDiagnostics,
+      ...documentDiagnostics,
+    ],
+    [adaptationDiagnostics, chapterCount, documentDiagnostics, parsedNovel.diagnostics, sourceText],
   );
 
-  const yamlPreview = useMemo(() => {
-    const chapterYaml =
-      sourceChapters
-        .map(
-          (chapter) => `    - id: ${yamlString(chapter.id)}
-      title: ${yamlString(chapter.title)}
-      summary: ${yamlString(chapter.summary ?? '')}`,
-        )
-        .join('\n') || '    []';
-
-    const characterYaml =
-      screenplayDocument.characters
-        .map(
-          (character) => `  - id: ${yamlString(character.id)}
-    name: ${yamlString(character.name)}
-    aliases: ${yamlStringList(character.aliases)}
-    description: ${yamlString(character.description ?? '')}`,
-        )
-        .join('\n') || '  []';
-
-    const sceneYaml = activeScene
-      ? (() => {
-          const sourceChapterIds = activeScene.sourceRefs
-            .filter((sourceRef) => sourceRef.kind === 'chapter')
-            .map((sourceRef) => sourceRef.sourceId);
-          const blockYaml =
-            activeScene.blocks
-              .map((block) => {
-                const characterLine =
-                  block.type === 'dialogue'
-                    ? `          characterId: ${yamlString(block.characterId)}\n`
-                    : '';
-                const parentheticalLine =
-                  block.type === 'dialogue' && block.parenthetical
-                    ? `          parenthetical: ${yamlString(block.parenthetical)}\n`
-                    : '';
-
-                return `        - id: ${yamlString(block.id)}
-          type: ${yamlString(block.type)}
-${characterLine}${parentheticalLine}          text: ${yamlString(block.text)}`;
-              })
-              .join('\n') || '        []';
-
-          return `  scenes:
-    - id: ${yamlString(activeScene.id)}
-      sourceChapterIds: ${yamlStringList(sourceChapterIds)}
-      heading:
-        locationType: ${yamlString(activeScene.heading.locationType)}
-        location: ${yamlString(activeScene.heading.location)}
-        timeOfDay: ${yamlString(activeScene.heading.timeOfDay)}
-      title: ${yamlString(activeScene.title)}
-      synopsis: ${yamlString(activeScene.synopsis ?? '')}
-      blocks:
-${blockYaml}`;
-        })()
-      : '  scenes: []';
-
-    return `schemaVersion: "0.1"
-project:
-  title: ${yamlString(screenplayDocument.project.title)}
-  language: ${yamlString(screenplayDocument.project.language)}
-  targetMedium: ${yamlString(screenplayDocument.project.targetMedium)}
-  sourceType: ${yamlString(screenplayDocument.source.type)}
-source:
-  chapterCount: ${chapterCount}
-  chapters:
-${chapterYaml}
-characters:
-${characterYaml}
-script:
-  structure:
-    type: ${yamlString(screenplayDocument.script.structure.type)}
-    startSceneId: ${yamlString(activeScene?.id ?? '')}
-${sceneYaml}`;
-  }, [activeScene, chapterCount, screenplayDocument, sourceChapters]);
+  const yamlPreview = useMemo(
+    () => serializeDocumentToYaml(workingDocument, { generatedAt }),
+    [generatedAt, workingDocument],
+  );
 
   const addBlock = () => {
-    setScreenplayDocument((currentDocument) => {
-      const scene = currentDocument.script.scenes[0];
-
-      if (!scene) {
-        return currentDocument;
-      }
-
-      const nextBlock: ScriptBlock = {
-        id: createNextBlockId(scene.blocks),
-        type: 'action',
-        text: '新的动作描写。',
-      };
-
-      return {
-        ...currentDocument,
-        script: {
-          ...currentDocument.script,
-          scenes: currentDocument.script.scenes.map((currentScene) =>
-            currentScene.id === scene.id
-              ? {
-                  ...currentScene,
-                  blocks: [...currentScene.blocks, nextBlock],
-                }
-              : currentScene,
-          ),
-        },
-      };
-    });
+    setScreenplayDocument((currentDocument) => appendBlockToFirstScene(currentDocument));
   };
 
   const updateBlockText = (id: BlockId, text: string) => {
-    setScreenplayDocument((currentDocument) => ({
-      ...currentDocument,
-      script: {
-        ...currentDocument.script,
-        scenes: currentDocument.script.scenes.map((scene) => ({
-          ...scene,
-          blocks: scene.blocks.map((block) => (block.id === id ? { ...block, text } : block)),
-        })),
-      },
-    }));
+    setScreenplayDocument((currentDocument) => updateDocumentBlockText(currentDocument, id, text));
+  };
+
+  const updateSourceText = (text: string) => {
+    setSourceText(text);
+    setAdaptationDiagnostics([]);
+  };
+
+  const generateScreenplay = () => {
+    const adaptationResult = adaptNovelToScreenplayMock({ document: workingDocument });
+
+    setScreenplayDocument(adaptationResult.document);
+    setAdaptationDiagnostics(adaptationResult.diagnostics);
   };
 
   return (
@@ -204,7 +120,12 @@ ${sceneYaml}`;
             <FileText size={16} />
             导入
           </button>
-          <button className="button-primary" type="button" title="生成剧本">
+          <button
+            className="button-primary"
+            type="button"
+            title="生成剧本"
+            onClick={generateScreenplay}
+          >
             <WandSparkles size={16} />
             生成
           </button>
@@ -223,7 +144,7 @@ ${sceneYaml}`;
               Source
             </div>
             <span className="panel-meta">
-              {screenplayDocument.source.type} · {chapterCount} chapters
+              {workingDocument.source.type} · {chapterCount} chapters
             </span>
           </div>
           <div className="panel-body">
@@ -231,12 +152,12 @@ ${sceneYaml}`;
               aria-label="小说来源文本"
               className="source-textarea"
               value={sourceText}
-              onChange={(event) => setSourceText(event.target.value)}
+              onChange={(event) => updateSourceText(event.target.value)}
             />
             <div className="chapter-strip" aria-label="章节识别结果">
               <div className="chapter-pill">
                 <span>sourceType</span>
-                <span>{screenplayDocument.source.type}</span>
+                <span>{workingDocument.source.type}</span>
               </div>
               <div className="chapter-pill">
                 <span>submission check</span>
@@ -316,19 +237,20 @@ ${sceneYaml}`;
               <Download size={16} />
               YAML Projection
             </div>
-            <span className="panel-meta">document v{screenplayDocument.documentVersion}</span>
+            <span className="panel-meta">document v{workingDocument.documentVersion}</span>
           </div>
           <div className="panel-body side-tabs">
             <pre className="yaml-preview">{yamlPreview}</pre>
             <div className="diagnostics">
-              <div className="diagnostic">
-                <AlertTriangle size={16} />
-                <span>
-                  {chapterCount >= 3
-                    ? '提交样例满足 3+ 章节检查。'
-                    : '当前输入少于 3 章，普通转换允许继续。'}
-                </span>
-              </div>
+              {displayedDiagnostics.map((diagnostic, index) => (
+                <div className="diagnostic" key={`${diagnostic.code}-${diagnostic.path}-${index}`}>
+                  <AlertTriangle size={16} />
+                  <span>
+                    {diagnostic.message}
+                    {diagnostic.suggestion ? ` ${diagnostic.suggestion}` : ''}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </section>

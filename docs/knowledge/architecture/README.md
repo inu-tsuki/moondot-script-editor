@@ -6,6 +6,7 @@
 
 ## 当前入口
 
+- `adaptation-workflow.md`：从小说/灵感来源到剧本 AST 的分阶段 AI 改编工作流。
 - `document-workspace-boundary.md`：`ScreenplayDocument` 与未来 workspace/project/store 的长期拆分边界。
 - `screenplay-ast-contract.md`：`ScreenplayDocument` 是核心模型，`script: ScreenplayAst` 是脚本树，YAML 是官方要求的序列化表示。
 - `screenplay-ast-structure.md`：`ScreenplayDocument` v0.1 与内部 `ScreenplayAst` 的节点结构和实现切片。

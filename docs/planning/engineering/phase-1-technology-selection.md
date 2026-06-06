@@ -1,6 +1,6 @@
 # Phase 1 Technology Selection
 
-> 最近更新：2026-06-05  
+> 最近更新：2026-06-06  
 > 状态：用于脚手架启动的当前决策。
 
 ## 选型原则
@@ -68,13 +68,16 @@ Creative source
 推荐：
 
 - TypeScript 定义 `ScreenplayDocument` / `ScreenplayAst`。
-- Zod 做运行时校验和类型推导。
-- `yaml` 或 `js-yaml` 做 document -> YAML 序列化。
+- v0.1 使用手写 TypeScript runtime validation。
+- 后续可引入 Zod 做运行时校验和类型推导。
+- v0.1 使用手写 `serializeDocumentToYaml`。
+- 后续可引入 `yaml` 或 `js-yaml` 替换 serializer 内部实现。
 
 理由：
 
 - 官方需要 YAML Schema 文档，但工程上需要运行时校验。
-- Zod 能直接为 UI、serializer、LLM response parser 提供同一份约束。
+- 手写校验和 serializer 能降低 MVP 依赖和维护成本。
+- Zod 能在后续为 UI、serializer、LLM response parser 提供同一份约束。
 - 保持全 TypeScript 能降低前后端类型断裂。
 
 ## 模型调用
@@ -102,6 +105,8 @@ Creative source
 推荐：先用确定性 TypeScript parser。
 
 章节解析是当前 `novel` source adapter 的一部分。长期可以增加 inspiration seed、outline 或 world bible adapter，但 Phase 1 只实现小说文本入口。
+
+边界：章节解析只做 source ingestion，不做小说到剧本的改编。它不能可靠地产生场景、对白、人物动机或动作调度；这些应交给 LLM planner / writer，再通过 validation 和修复链路收敛到 `ScreenplayDocument`。
 
 能力范围：
 
@@ -175,7 +180,7 @@ src/
 ## 第一批 PR 建议
 
 - PR 1：项目脚手架、README 初稿、依赖说明。
-- PR 2：`ScreenplayDocument` / `ScreenplayAst` 类型与 Zod schema。
+- PR 2：`ScreenplayDocument` / `ScreenplayAst` 类型与 runtime validation。
 - PR 3：source ingestion、章节解析和 diagnostics。
 - PR 4：document -> YAML serializer。
 - PR 5：基础 UI：输入、章节列表、预览、YAML 输出。

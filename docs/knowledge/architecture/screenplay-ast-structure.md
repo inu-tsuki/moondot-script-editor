@@ -100,6 +100,30 @@ ScreenplayDocument
 - 导出外部标准格式时，可能会丢弃 editor-only 信息，例如 diagnostics path、source summary 或局部生成备注。
 - 每个 importer / exporter 都应声明自己的能力范围和可能的信息损失。
 
+## Source Ingestion 与改编 Agent 边界
+
+小说来源和剧本格式来源需要不同的入口：
+
+```text
+Novel text
+  -> parseNovelChapters
+  -> NovelSource.chapters
+  -> LLM adaptation agent
+  -> ScreenplayAst
+
+Fountain-like text
+  -> Fountain importer
+  -> ScreenplayAst        (future)
+```
+
+`parseNovelChapters` 只负责把自由文本摄取为可追溯的章节来源。它可以识别章节标题、保留章节正文，并产生章节数 diagnostics；它不负责把小说“解析”为场景、对白或动作块。
+
+小说到剧本的转换属于改编问题，不是文本语法解析问题。Phase 1 应建立 prompt / agent 输入输出协议，并保留 mock fallback 让 demo 可复现；真实转换需要由 LLM 完成规划、改写、结构化输出和修复。
+
+只有当输入本身已经是结构化剧本格式，例如 Fountain-like 文本时，才适合使用确定性 parser 直接导入为 AST。这个 parser 应放在 importer 边界，而不是复用小说 source ingestion。
+
+更完整的 AI 改编链路见 `adaptation-workflow.md`。核心方向是先生成 source analysis、开放问题和 scene outline，再根据用户确认后的 writer brief 生成剧本初稿。
+
 ## Project
 
 ```ts

@@ -1,12 +1,12 @@
 # 月点 TODO
 
-> 最近更新：2026-06-05
+> 最近更新：2026-06-06
 
 本文件是月点 AI 协作期任务池。阶段权威以 `roadmap/` 为准，官方约束以 `../knowledge/requirements/` 为准。
 
 ## 当前阶段
 
-Phase 1：工程脚手架与基础 UI 已建立。当前重点进入 `ScreenplayDocument` / `ScreenplayAst` 类型、运行时校验和 demo document。
+Phase 1：工程脚手架、基础 UI、`ScreenplayDocument` 类型、runtime validation 和 YAML projection 已建立。当前重点进入 source ingestion、改编 agent 骨架和基础导出交互。
 
 ## 已完成
 
@@ -33,17 +33,23 @@ Phase 1：工程脚手架与基础 UI 已建立。当前重点进入 `Screenplay
 - [x] 提交并合并 `feat/app-scaffold` PR。
 - [x] 规划 `ScreenplayDocument` v0.1 与内部 `ScreenplayAst` 结构。
 - [x] 明确 `ScreenplayDocument` 是剧本草稿快照，长期 workspace / project 外层承载来源、资产、生成日志和版本历史。
+- [x] 定义 `ScreenplayDocument` / `ScreenplayAst` TypeScript 类型和 demo document。
+- [x] 实现 diagnostics 分级和 `validateScreenplayDocument`。
+- [x] 实现 document 到 YAML projection 的核心 serializer。
+- [x] 实现小说 source ingestion 和基础章节解析。
+- [x] 明确章节解析只属于 novel source ingestion，不承担小说到剧本的转换。
+- [x] 建立小说改编 prompt / mock fallback 骨架。
+- [x] 明确 AI 改编应先生成 source analysis / scene outline / writer brief，再委托 Writer 写剧本初稿。
+- [x] 实现增加语义块的基础 UI。
 
 ## 下一步
 
 - [ ] 以 PR 方式拆分第一组开发任务：脚手架、document / AST、文本输入、YAML 导出、语义块编辑。
-- [ ] 定义 `ScreenplayDocument` / `ScreenplayAst` TypeScript 类型和运行时校验。
-- [ ] 实现 document 到 YAML projection 的序列化器。
-- [ ] 实现章节解析和基础 YAML 导出。
-- [ ] 实现 diagnostics 分级和 `validateScreenplayDocument`。
+- [ ] 实现基础 YAML 导出交互。
+- [ ] 设计生成前配置 UI：目标长度、风格、忠实度、目标媒介、是否压缩支线。
+- [ ] 实现 adaptation plan / scene outline 的预览与确认交互。
 - [ ] 实现可选 `exportDocumentToFountainLike` 预览投影。
-- [ ] 实现增加语义块的基础 UI。
-- [ ] 设计轻量模型调用层和 mock fallback。
+- [ ] 接入轻量模型调用层，将 mock fallback 替换为可配置 LLM agent。
 
 ## 提交前检查
 
