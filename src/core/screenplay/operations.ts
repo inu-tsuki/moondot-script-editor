@@ -8,14 +8,11 @@ const locationTypeLabels: Record<SceneHeading['locationType'], string> = {
 
 const blockIdPattern = /^blk_(\d+)$/;
 
-export const formatSceneHeading = (heading: SceneHeading) =>
-  `${locationTypeLabels[heading.locationType]}. ${heading.location} - ${heading.timeOfDay}`;
+const formatBlockId = (index: number): BlockId =>
+  `blk_${String(index).padStart(3, '0')}` as BlockId;
 
-export const getBlockCharacterId = (block: ScriptBlock): CharacterId | undefined =>
-  block.type === 'dialogue' ? block.characterId : undefined;
-
-export const createNextBlockId = (document: ScreenplayDocument): BlockId => {
-  const highestNumericId = document.script.scenes
+const getHighestBlockNumericId = (document: ScreenplayDocument) =>
+  document.script.scenes
     .flatMap((scene) => scene.blocks)
     .reduce((highestId, block) => {
       const numericId = Number(block.id.match(blockIdPattern)?.[1] ?? 0);
@@ -23,7 +20,24 @@ export const createNextBlockId = (document: ScreenplayDocument): BlockId => {
       return Math.max(highestId, numericId);
     }, 0);
 
-  return `blk_${String(highestNumericId + 1).padStart(3, '0')}` as BlockId;
+export const formatSceneHeading = (heading: SceneHeading) =>
+  `${locationTypeLabels[heading.locationType]}. ${heading.location} - ${heading.timeOfDay}`;
+
+export const getBlockCharacterId = (block: ScriptBlock): CharacterId | undefined =>
+  block.type === 'dialogue' ? block.characterId : undefined;
+
+export const createNextBlockId = (document: ScreenplayDocument): BlockId =>
+  formatBlockId(getHighestBlockNumericId(document) + 1);
+
+export const createBlockIdFactory = (document: ScreenplayDocument) => {
+  let nextNumericId = getHighestBlockNumericId(document) + 1;
+
+  return () => {
+    const blockId = formatBlockId(nextNumericId);
+    nextNumericId += 1;
+
+    return blockId;
+  };
 };
 
 export const appendBlockToFirstScene = (

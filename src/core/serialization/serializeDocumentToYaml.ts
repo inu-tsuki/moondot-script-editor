@@ -4,8 +4,13 @@ export type SerializeDocumentToYamlOptions = {
   generatedAt?: string;
 };
 
+const normalizeYamlScalarString = (value: string) => value.replace(/\r\n?/g, '\n');
+
 const escapeYamlString = (value: string) =>
-  value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+  normalizeYamlScalarString(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n');
 
 const yamlString = (value: string) => `"${escapeYamlString(value)}"`;
 

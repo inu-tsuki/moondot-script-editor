@@ -11,7 +11,7 @@ import {
   getBlockCharacterId,
   updateBlockText as updateDocumentBlockText,
 } from './core/screenplay';
-import { parseNovelChapters } from './core/source-ingestion';
+import { parseNovelChapters, withParsedNovelChapters } from './core/source-ingestion';
 import { validateScreenplayDocument } from './core/validation';
 import type { BlockId, ScreenplayDocument, ScriptBlock } from './core/screenplay';
 import type { Diagnostic } from './core/validation';
@@ -24,6 +24,18 @@ const blockTypeLabels: Record<ScriptBlock['type'], string> = {
   note: 'NOTE',
 };
 
+const shouldSuppressParsedDiagnostic = (
+  diagnostic: Diagnostic,
+  documentDiagnostics: Diagnostic[],
+) =>
+  (diagnostic.code === 'empty_source_text' && diagnostic.path === 'sourceText') ||
+  (diagnostic.code === 'empty_parsed_chapter_text' &&
+    documentDiagnostics.some(
+      (documentDiagnostic) =>
+        documentDiagnostic.code === 'empty_chapter_text' &&
+        documentDiagnostic.path === diagnostic.path,
+    ));
+
 function App() {
   const [sourceText, setSourceText] = useState(demoNovelText);
   const [generatedAt] = useState(() => new Date().toISOString());
@@ -33,21 +45,14 @@ function App() {
 
   const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
   const workingDocument = useMemo<ScreenplayDocument>(
-    () => ({
-      ...screenplayDocument,
-      source: {
-        type: 'novel',
-        title:
-          screenplayDocument.source.type === 'novel'
-            ? screenplayDocument.source.title
-            : screenplayDocument.project.title,
-        chapters: parsedNovel.chapters,
-      },
-    }),
+    () => withParsedNovelChapters(screenplayDocument, parsedNovel.chapters),
     [parsedNovel.chapters, screenplayDocument],
   );
   const activeScene = workingDocument.script.scenes[0];
-  const chapterCount = parsedNovel.chapters.length;
+  const chapterCount =
+    workingDocument.source.type === 'novel'
+      ? workingDocument.source.chapters.length
+      : parsedNovel.chapters.length;
 
   const charactersById = useMemo(
     () => new Map(workingDocument.characters.map((character) => [character.id, character])),
@@ -73,7 +78,9 @@ function App() {
           : '小说文本不能为空。',
         path: 'sourceText',
       },
-      ...parsedNovel.diagnostics,
+      ...parsedNovel.diagnostics.filter(
+        (diagnostic) => !shouldSuppressParsedDiagnostic(diagnostic, documentDiagnostics),
+      ),
       ...adaptationDiagnostics,
       ...documentDiagnostics,
     ],
