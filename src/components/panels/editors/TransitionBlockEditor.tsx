@@ -9,11 +9,15 @@ type TransitionBlockEditorProps = {
 export function TransitionBlockEditor({ block, onChange }: TransitionBlockEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
+  const adjustHeight = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    adjustHeight();
   }, [block.text]);
 
   return (
@@ -21,10 +25,11 @@ export function TransitionBlockEditor({ block, onChange }: TransitionBlockEditor
       <textarea
         ref={textareaRef}
         aria-label={`Transition ${block.id}`}
-        className="resize-none overflow-hidden border border-transparent bg-transparent p-0 text-right text-[13px] font-extrabold uppercase tracking-wide text-[#5f6b64] outline-none transition-colors focus:rounded-md focus:border-[#cfc7ba] focus:bg-[#fffdf8] focus:px-2 focus:py-1"
+        className="resize-none overflow-hidden border border-transparent bg-transparent p-0 text-right text-[13px] font-extrabold uppercase tracking-wide text-[#5f6b64] outline-none transition-colors focus:rounded-md focus:border-[#cfc7ba] focus:bg-[#fffdf8]"
         rows={1}
         value={block.text}
         onChange={(event) => onChange(event.target.value)}
+        onFocus={adjustHeight}
       />
     </div>
   );
