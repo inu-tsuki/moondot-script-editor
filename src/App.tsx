@@ -204,6 +204,7 @@ function App() {
     setAdaptationTrace(adaptationResult.trace);
     setAdaptationDiagnostics(adaptationResult.diagnostics);
     setExportFeedback('');
+    setOutputTab('outline');
   };
 
   const confirmSceneOutline = () => {
@@ -226,6 +227,8 @@ function App() {
   };
 
   const copyYaml = async () => {
+    setOutputTab('yaml');
+
     if (!exportStatus.isReady) {
       setExportFeedback('存在 validation error，暂不复制。');
       return;
@@ -240,6 +243,8 @@ function App() {
   };
 
   const downloadYaml = () => {
+    setOutputTab('yaml');
+
     if (!exportStatus.isReady) {
       setExportFeedback('存在 validation error，暂不下载。');
       return;

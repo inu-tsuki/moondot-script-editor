@@ -40,7 +40,7 @@ export function SceneOutlinePanel({ isDrafted, plan, trace, onConfirm }: SceneOu
         <Badge variant="accent">{plan.preferences.fidelity}</Badge>
         <Badge variant="accent">{plan.preferences.pacing}</Badge>
       </div>
-      <div className="grid gap-2 max-h-[220px] overflow-auto">
+      <div className="grid gap-2">
         {plan.sceneOutline.map((sceneCard) => (
           <article
             className="grid gap-1.5 rounded-md border border-[#cfe5dd] bg-white p-2"
