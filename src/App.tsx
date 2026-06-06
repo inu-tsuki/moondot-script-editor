@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import './App.css';
-import { adaptNovelToScreenplayMock } from './core/adaptation';
+import { adaptNovelToScreenplayMock, defaultAdaptationPreferences } from './core/adaptation';
 import { serializeDocumentToYaml } from './core/serialization';
 import {
   appendBlockToFirstScene,
@@ -21,7 +21,15 @@ import {
 } from './core/screenplay';
 import { parseNovelChapters, withParsedNovelChapters } from './core/source-ingestion';
 import { validateScreenplayDocument } from './core/validation';
-import type { AdaptationPlan, NovelAdaptationTraceStep } from './core/adaptation';
+import type {
+  AdaptationFidelity,
+  AdaptationPacing,
+  AdaptationPlan,
+  AdaptationPreferences,
+  AdaptationStyle,
+  AdaptationTargetLength,
+  NovelAdaptationTraceStep,
+} from './core/adaptation';
 import type { BlockId, ScreenplayDocument, ScriptBlock } from './core/screenplay';
 import type { Diagnostic } from './core/validation';
 
@@ -32,6 +40,42 @@ const blockTypeLabels: Record<ScriptBlock['type'], string> = {
   transition: 'TRANSITION',
   note: 'NOTE',
 };
+
+const targetMediumOptions: Array<{
+  value: AdaptationPreferences['targetMedium'];
+  label: string;
+}> = [
+  { value: 'short_drama', label: '短剧' },
+  { value: 'screenplay', label: '影视剧本' },
+  { value: 'visual_novel', label: '视觉小说' },
+];
+
+const targetLengthOptions: Array<{ value: AdaptationTargetLength; label: string }> = [
+  { value: 'short_drama_3_min', label: '3 分钟' },
+  { value: 'short_scene', label: '单场戏' },
+  { value: 'ten_scene_outline', label: '10 场' },
+  { value: 'episode_outline', label: '单集' },
+];
+
+const fidelityOptions: Array<{ value: AdaptationFidelity; label: string }> = [
+  { value: 'core_rewrite', label: '核心重写' },
+  { value: 'faithful', label: '忠于原文' },
+  { value: 'free', label: '自由改编' },
+];
+
+const pacingOptions: Array<{ value: AdaptationPacing; label: string }> = [
+  { value: 'balanced', label: '均衡' },
+  { value: 'fast', label: '快节奏' },
+  { value: 'slow', label: '慢节奏' },
+];
+
+const styleOptions: Array<{ value: AdaptationStyle; label: string }> = [
+  { value: 'realist', label: '现实主义' },
+  { value: 'suspense', label: '悬疑' },
+  { value: 'light_comedy', label: '轻喜剧' },
+  { value: 'cold', label: '冷峻' },
+  { value: 'romantic', label: '浪漫' },
+];
 
 const shouldSuppressParsedDiagnostic = (
   diagnostic: Diagnostic,
@@ -50,6 +94,9 @@ function App() {
   const [generatedAt] = useState(() => new Date().toISOString());
   const [screenplayDocument, setScreenplayDocument] =
     useState<ScreenplayDocument>(demoScreenplayDocument);
+  const [adaptationPreferences, setAdaptationPreferences] = useState<AdaptationPreferences>({
+    ...defaultAdaptationPreferences,
+  });
   const [adaptationDiagnostics, setAdaptationDiagnostics] = useState<Diagnostic[]>([]);
   const [adaptationPlan, setAdaptationPlan] = useState<AdaptationPlan>();
   const [adaptationTrace, setAdaptationTrace] = useState<NovelAdaptationTraceStep[]>([]);
@@ -118,8 +165,29 @@ function App() {
     setAdaptationTrace([]);
   };
 
+  const clearAdaptationRun = () => {
+    setAdaptationDiagnostics([]);
+    setAdaptationPlan(undefined);
+    setAdaptationTrace([]);
+  };
+
+  const updateAdaptationPreference = <Key extends keyof AdaptationPreferences>(
+    key: Key,
+    value: AdaptationPreferences[Key],
+  ) => {
+    setAdaptationPreferences((currentPreferences) => ({
+      ...currentPreferences,
+      [key]: value,
+      source: 'user',
+    }));
+    clearAdaptationRun();
+  };
+
   const generateScreenplay = () => {
-    const adaptationResult = adaptNovelToScreenplayMock({ document: workingDocument });
+    const adaptationResult = adaptNovelToScreenplayMock({
+      document: workingDocument,
+      preferences: adaptationPreferences,
+    });
 
     setScreenplayDocument(adaptationResult.document);
     setAdaptationPlan(adaptationResult.plan);
@@ -184,6 +252,126 @@ function App() {
               <div className="chapter-pill">
                 <span>submission check</span>
                 <span>{chapterCount >= 3 ? 'ready' : 'warning'}</span>
+              </div>
+            </div>
+            <div className="preference-panel" aria-label="改编基础偏好">
+              <div className="preference-grid">
+                <label className="preference-field">
+                  <span>媒介</span>
+                  <select
+                    value={adaptationPreferences.targetMedium}
+                    onChange={(event) =>
+                      updateAdaptationPreference(
+                        'targetMedium',
+                        event.target.value as AdaptationPreferences['targetMedium'],
+                      )
+                    }
+                  >
+                    {targetMediumOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="preference-field">
+                  <span>长度</span>
+                  <select
+                    value={adaptationPreferences.targetLength}
+                    onChange={(event) =>
+                      updateAdaptationPreference(
+                        'targetLength',
+                        event.target.value as AdaptationTargetLength,
+                      )
+                    }
+                  >
+                    {targetLengthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="preference-field">
+                  <span>忠实度</span>
+                  <select
+                    value={adaptationPreferences.fidelity}
+                    onChange={(event) =>
+                      updateAdaptationPreference(
+                        'fidelity',
+                        event.target.value as AdaptationFidelity,
+                      )
+                    }
+                  >
+                    {fidelityOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="preference-field">
+                  <span>节奏</span>
+                  <select
+                    value={adaptationPreferences.pacing}
+                    onChange={(event) =>
+                      updateAdaptationPreference('pacing', event.target.value as AdaptationPacing)
+                    }
+                  >
+                    {pacingOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="preference-field preference-field-wide">
+                  <span>风格</span>
+                  <select
+                    value={adaptationPreferences.style}
+                    onChange={(event) =>
+                      updateAdaptationPreference('style', event.target.value as AdaptationStyle)
+                    }
+                  >
+                    {styleOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="preference-toggles">
+                <label className="preference-toggle">
+                  <input
+                    type="checkbox"
+                    checked={adaptationPreferences.allowSubplotCompression}
+                    onChange={(event) =>
+                      updateAdaptationPreference('allowSubplotCompression', event.target.checked)
+                    }
+                  />
+                  <span>压缩支线</span>
+                </label>
+                <label className="preference-toggle">
+                  <input
+                    type="checkbox"
+                    checked={adaptationPreferences.allowTimelineReorder}
+                    onChange={(event) =>
+                      updateAdaptationPreference('allowTimelineReorder', event.target.checked)
+                    }
+                  />
+                  <span>重排时间线</span>
+                </label>
+                <label className="preference-toggle">
+                  <input
+                    type="checkbox"
+                    checked={adaptationPreferences.allowCharacterMerge}
+                    onChange={(event) =>
+                      updateAdaptationPreference('allowCharacterMerge', event.target.checked)
+                    }
+                  />
+                  <span>合并角色</span>
+                </label>
               </div>
             </div>
           </div>
@@ -270,6 +458,12 @@ function App() {
                     Scene Outline
                   </div>
                   <span className="panel-meta">{adaptationPlan.sceneOutline.length} scenes</span>
+                </div>
+                <div className="outline-preferences">
+                  <span>{adaptationPlan.preferences.targetMedium}</span>
+                  <span>{adaptationPlan.preferences.targetLength}</span>
+                  <span>{adaptationPlan.preferences.fidelity}</span>
+                  <span>{adaptationPlan.preferences.pacing}</span>
                 </div>
                 <div className="outline-list">
                   {adaptationPlan.sceneOutline.map((sceneCard) => (

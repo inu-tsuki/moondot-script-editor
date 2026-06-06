@@ -86,46 +86,50 @@ const formatSourceCoverageRule = () =>
 export const buildNovelAdaptationPrompt = (
   document: ScreenplayDocument,
   preferences?: Partial<AdaptationPreferences>,
-): PromptMessage[] => [
-  {
-    role: 'system',
-    stage: 'adaptation_planning',
-    content: [
-      '你是“月点”的 Lead Adaptation Architect，负责把小说来源分析成可执行的改编方案。',
-      '重要边界：章节解析只负责 source ingestion；小说到剧本的转换必须由改编 agent 完成，而不是靠正则或 Fountain-like 文本解析完成。',
-      '当前阶段不要直接写最终剧本块；先输出 source analysis、开放问题、改编选项和 scene outline。',
-      formatSourceCoverageRule(),
-      '优先把心理描写改写成可拍摄的动作、对白、旁白或转场，不要机械复制原文。',
-    ].join('\n'),
-  },
-  {
-    role: 'user',
-    stage: 'adaptation_planning',
-    content: [
-      `项目标题：${document.project.title}`,
-      `目标媒介：${document.project.targetMedium}`,
-      '',
-      '基础改编偏好：',
-      formatAdaptationPreferences(preferences),
-      '',
-      '现有角色表：',
-      formatCharacterRoster(document),
-      '',
-      '来源章节：',
-      formatChapterBriefs(document),
-      '',
-      '请输出 JSON object，要求：',
-      '- sourceAnalysis: 核心事件、人物弧光、时间线、必须保留的信息。',
-      '- adaptationQuestions: 需要用户确认的问题，例如目标长度、风格、忠实度、目标媒介、是否压缩支线。',
-      '- adaptationOptions: 2-3 个可选改编方向，每个方向说明优缺点。',
-      '- recommendedPlan: 推荐方案和原因。',
-      '- sceneOutline: 场景卡片数组，包含 title、dramaticPurpose、sourceRefs、estimatedBlocks、pacing、writerBrief。',
-      '- characterUpdates: 需要补充或修订的角色设定。',
-      '- risks: 可能导致改编失败或跑偏的风险。',
-      '- 不要输出解释文字，只输出 JSON。',
-    ].join('\n'),
-  },
-];
+): PromptMessage[] => {
+  const resolvedPreferences = resolveAdaptationPreferences(preferences);
+
+  return [
+    {
+      role: 'system',
+      stage: 'adaptation_planning',
+      content: [
+        '你是“月点”的 Lead Adaptation Architect，负责把小说来源分析成可执行的改编方案。',
+        '重要边界：章节解析只负责 source ingestion；小说到剧本的转换必须由改编 agent 完成，而不是靠正则或 Fountain-like 文本解析完成。',
+        '当前阶段不要直接写最终剧本块；先输出 source analysis、开放问题、改编选项和 scene outline。',
+        formatSourceCoverageRule(),
+        '优先把心理描写改写成可拍摄的动作、对白、旁白或转场，不要机械复制原文。',
+      ].join('\n'),
+    },
+    {
+      role: 'user',
+      stage: 'adaptation_planning',
+      content: [
+        `项目标题：${document.project.title}`,
+        `目标媒介：${resolvedPreferences.targetMedium}`,
+        '',
+        '基础改编偏好：',
+        formatAdaptationPreferences(resolvedPreferences),
+        '',
+        '现有角色表：',
+        formatCharacterRoster(document),
+        '',
+        '来源章节：',
+        formatChapterBriefs(document),
+        '',
+        '请输出 JSON object，要求：',
+        '- sourceAnalysis: 核心事件、人物弧光、时间线、必须保留的信息。',
+        '- adaptationQuestions: 需要用户确认的问题，例如目标长度、风格、忠实度、目标媒介、是否压缩支线。',
+        '- adaptationOptions: 2-3 个可选改编方向，每个方向说明优缺点。',
+        '- recommendedPlan: 推荐方案和原因。',
+        '- sceneOutline: 场景卡片数组，包含 title、dramaticPurpose、sourceRefs、estimatedBlocks、pacing、writerBrief。',
+        '- characterUpdates: 需要补充或修订的角色设定。',
+        '- risks: 可能导致改编失败或跑偏的风险。',
+        '- 不要输出解释文字，只输出 JSON。',
+      ].join('\n'),
+    },
+  ];
+};
 
 export const buildNovelSceneWriterPrompt = (
   document: ScreenplayDocument,
