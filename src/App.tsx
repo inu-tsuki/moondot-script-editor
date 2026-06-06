@@ -12,6 +12,18 @@ import {
 import { useMemo, useState } from 'react';
 import './App.css';
 import {
+  Badge,
+  Button,
+  Field,
+  PanelBody,
+  PanelHeader,
+  PanelMeta,
+  PanelShell,
+  PanelTitle,
+  Toolbar,
+  fieldControlClassName,
+} from './components/ui';
+import {
   defaultAdaptationPreferences,
   draftNovelAdaptationFromPlanMock,
   planNovelAdaptationMock,
@@ -316,55 +328,39 @@ function App() {
             <span className="brand-subtitle">AI 剧本创作工作台</span>
           </div>
         </div>
-        <div className="topbar-actions">
-          <button className="button-secondary" type="button" title="导入小说">
+        <Toolbar className="topbar-actions">
+          <Button title="导入小说">
             <FileText size={16} />
             导入
-          </button>
-          <button
-            className="button-primary"
-            type="button"
-            title="生成改编大纲"
-            onClick={generateSceneOutline}
-          >
+          </Button>
+          <Button title="生成改编大纲" variant="primary" onClick={generateSceneOutline}>
             <WandSparkles size={16} />
             大纲
-          </button>
-          <button
-            className="button-secondary"
-            type="button"
+          </Button>
+          <Button
             title="确认大纲并写入剧本"
             onClick={confirmSceneOutline}
             disabled={!adaptationPlan || isCurrentPlanDrafted}
           >
             <CheckCircle2 size={16} />
             写入
-          </button>
-          <button
-            className="button-secondary"
-            type="button"
-            title="下载 YAML"
-            onClick={downloadYaml}
-            disabled={!exportStatus.isReady}
-          >
+          </Button>
+          <Button title="下载 YAML" onClick={downloadYaml} disabled={!exportStatus.isReady}>
             <Download size={16} />
             YAML
-          </button>
-        </div>
+          </Button>
+        </Toolbar>
       </header>
 
       <main className="workbench">
-        <section className="panel">
-          <div className="panel-header">
-            <div className="panel-title">
-              <FileText size={16} />
-              Source
-            </div>
-            <span className="panel-meta">
+        <PanelShell>
+          <PanelHeader>
+            <PanelTitle icon={<FileText size={16} />}>Source</PanelTitle>
+            <PanelMeta>
               {workingDocument.source.type} · {chapterCount} chapters
-            </span>
-          </div>
-          <div className="panel-body">
+            </PanelMeta>
+          </PanelHeader>
+          <PanelBody>
             <textarea
               aria-label="小说来源文本"
               className="source-textarea"
@@ -383,9 +379,9 @@ function App() {
             </div>
             <div className="preference-panel" aria-label="改编基础偏好">
               <div className="preference-grid">
-                <label className="preference-field">
-                  <span>媒介</span>
+                <Field label="媒介">
                   <select
+                    className={fieldControlClassName}
                     value={adaptationPreferences.targetMedium}
                     onChange={(event) =>
                       updateAdaptationPreference(
@@ -400,10 +396,10 @@ function App() {
                       </option>
                     ))}
                   </select>
-                </label>
-                <label className="preference-field">
-                  <span>长度</span>
+                </Field>
+                <Field label="长度">
                   <select
+                    className={fieldControlClassName}
                     value={adaptationPreferences.targetLength}
                     onChange={(event) =>
                       updateAdaptationPreference(
@@ -418,10 +414,10 @@ function App() {
                       </option>
                     ))}
                   </select>
-                </label>
-                <label className="preference-field">
-                  <span>忠实度</span>
+                </Field>
+                <Field label="忠实度">
                   <select
+                    className={fieldControlClassName}
                     value={adaptationPreferences.fidelity}
                     onChange={(event) =>
                       updateAdaptationPreference(
@@ -436,10 +432,10 @@ function App() {
                       </option>
                     ))}
                   </select>
-                </label>
-                <label className="preference-field">
-                  <span>节奏</span>
+                </Field>
+                <Field label="节奏">
                   <select
+                    className={fieldControlClassName}
                     value={adaptationPreferences.pacing}
                     onChange={(event) =>
                       updateAdaptationPreference('pacing', event.target.value as AdaptationPacing)
@@ -451,10 +447,10 @@ function App() {
                       </option>
                     ))}
                   </select>
-                </label>
-                <label className="preference-field preference-field-wide">
-                  <span>风格</span>
+                </Field>
+                <Field label="风格" wide>
                   <select
+                    className={fieldControlClassName}
                     value={adaptationPreferences.style}
                     onChange={(event) =>
                       updateAdaptationPreference('style', event.target.value as AdaptationStyle)
@@ -466,7 +462,7 @@ function App() {
                       </option>
                     ))}
                   </select>
-                </label>
+                </Field>
               </div>
               <div className="preference-toggles">
                 <label className="preference-toggle">
@@ -501,26 +497,18 @@ function App() {
                 </label>
               </div>
             </div>
-          </div>
-        </section>
+          </PanelBody>
+        </PanelShell>
 
-        <section className="panel">
-          <div className="panel-header">
-            <div className="panel-title">
-              <Sparkles size={16} />
-              Semantic Blocks
-            </div>
-            <button
-              className="button-secondary"
-              type="button"
-              title="增加语义块"
-              onClick={addBlock}
-            >
+        <PanelShell>
+          <PanelHeader>
+            <PanelTitle icon={<Sparkles size={16} />}>Semantic Blocks</PanelTitle>
+            <Button title="增加语义块" onClick={addBlock}>
               <Plus size={16} />
               Block
-            </button>
-          </div>
-          <div className="panel-body">
+            </Button>
+          </PanelHeader>
+          <PanelBody>
             <div className="scene-list">
               {activeScene ? (
                 <article className="scene-card">
@@ -530,7 +518,7 @@ function App() {
                       <div className="scene-title">{activeScene.title}</div>
                       <div className="scene-summary">{activeScene.synopsis}</div>
                     </div>
-                    <span className="panel-meta">{activeScene.id}</span>
+                    <PanelMeta>{activeScene.id}</PanelMeta>
                   </div>
                   <div className="block-list">
                     {activeScene.blocks.map((block) => {
@@ -542,9 +530,11 @@ function App() {
                       return (
                         <div className="script-block" key={block.id}>
                           <div className="block-toolbar">
-                            <span className="block-type">{blockTypeLabels[block.type]}</span>
+                            <Badge variant="dark">{blockTypeLabels[block.type]}</Badge>
                             {characterName ? (
-                              <span className="block-character">{characterName}</span>
+                              <Badge className="border-transparent bg-transparent text-[#8a4b2d]">
+                                {characterName}
+                              </Badge>
                             ) : null}
                           </div>
                           <textarea
@@ -565,45 +555,38 @@ function App() {
                 </div>
               )}
             </div>
-          </div>
-        </section>
+          </PanelBody>
+        </PanelShell>
 
-        <section className="panel panel-output">
-          <div className="panel-header">
-            <div className="panel-title">
-              <Download size={16} />
-              YAML Projection
-            </div>
-            <span className="panel-meta">document v{workingDocument.documentVersion}</span>
-          </div>
-          <div className="panel-body side-tabs">
+        <PanelShell className="panel-output">
+          <PanelHeader>
+            <PanelTitle icon={<Download size={16} />}>YAML Projection</PanelTitle>
+            <PanelMeta>document v{workingDocument.documentVersion}</PanelMeta>
+          </PanelHeader>
+          <PanelBody className="side-tabs">
             <div className="output-controls">
               {adaptationPlan ? (
                 <section className="outline-panel" aria-label="改编大纲">
                   <div className="outline-header">
-                    <div className="panel-title">
-                      <ListChecks size={16} />
-                      Scene Outline
-                    </div>
-                    <span className="panel-meta">{adaptationPlan.sceneOutline.length} scenes</span>
+                    <PanelTitle icon={<ListChecks size={16} />}>Scene Outline</PanelTitle>
+                    <PanelMeta>{adaptationPlan.sceneOutline.length} scenes</PanelMeta>
                   </div>
                   <div className="outline-actions">
-                    <button
-                      className="button-primary"
-                      type="button"
+                    <Button
                       title="确认大纲并写入剧本"
+                      variant="primary"
                       onClick={confirmSceneOutline}
                       disabled={isCurrentPlanDrafted}
                     >
                       <CheckCircle2 size={16} />
                       {isCurrentPlanDrafted ? '已写入' : '确认写入'}
-                    </button>
+                    </Button>
                   </div>
                   <div className="outline-preferences">
-                    <span>{adaptationPlan.preferences.targetMedium}</span>
-                    <span>{adaptationPlan.preferences.targetLength}</span>
-                    <span>{adaptationPlan.preferences.fidelity}</span>
-                    <span>{adaptationPlan.preferences.pacing}</span>
+                    <Badge variant="accent">{adaptationPlan.preferences.targetMedium}</Badge>
+                    <Badge variant="accent">{adaptationPlan.preferences.targetLength}</Badge>
+                    <Badge variant="accent">{adaptationPlan.preferences.fidelity}</Badge>
+                    <Badge variant="accent">{adaptationPlan.preferences.pacing}</Badge>
                   </div>
                   <div className="outline-list">
                     {adaptationPlan.sceneOutline.map((sceneCard) => (
@@ -635,33 +618,26 @@ function App() {
               ) : null}
               <section className="export-panel" aria-label="YAML 导出">
                 <div className="export-status">
-                  <span className={exportStatus.isReady ? 'status-ready' : 'status-error'}>
+                  <Badge variant={exportStatus.isReady ? 'success' : 'error'}>
                     {exportStatus.isReady ? 'export ready' : `${exportStatus.errorCount} errors`}
-                  </span>
-                  <span>{exportStatus.warningCount} warnings</span>
-                  {exportFeedback ? <span>{exportFeedback}</span> : null}
+                  </Badge>
+                  <Badge>{exportStatus.warningCount} warnings</Badge>
+                  {exportFeedback ? <Badge>{exportFeedback}</Badge> : null}
                 </div>
                 <div className="export-actions">
-                  <button
-                    className="button-secondary"
-                    type="button"
-                    title="复制 YAML"
-                    onClick={copyYaml}
-                    disabled={!exportStatus.isReady}
-                  >
+                  <Button title="复制 YAML" onClick={copyYaml} disabled={!exportStatus.isReady}>
                     <Copy size={16} />
                     复制
-                  </button>
-                  <button
-                    className="button-primary"
-                    type="button"
+                  </Button>
+                  <Button
                     title="下载 YAML"
+                    variant="primary"
                     onClick={downloadYaml}
                     disabled={!exportStatus.isReady}
                   >
                     <Download size={16} />
                     下载
-                  </button>
+                  </Button>
                 </div>
               </section>
             </div>
@@ -677,8 +653,8 @@ function App() {
                 </div>
               ))}
             </div>
-          </div>
-        </section>
+          </PanelBody>
+        </PanelShell>
       </main>
     </div>
   );
