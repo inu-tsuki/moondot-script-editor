@@ -8,6 +8,8 @@ export type {
   ModelCallResult,
   ModelProviderConfig,
   ModelProviderType,
+  ModelStage,
+  ModelStagePayloadMap,
   ModelTraceEvent,
   ModelTraceOutcome,
 } from './types';

@@ -7,6 +7,8 @@ import type {
   ModelCallResult,
   ModelProviderConfig,
   ModelProviderType,
+  ModelStage,
+  ModelStagePayloadMap,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -36,22 +38,35 @@ export type MockAdapterContext = {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Map a `NovelAdaptationResult` into a `ModelCallResult`.
+ *
+ * The trace outcome is derived from whether the expected artifact is
+ * actually present — not hard-coded to `success`.
+ */
 const mapResult = <TData>(
   result: NovelAdaptationResult,
   provider: ModelProviderType,
   stage: string,
   data: TData | null,
-): ModelCallResult<TData> => ({
-  data,
-  diagnostics: result.diagnostics,
-  trace: {
-    provider,
-    stage,
-    outcome: 'success',
-  },
-});
+  runId?: string,
+): ModelCallResult<TData> => {
+  const artifactPresent = data !== null && data !== undefined;
 
-const unknownStageResult = <TData>(stage: string): ModelCallResult<TData> => ({
+  return {
+    data,
+    diagnostics: result.diagnostics,
+    trace: {
+      provider,
+      stage,
+      outcome: artifactPresent ? 'success' : 'error',
+      fallbackReason: artifactPresent ? undefined : 'semantic',
+    },
+    runId,
+  };
+};
+
+const unknownStageResult = <TData>(stage: string, runId?: string): ModelCallResult<TData> => ({
   data: null,
   diagnostics: [
     {
@@ -67,6 +82,7 @@ const unknownStageResult = <TData>(stage: string): ModelCallResult<TData> => ({
     outcome: 'fallback',
     fallbackReason: 'semantic',
   },
+  runId,
 });
 
 // ---------------------------------------------------------------------------
@@ -76,8 +92,10 @@ const unknownStageResult = <TData>(stage: string): ModelCallResult<TData> => ({
 export const createMockModelAdapter = (ctx: MockAdapterContext): ModelAdapter => ({
   config: MOCK_PROVIDER_CONFIG,
 
-  async call<TData>(request: ModelCallRequest): Promise<ModelCallResult<TData>> {
-    const { stage } = request;
+  async call<S extends ModelStage>(
+    request: ModelCallRequest<S>,
+  ): Promise<ModelCallResult<ModelStagePayloadMap[S]>> {
+    const { stage, runId } = request;
 
     // -- adaptation plan generation --
     if (stage === 'adaptation_planning') {
@@ -89,8 +107,9 @@ export const createMockModelAdapter = (ctx: MockAdapterContext): ModelAdapter =>
         result,
         MOCK_PROVIDER_CONFIG.provider,
         stage,
-        (result.plan ?? null) as TData,
-      );
+        result.plan ?? null,
+        runId,
+      ) as ModelCallResult<ModelStagePayloadMap[S]>;
     }
 
     // -- scene draft generation --
@@ -113,17 +132,24 @@ export const createMockModelAdapter = (ctx: MockAdapterContext): ModelAdapter =>
             outcome: 'error',
             fallbackReason: 'semantic',
           },
-        } as ModelCallResult<TData>;
+          runId,
+        } as ModelCallResult<ModelStagePayloadMap[S]>;
       }
 
       const result = draftNovelAdaptationFromPlanMock({
         document: ctx.getDocument(),
         plan,
       });
-      return mapResult(result, MOCK_PROVIDER_CONFIG.provider, stage, result.document as TData);
+      return mapResult(
+        result,
+        MOCK_PROVIDER_CONFIG.provider,
+        stage,
+        result.document,
+        runId,
+      ) as ModelCallResult<ModelStagePayloadMap[S]>;
     }
 
     // -- fallback for unrecognised stages --
-    return unknownStageResult(stage);
+    return unknownStageResult(stage, runId) as ModelCallResult<ModelStagePayloadMap[S]>;
   },
 });

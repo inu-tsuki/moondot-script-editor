@@ -1,4 +1,5 @@
-import type { PromptMessage } from '../adaptation';
+import type { AdaptationPlan, PromptMessage } from '../adaptation';
+import type { ScreenplayDocument } from '../screenplay';
 import type { Diagnostic } from '../validation';
 
 // ---------------------------------------------------------------------------
@@ -49,12 +50,36 @@ export type ModelTraceEvent = {
 };
 
 // ---------------------------------------------------------------------------
+// Stage → payload mapping (typed contract)
+// ---------------------------------------------------------------------------
+
+/** Known workflow stages. Each stage maps to a fixed artifact type below. */
+export type ModelStage = 'adaptation_planning' | 'scene_draft';
+
+/**
+ * Payload type determined by `stage`, not by the caller.
+ *
+ * When a caller passes `stage: 'adaptation_planning'` the adapter resolves
+ * with `ModelCallResult<AdaptationPlan>`.  There is no way to request a
+ * different type for the same stage — the contract is enforced by this map.
+ */
+export type ModelStagePayloadMap = {
+  adaptation_planning: AdaptationPlan;
+  scene_draft: ScreenplayDocument;
+};
+
+// ---------------------------------------------------------------------------
 // Request / Result envelopes
 // ---------------------------------------------------------------------------
 
-export type ModelCallRequest = {
+export type ModelCallRequest<S extends ModelStage = ModelStage> = {
   messages: PromptMessage[];
-  stage: string;
+  stage: S;
+  /**
+   * Opaque token the caller can use to detect stale results.
+   * The adapter echoes it back unchanged in `ModelCallResult.runId`.
+   */
+  runId?: string;
 };
 
 export type ModelCallResult<TData = unknown> = {
@@ -62,6 +87,8 @@ export type ModelCallResult<TData = unknown> = {
   diagnostics: Diagnostic[];
   trace: ModelTraceEvent;
   error?: ModelCallError;
+  /** Echoed from the request — compare to detect stale responses. */
+  runId?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -73,8 +100,20 @@ export type ModelCallResult<TData = unknown> = {
  *
  * Both mock (default) and future real providers implement this contract
  * so the UI never needs to know which provider is active.
+ *
+ * The return type is determined by `request.stage`, not by an explicit
+ * type parameter — see `ModelStagePayloadMap`.
  */
 export type ModelAdapter = {
   readonly config: ModelProviderConfig;
-  call<TData>(request: ModelCallRequest): Promise<ModelCallResult<TData>>;
+
+  /**
+   * Issue a model call for the given stage.
+   *
+   * @returns Always resolves — even on failure the error is surfaced
+   *          inside `ModelCallResult` rather than rejecting the promise.
+   */
+  call<S extends ModelStage>(
+    request: ModelCallRequest<S>,
+  ): Promise<ModelCallResult<ModelStagePayloadMap[S]>>;
 };

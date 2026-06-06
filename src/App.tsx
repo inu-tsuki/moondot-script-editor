@@ -122,6 +122,9 @@ function App() {
     [],
   );
 
+  // Track the latest call to ignore stale async results.
+  const latestRunIdRef = useRef<string | null>(null);
+
   const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
   const workingDocument = useMemo<ScreenplayDocument>(
     () => withParsedNovelChapters(screenplayDocument, parsedNovel.chapters),
@@ -277,38 +280,58 @@ function App() {
   };
 
   const generateSceneOutline = async () => {
-    const messages = buildNovelAdaptationPrompt(workingDocument, adaptationPreferences);
-    const result = await modelAdapter.call<AdaptationPlan>({
-      messages,
-      stage: 'adaptation_planning',
-    });
+    const runId = crypto.randomUUID();
+    latestRunIdRef.current = runId;
 
-    setAdaptationPlan(result.data ?? undefined);
-    setAdaptationTrace(
-      result.data
-        ? [
-            {
-              label: 'source-ingestion',
-              detail: `读取 ${chapterCount} 个小说章节作为模型输入。`,
-              stage: 'source_analysis',
-              artifactType: 'source_analysis',
-              sourceIds: result.data.sceneOutline.flatMap((sceneCard) =>
-                sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
-              ),
-            },
-            {
-              label: 'model-planning',
-              detail: `通过 ${result.trace.provider} provider 生成 ${result.data.sceneOutline.length} 张 scene cards；scene 可以引用多个章节。`,
-              stage: 'adaptation_planning',
-              artifactType: 'adaptation_plan',
-            },
-          ]
-        : [],
-    );
-    setAdaptationDiagnostics(result.diagnostics);
-    setExportFeedback('');
-    setOutputTab('outline');
-    clearSelection();
+    try {
+      const messages = buildNovelAdaptationPrompt(workingDocument, adaptationPreferences);
+      const result = await modelAdapter.call({
+        messages,
+        stage: 'adaptation_planning',
+        runId,
+      });
+
+      // Discard stale results (user changed source while request was in flight).
+      if (result.runId !== latestRunIdRef.current) {
+        return;
+      }
+
+      setAdaptationPlan(result.data ?? undefined);
+      setAdaptationTrace(
+        result.data
+          ? [
+              {
+                label: 'source-ingestion',
+                detail: `读取 ${chapterCount} 个小说章节作为模型输入。`,
+                stage: 'source_analysis',
+                artifactType: 'source_analysis',
+                sourceIds: result.data.sceneOutline.flatMap((sceneCard) =>
+                  sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
+                ),
+              },
+              {
+                label: 'model-planning',
+                detail: `通过 ${result.trace.provider} provider 生成 ${result.data.sceneOutline.length} 张 scene cards；scene 可以引用多个章节。`,
+                stage: 'adaptation_planning',
+                artifactType: 'adaptation_plan',
+              },
+            ]
+          : [],
+      );
+      setAdaptationDiagnostics(result.diagnostics);
+      setExportFeedback('');
+      setOutputTab('outline');
+      clearSelection();
+    } catch (err) {
+      setAdaptationDiagnostics([
+        {
+          severity: 'error',
+          code: 'model_call_rejected',
+          message: err instanceof Error ? err.message : 'Model call failed unexpectedly.',
+          path: 'model',
+        },
+      ]);
+    }
   };
 
   const confirmSceneOutline = async () => {
@@ -316,30 +339,50 @@ function App() {
       return;
     }
 
-    const messages = buildNovelSceneWriterPrompt(workingDocument, adaptationPlan);
-    const result = await modelAdapter.call<ScreenplayDocument>({
-      messages,
-      stage: 'scene_draft',
-    });
+    const runId = crypto.randomUUID();
+    latestRunIdRef.current = runId;
 
-    if (!result.data) {
-      setAdaptationDiagnostics(result.diagnostics);
-      return;
-    }
-
-    setScreenplayDocument(result.data);
-    setAdaptationTrace((currentTrace) => [
-      ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
-      {
-        label: 'model-writing',
-        detail: `通过 ${result.trace.provider} provider 写入 ScreenplayAst 草稿。`,
+    try {
+      const messages = buildNovelSceneWriterPrompt(workingDocument, adaptationPlan);
+      const result = await modelAdapter.call({
+        messages,
         stage: 'scene_draft',
-        artifactType: 'writer_draft',
-      },
-    ]);
-    setAdaptationDiagnostics(result.diagnostics);
-    setExportFeedback('');
-    clearSelection();
+        runId,
+      });
+
+      // Discard stale results.
+      if (result.runId !== latestRunIdRef.current) {
+        return;
+      }
+
+      if (!result.data) {
+        setAdaptationDiagnostics(result.diagnostics);
+        return;
+      }
+
+      setScreenplayDocument(result.data);
+      setAdaptationTrace((currentTrace) => [
+        ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
+        {
+          label: 'model-writing',
+          detail: `通过 ${result.trace.provider} provider 写入 ScreenplayAst 草稿。`,
+          stage: 'scene_draft',
+          artifactType: 'writer_draft',
+        },
+      ]);
+      setAdaptationDiagnostics(result.diagnostics);
+      setExportFeedback('');
+      clearSelection();
+    } catch (err) {
+      setAdaptationDiagnostics([
+        {
+          severity: 'error',
+          code: 'model_call_rejected',
+          message: err instanceof Error ? err.message : 'Model call failed unexpectedly.',
+          path: 'model',
+        },
+      ]);
+    }
   };
 
   const copyYaml = async () => {
