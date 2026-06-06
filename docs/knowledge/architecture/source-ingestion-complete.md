@@ -231,15 +231,15 @@ Writer prompt
 - 支持局部重生成。
 - 支持来源覆盖检查。
 
-## Phase 1 / Phase 2 分界
+## 基础切片 / Phase 2 分界
 
-当前 Phase 1 只做：
+已完成的基础切片已经做到：
 
 - `parseNovelChapters`。
 - chapter-level sourceRefs。
 - 基础 diagnostics。
 
-下一阶段可以做：
+Phase 2 可以做：
 
 - `SourceSegment` 类型草案。
 - chapter summary / event beat mock。

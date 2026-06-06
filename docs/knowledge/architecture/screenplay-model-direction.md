@@ -13,7 +13,7 @@
 - 内部用结构化 `ScreenplayDocument` 表示剧本项目，其中 `script: ScreenplayAst` 表达脚本树。
 - 对外优先把 document 序列化为官方要求的 YAML。
 - UI 提供可读、可编辑的剧本视图。
-- YAML + Fountain、Ren'Py、Naninovel、Word 等作为后续导出目标或 demo 加分项，而不是第一阶段必需项。
+- YAML + Fountain、Ren'Py、Naninovel、Word 等作为后续导出目标或 demo 加分项，而不是当前 MVP 必需项。
 
 ## 为什么不是纯 YAML 编辑器
 

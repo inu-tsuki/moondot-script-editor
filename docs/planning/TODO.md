@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-Phase 1：工程脚手架、基础 UI、`ScreenplayDocument` 类型、runtime validation、YAML projection、source ingestion 和 mock adaptation scaffold 已建立。当前重点从 review follow-up 转入 adaptation plan / scene outline 的中间层建设。
+Phase 2：Adaptation Plan / Scene Outline 工作流。基础切片的工程脚手架、基础 UI、`ScreenplayDocument` 类型、runtime validation、YAML projection、source ingestion 和 mock adaptation scaffold 已建立；当前重点是让“先规划，再写作”进入代码和 UI。
 
 ## 已完成
 
@@ -44,10 +44,14 @@ Phase 1：工程脚手架、基础 UI、`ScreenplayDocument` 类型、runtime va
 - [x] 建立长期版本控制方向，明确版本历史属于 workspace / project 外层。
 - [x] 建立 source ingestion 完整体规划，明确 chapter、segment、beat 和 coverage 的边界。
 - [x] 建立 PR #8 之后的下一阶段规划。
+- [x] 完成 agent workflow 调研沉淀，明确当前提交阶段不引入完整 agent graph runtime。
+- [x] 正式启动 Phase 2 规划，明确 Adaptation Plan / Scene Outline 阶段边界。
 
 ## 下一步
 
 - [ ] 定义 `AdaptationPlan` / `SceneCard` / `AdaptationQuestion` 类型和 mock plan builder。
+- [ ] 定义 `AdaptationPreferences`，并让基础偏好进入 plan builder。
+- [ ] 定义轻量 `GenerationTrace` / `GenerationRun`，记录 plan / writer 两阶段。
 - [ ] 让 mock screenplay generation 基于 adaptation plan，而不是直接从章节生成场景。
 - [ ] 设计生成前配置 UI：目标长度、风格、忠实度、目标媒介、是否压缩支线。
 - [ ] 实现 adaptation plan / scene outline 的预览与确认交互。

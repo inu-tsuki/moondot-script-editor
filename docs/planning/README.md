@@ -1,6 +1,6 @@
 # Development Planning
 
-> 最近更新：2026-06-05
+> 最近更新：2026-06-06
 
 这里放仍会影响开发顺序、任务拆分和提交节奏的文档。它回答“下一步做什么，做到什么程度算结束”。
 
@@ -9,9 +9,10 @@
 - `submission-fit-review.md`：brainstorm 与官方提交需求的适配审计、MVP 收口和开放问题。
 - `development-workflow.md`：PR、commit、第一次提交和后续开发节奏。
 - `engineering/phase-1-technology-selection.md`：Phase 1 技术栈和脚手架边界。
-- `next-direction.md`：PR #8 之后的近期开发方向，优先级和 PR 拆分建议。
+- `next-direction.md`：PR #9 之后的近期开发方向，优先级和 PR 拆分建议。
 - `reviews/README.md`：已合并 PR 的 review、回顾和后续动作。
 - `roadmap/README.md`：72 小时作品挑战的阶段路线。
+- `roadmap/phase-2-adaptation-workflow.md`：当前 Phase 2 的 Adaptation Plan / Scene Outline 工作流规划。
 - `TODO.md`：任务池和提交前检查。
 
 ## 子目录

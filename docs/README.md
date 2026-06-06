@@ -1,6 +1,6 @@
 # 月点文档索引
 
-> 最近更新：2026-06-05
+> 最近更新：2026-06-06
 
 `docs/` 是月点的项目文档库，按用途分成三类：开发规划、知识库、归档。新增文档时先判断它是在回答“接下来怎么做”，还是“长期事实是什么”，或者只是“历史材料是什么”。
 
@@ -16,8 +16,9 @@
 当前优先从这里开始：
 
 - `planning/roadmap/README.md`
+- `planning/roadmap/phase-2-adaptation-workflow.md`
 - `planning/development-workflow.md`
-- `planning/reviews/pr-001-app-scaffold.md`
+- `planning/next-direction.md`
 - `planning/TODO.md`
 
 ## 知识库：`docs/knowledge/`
@@ -35,6 +36,7 @@
 - `knowledge/requirements/xengineer-ai-novel-to-script.md`
 - `knowledge/requirements/submission-rules.md`
 - `knowledge/product/vision.md`
+- `knowledge/architecture/agent-workflow-research.md`
 - `knowledge/architecture/screenplay-ast-structure.md`
 - `knowledge/architecture/screenplay-model-direction.md`
 - `knowledge/interaction/semantic-block-editing.md`

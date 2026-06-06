@@ -1,7 +1,7 @@
 # Tool Composition Architecture
 
-> 最近更新：2026-06-05  
-> 状态：Phase 1 架构原则。
+> 最近更新：2026-06-06  
+> 状态：MVP 架构原则。
 
 ## 核心原则
 
