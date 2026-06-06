@@ -1,5 +1,5 @@
 import type { Diagnostic } from '../validation';
-import type { ChapterId, SourceChapter } from '../screenplay';
+import type { ChapterId, ScreenplayDocument, SourceChapter } from '../screenplay';
 
 export type ChapterParseResult = {
   chapters: SourceChapter[];
@@ -127,5 +127,22 @@ export const parseNovelChapters = (text: string): ChapterParseResult => {
   return {
     chapters,
     diagnostics,
+  };
+};
+
+export const withParsedNovelChapters = (
+  document: ScreenplayDocument,
+  chapters: SourceChapter[],
+): ScreenplayDocument => {
+  if (document.source.type !== 'novel') {
+    return document;
+  }
+
+  return {
+    ...document,
+    source: {
+      ...document.source,
+      chapters,
+    },
   };
 };

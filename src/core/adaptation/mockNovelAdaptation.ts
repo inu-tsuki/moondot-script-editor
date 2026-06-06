@@ -1,3 +1,4 @@
+import { createBlockIdFactory } from '../screenplay';
 import type {
   BlockId,
   CharacterId,
@@ -52,17 +53,6 @@ const compactText = (text: string | undefined, maxLength = 70) => {
 
 const createSceneId = (index: number): SceneId =>
   `scene_${String(index).padStart(3, '0')}` as SceneId;
-
-const createBlockIdFactory = () => {
-  let blockIndex = 1;
-
-  return () => {
-    const blockId = `blk_${String(blockIndex).padStart(3, '0')}` as BlockId;
-    blockIndex += 1;
-
-    return blockId;
-  };
-};
 
 const getPrimaryCharacterId = (document: ScreenplayDocument): CharacterId | undefined =>
   document.characters[0]?.id;
@@ -180,7 +170,7 @@ export const adaptNovelToScreenplayMock = ({
     };
   }
 
-  const nextBlockId = createBlockIdFactory();
+  const nextBlockId = createBlockIdFactory(document);
   const scenes = document.source.chapters.map((_, chapterIndex) =>
     createChapterScene(document.source as NovelSource, document, chapterIndex, nextBlockId),
   );

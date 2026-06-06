@@ -1,6 +1,7 @@
 export { demoNovelText, demoScreenplayDocument } from './demoDocument';
 export {
   appendBlockToFirstScene,
+  createBlockIdFactory,
   createNextBlockId,
   formatSceneHeading,
   getBlockCharacterId,
