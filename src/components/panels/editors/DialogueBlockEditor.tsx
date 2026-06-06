@@ -40,21 +40,13 @@ export function DialogueBlockEditor({
 
   const showParenthetical = !!block.parenthetical || isSelected;
 
-  const selectClass = isSelected
-    ? 'rounded border-[#cfc7ba] bg-white px-1'
-    : 'border-transparent bg-transparent';
-
-  const inputClass = isSelected
-    ? 'rounded border-[#cfc7ba] bg-white px-1'
-    : 'border-transparent bg-transparent';
-
   return (
     <div className="my-3">
       <div className="mx-auto max-w-full text-center min-[860px]:max-w-[65%]">
         <div className="flex flex-wrap items-center justify-center gap-2">
           <select
             aria-label="Character"
-            className={`${manuscriptField} appearance-none cursor-pointer font-extrabold uppercase tracking-wide text-[#17211d] ${selectClass}`}
+            className={`${manuscriptField} appearance-none cursor-pointer font-extrabold uppercase tracking-wide text-[#17211d]`}
             onChange={(e) =>
               onEdit({
                 type: 'update-block-character',
@@ -74,7 +66,7 @@ export function DialogueBlockEditor({
           {showParenthetical ? (
             <input
               aria-label="Parenthetical"
-              className={`${manuscriptField} text-[13px] italic text-[#7b776b] outline-none ${inputClass}`}
+              className={`${manuscriptField} text-[13px] italic text-[#7b776b] outline-none`}
               onChange={(e) =>
                 onEdit({
                   type: 'update-parenthetical',

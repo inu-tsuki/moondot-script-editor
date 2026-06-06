@@ -24,23 +24,21 @@ type ScenePageProps = {
 };
 
 // ---------------------------------------------------------------------------
-// Manuscript tokens — stable class compositions shared across all editors
+// Manuscript tokens — controls are always transparent; containers use
+// focus-within for activation highlight
 // ---------------------------------------------------------------------------
 
-// Ghost control: transparent border + padding always present, focus only changes color
-const manuscriptField =
-  'bg-transparent border border-transparent outline-none px-0.5 hover:opacity-70 focus:rounded focus:border-[#cfc7ba] focus:bg-[#fffdf8] focus:opacity-100';
+const manuscriptField = 'bg-transparent border-0 outline-none px-0.5 hover:opacity-70';
 
 const manuscriptSelect = `${manuscriptField} appearance-none cursor-pointer`;
 
-// Textarea: no border at all — focus uses background change only, zero layout impact
 const manuscriptText =
-  'w-full resize-none overflow-hidden border-0 bg-transparent p-0 outline-none transition-colors focus:rounded-md focus:bg-[#fffdf8]';
+  'w-full resize-none overflow-hidden border-0 bg-transparent p-0 outline-none transition-colors';
 
-const manuscriptTextarea = `${manuscriptText}`;
-
-// Heading inline inputs: explicit width per field, no w-auto to avoid browser size=20 default
 const headingInputBase = `${manuscriptField} font-extrabold uppercase tracking-wide text-[#7b6651] max-w-full`;
+
+// Shared activation background for any container whose child gains focus
+const focusContainer = 'focus-within:bg-[#f4f1ea] focus-within:rounded transition-colors';
 
 const locationTypeOptions = [
   { value: 'INT', label: 'INT.' },
@@ -118,9 +116,9 @@ export function ScenePage({
     return (
       <div
         key={block.id}
-        className={`group grid grid-cols-[24px_1fr] min-[761px]:grid-cols-[32px_1fr_auto] items-start gap-x-2 ${
+        className={`group grid grid-cols-[24px_1fr] min-[761px]:grid-cols-[32px_1fr_auto] items-start gap-x-2 ${focusContainer} ${
           isSelected ? 'bg-[#f4f1ea]' : ''
-        } -mx-4 rounded px-4 min-[761px]:-mx-10 min-[761px]:px-10 transition-colors`}
+        } -mx-4 rounded px-4 min-[761px]:-mx-10 min-[761px]:px-10`}
       >
         {/* Left gutter: selection handle */}
         <button
@@ -128,7 +126,7 @@ export function ScenePage({
           className={`mt-1 min-h-[24px] cursor-pointer self-stretch border-l-2 transition-colors ${
             isSelected
               ? 'border-l-[#7b6651]'
-              : 'border-l-transparent group-hover:border-l-[#d9d1c4]'
+              : 'border-l-transparent group-hover:border-l-[#d9d1c4] group-focus-within:border-l-[#7b6651]'
           }`}
           onClick={() =>
             onEdit({
@@ -141,7 +139,7 @@ export function ScenePage({
 
         {/* Content area: auto-selects block when any child gains focus */}
         <div
-          className="min-w-0 min-h-0 overflow-hidden"
+          className="min-w-0 min-h-0 overflow-hidden pt-0.5"
           onFocus={() => {
             if (!isSelected) {
               onEdit({ type: 'select-block', blockId: block.id });
@@ -173,7 +171,10 @@ export function ScenePage({
   return (
     <article>
       <header className="mb-6 border-b border-[#e4ded3] pb-4">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-extrabold uppercase tracking-wide text-[#7b6651]">
+        {/* Scene heading: container lights up when any field is focused */}
+        <div
+          className={`${focusContainer} -mx-1 flex flex-wrap items-center gap-x-2 gap-y-1 rounded px-1 font-extrabold uppercase tracking-wide text-[#7b6651]`}
+        >
           <select
             aria-label="Location type"
             className={`${manuscriptSelect} font-extrabold uppercase tracking-wide text-[#7b6651]`}
@@ -222,7 +223,9 @@ export function ScenePage({
             value={scene.heading.timeOfDay}
           />
         </div>
-        <div className="mt-2">
+
+        {/* Scene title: container lights up on focus */}
+        <div className={`${focusContainer} -mx-1 mt-2 rounded px-1`}>
           <input
             aria-label="Scene title"
             className={`${manuscriptField} w-full text-lg font-extrabold text-[#17211d] placeholder:font-extrabold placeholder:text-[#b0a89a]`}
@@ -238,10 +241,12 @@ export function ScenePage({
             value={scene.title ?? ''}
           />
         </div>
-        <div className="mt-1">
+
+        {/* Scene synopsis: container lights up on focus */}
+        <div className={`${focusContainer} -mx-1 mt-1 rounded px-1`}>
           <textarea
             aria-label="Scene synopsis"
-            className={`${manuscriptTextarea} w-full text-[13px] leading-relaxed text-[#56615a] placeholder:text-[#b0a89a]`}
+            className={`${manuscriptText} w-full text-[13px] leading-relaxed text-[#56615a] placeholder:text-[#b0a89a]`}
             onChange={(e) =>
               onEdit({
                 type: 'update-scene-metadata',
