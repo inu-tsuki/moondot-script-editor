@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  CheckCircle2,
   Download,
   FileText,
   ListChecks,
@@ -9,7 +10,11 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import './App.css';
-import { adaptNovelToScreenplayMock, defaultAdaptationPreferences } from './core/adaptation';
+import {
+  defaultAdaptationPreferences,
+  draftNovelAdaptationFromPlanMock,
+  planNovelAdaptationMock,
+} from './core/adaptation';
 import { serializeDocumentToYaml } from './core/serialization';
 import {
   appendBlockToFirstScene,
@@ -100,6 +105,9 @@ function App() {
   const [adaptationDiagnostics, setAdaptationDiagnostics] = useState<Diagnostic[]>([]);
   const [adaptationPlan, setAdaptationPlan] = useState<AdaptationPlan>();
   const [adaptationTrace, setAdaptationTrace] = useState<NovelAdaptationTraceStep[]>([]);
+  const isCurrentPlanDrafted = adaptationTrace.some(
+    (traceStep) => traceStep.artifactType === 'writer_draft',
+  );
 
   const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
   const workingDocument = useMemo<ScreenplayDocument>(
@@ -183,15 +191,32 @@ function App() {
     clearAdaptationRun();
   };
 
-  const generateScreenplay = () => {
-    const adaptationResult = adaptNovelToScreenplayMock({
+  const generateSceneOutline = () => {
+    const adaptationResult = planNovelAdaptationMock({
       document: workingDocument,
       preferences: adaptationPreferences,
     });
 
-    setScreenplayDocument(adaptationResult.document);
     setAdaptationPlan(adaptationResult.plan);
     setAdaptationTrace(adaptationResult.trace);
+    setAdaptationDiagnostics(adaptationResult.diagnostics);
+  };
+
+  const confirmSceneOutline = () => {
+    if (!adaptationPlan) {
+      return;
+    }
+
+    const adaptationResult = draftNovelAdaptationFromPlanMock({
+      document: workingDocument,
+      plan: adaptationPlan,
+    });
+
+    setScreenplayDocument(adaptationResult.document);
+    setAdaptationTrace((currentTrace) => [
+      ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
+      ...adaptationResult.trace,
+    ]);
     setAdaptationDiagnostics(adaptationResult.diagnostics);
   };
 
@@ -213,11 +238,21 @@ function App() {
           <button
             className="button-primary"
             type="button"
-            title="生成剧本"
-            onClick={generateScreenplay}
+            title="生成改编大纲"
+            onClick={generateSceneOutline}
           >
             <WandSparkles size={16} />
-            生成
+            大纲
+          </button>
+          <button
+            className="button-secondary"
+            type="button"
+            title="确认大纲并写入剧本"
+            onClick={confirmSceneOutline}
+            disabled={!adaptationPlan || isCurrentPlanDrafted}
+          >
+            <CheckCircle2 size={16} />
+            写入
           </button>
           <button className="button-secondary" type="button" title="导出 YAML">
             <Download size={16} />
@@ -458,6 +493,18 @@ function App() {
                     Scene Outline
                   </div>
                   <span className="panel-meta">{adaptationPlan.sceneOutline.length} scenes</span>
+                </div>
+                <div className="outline-actions">
+                  <button
+                    className="button-primary"
+                    type="button"
+                    title="确认大纲并写入剧本"
+                    onClick={confirmSceneOutline}
+                    disabled={isCurrentPlanDrafted}
+                  >
+                    <CheckCircle2 size={16} />
+                    {isCurrentPlanDrafted ? '已写入' : '确认写入'}
+                  </button>
                 </div>
                 <div className="outline-preferences">
                   <span>{adaptationPlan.preferences.targetMedium}</span>

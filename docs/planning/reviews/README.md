@@ -13,6 +13,7 @@
 - [pr-005-novel-adaptation-workflow.md](pr-005-novel-adaptation-workflow.md)：PR #5 `feat/novel-adaptation-workflow` 的 review，关注改编管线设计、mock fallback 边界和来源归因风险。
 - [pr-006-adaptation-plan-core.md](pr-006-adaptation-plan-core.md)：PR #6 `feat/adaptation-plan-core` 的 review，关注 AdaptationPlan 模型引入、UI 呈现和 mock 两阶段重构。
 - [pr-007-adaptation-preferences-ui.md](pr-007-adaptation-preferences-ui.md)：PR #7 `feat/adaptation-preferences-ui` 的 review，关注生成前配置表单 UI、偏好数据联动及可视化呈现。
+- [pr-008-scene-outline-confirmation.md](pr-008-scene-outline-confirmation.md)：PR #8 `feat/scene-outline-confirmation`（GitHub #15）的 review，关注大纲生成与剧本草稿编写的工作流分离与确认机制。
 
 ## 维护规则
 

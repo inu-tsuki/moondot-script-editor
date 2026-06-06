@@ -3,7 +3,11 @@ export {
   buildNovelSceneWriterPrompt,
 } from './buildNovelAdaptationPrompt';
 export { createMockAdaptationPlan } from './createMockAdaptationPlan';
-export { adaptNovelToScreenplayMock } from './mockNovelAdaptation';
+export {
+  adaptNovelToScreenplayMock,
+  draftNovelAdaptationFromPlanMock,
+  planNovelAdaptationMock,
+} from './mockNovelAdaptation';
 export { defaultAdaptationPreferences, resolveAdaptationPreferences } from './preferences';
 export type {
   AdaptationFidelity,
@@ -19,6 +23,8 @@ export type {
   AdaptationWorkflowStage,
   GenerationRun,
   GenerationTraceStep,
+  NovelAdaptationDraftRequest,
+  NovelAdaptationPlanRequest,
   NovelAdaptationRequest,
   NovelAdaptationResult,
   NovelAdaptationTraceStep,

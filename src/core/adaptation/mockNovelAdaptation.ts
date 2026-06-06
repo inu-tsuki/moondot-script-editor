@@ -16,6 +16,8 @@ import {
 import { createMockAdaptationPlan } from './createMockAdaptationPlan';
 import { resolveAdaptationPreferences } from './preferences';
 import type {
+  NovelAdaptationDraftRequest,
+  NovelAdaptationPlanRequest,
   NovelAdaptationRequest,
   NovelAdaptationResult,
   NovelAdaptationTraceStep,
@@ -110,15 +112,12 @@ const createSceneFromCard = (
   };
 };
 
-export const adaptNovelToScreenplayMock = ({
+export const planNovelAdaptationMock = ({
   document,
   preferences: preferencesInput,
-}: NovelAdaptationRequest): NovelAdaptationResult => {
+}: NovelAdaptationPlanRequest): NovelAdaptationResult => {
   const preferences = resolveAdaptationPreferences(preferencesInput);
-  const promptMessages = [
-    ...buildNovelAdaptationPrompt(document, preferences),
-    ...buildNovelSceneWriterPrompt(document),
-  ];
+  const promptMessages = buildNovelAdaptationPrompt(document, preferences);
 
   if (!isNovelSource(document.source)) {
     const trace: NovelAdaptationTraceStep[] = [];
@@ -167,14 +166,6 @@ export const adaptNovelToScreenplayMock = ({
   }
 
   const plan = createMockAdaptationPlan(document, document.source, preferences);
-  const planPromptMessages = [
-    ...buildNovelAdaptationPrompt(document, preferences),
-    ...buildNovelSceneWriterPrompt(document, plan),
-  ];
-  const nextBlockId = createBlockIdFactory(document);
-  const scenes = plan.sceneOutline.map((sceneCard, sceneIndex) =>
-    createSceneFromCard(sceneCard, document, sceneIndex, nextBlockId),
-  );
   const planSourceIds = plan.sceneOutline.flatMap((sceneCard) =>
     sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
   );
@@ -193,18 +184,12 @@ export const adaptNovelToScreenplayMock = ({
       artifactType: 'adaptation_plan',
       sourceIds: planSourceIds,
     },
-    {
-      label: 'mock-writing',
-      detail: '根据 mock SceneCard.writerBrief 写入 ScreenplayAst 草稿。',
-      stage: 'scene_draft',
-      artifactType: 'writer_draft',
-      sourceIds: planSourceIds,
-    },
   ];
 
   return {
     mode: 'mock',
-    promptMessages: planPromptMessages,
+    document,
+    promptMessages,
     plan,
     trace,
     generationRun: {
@@ -215,8 +200,52 @@ export const adaptNovelToScreenplayMock = ({
     diagnostics: [
       createDiagnostic(
         'info',
-        'mock_adaptation_used',
-        '当前使用本地 mock fallback；真实流程应先生成改编方案和 scene outline，再委托 Writer 写剧本初稿。',
+        'mock_adaptation_plan_used',
+        '当前使用本地 mock 生成改编方案；请确认 scene outline 后再委托 Writer 写剧本初稿。',
+        'adaptation',
+      ),
+    ],
+  };
+};
+
+export const draftNovelAdaptationFromPlanMock = ({
+  document,
+  plan,
+}: NovelAdaptationDraftRequest): NovelAdaptationResult => {
+  const promptMessages = buildNovelSceneWriterPrompt(document, plan);
+  const nextBlockId = createBlockIdFactory(document);
+  const scenes = plan.sceneOutline.map((sceneCard, sceneIndex) =>
+    createSceneFromCard(sceneCard, document, sceneIndex, nextBlockId),
+  );
+  const sourceIds = plan.sceneOutline.flatMap((sceneCard) =>
+    sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
+  );
+  const trace: NovelAdaptationTraceStep[] = [
+    {
+      label: 'mock-writing',
+      detail:
+        '用户确认 scene outline 后，根据 mock SceneCard.writerBrief 写入 ScreenplayAst 草稿。',
+      stage: 'scene_draft',
+      artifactType: 'writer_draft',
+      sourceIds,
+    },
+  ];
+
+  return {
+    mode: 'mock',
+    promptMessages,
+    plan,
+    trace,
+    generationRun: {
+      mode: 'mock',
+      planId: plan.id,
+      steps: trace,
+    },
+    diagnostics: [
+      createDiagnostic(
+        'info',
+        'mock_writer_draft_used',
+        '已确认改编方案，并使用本地 mock Writer 写入剧本初稿。',
         'adaptation',
       ),
     ],
@@ -232,6 +261,32 @@ export const adaptNovelToScreenplayMock = ({
         },
         scenes,
       },
+    },
+  };
+};
+
+export const adaptNovelToScreenplayMock = (
+  request: NovelAdaptationRequest,
+): NovelAdaptationResult => {
+  const planResult = planNovelAdaptationMock(request);
+
+  if (!planResult.plan) {
+    return planResult;
+  }
+
+  const draftResult = draftNovelAdaptationFromPlanMock({
+    document: request.document,
+    plan: planResult.plan,
+  });
+
+  return {
+    ...draftResult,
+    diagnostics: [...planResult.diagnostics, ...draftResult.diagnostics],
+    promptMessages: [...planResult.promptMessages, ...draftResult.promptMessages],
+    trace: [...planResult.trace, ...draftResult.trace],
+    generationRun: {
+      ...draftResult.generationRun,
+      steps: [...planResult.trace, ...draftResult.trace],
     },
   };
 };
