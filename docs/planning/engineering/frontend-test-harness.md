@@ -42,6 +42,14 @@
 
 Playwright 固定使用 `127.0.0.1:5173`。运行 `pnpm e2e` 前，确认 5173 空闲，或已经由本仓库当前分支的 `pnpm dev --host 127.0.0.1 --port 5173 --strictPort` 提供服务。
 
+如果当前 shell 设置了 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY`，运行 e2e 时显式设置本地绕过：
+
+```sh
+env NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost pnpm e2e
+```
+
+在受限自动化环境中，如果 Vite 报 `listen EPERM: operation not permitted 127.0.0.1:5173`，说明该环境不能绑定本地端口；应改在允许绑定 5173 的本地 shell 或获批的非沙箱执行环境中运行。
+
 优先覆盖：
 
 - 首页加载并显示 Source / Semantic Blocks / Output。

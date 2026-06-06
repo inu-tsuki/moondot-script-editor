@@ -146,6 +146,12 @@ pnpm e2e
 
 Playwright 固定使用 `127.0.0.1:5173`，并通过系统 Chromium 运行浏览器测试。Arch / pacman 环境下应使用 `/usr/bin/chromium`，不要运行 `pnpm exec playwright install` 下载 Playwright 托管浏览器。运行 e2e 前请确认 5173 空闲，或已经由当前分支的 `pnpm dev --host 127.0.0.1 --port 5173 --strictPort` 提供服务。
 
+如果当前 shell 设置了 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY`，运行 e2e 时显式绕过本地地址：
+
+```sh
+env NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost pnpm e2e
+```
+
 ## Demo
 
 Demo 视频链接待补充。

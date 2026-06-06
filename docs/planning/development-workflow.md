@@ -162,6 +162,7 @@ git push -u origin main
 - UI、editor、toolbar、output panel 或 responsive layout 改动额外运行 `pnpm e2e`。
 - Playwright 固定使用 `127.0.0.1:5173` 和系统 Chromium `/usr/bin/chromium`；不要运行 `pnpm exec playwright install`。
 - 运行 e2e 前，确认 5173 空闲，或已经由当前分支的 `pnpm dev --host 127.0.0.1 --port 5173 --strictPort` 提供服务。
+- 如果 shell 设置了 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY`，运行 e2e 时显式设置 `NO_PROXY=127.0.0.1,localhost`，避免浏览器或健康检查把本地地址走代理。
 - 如果 e2e 因本地 server 可见性、端口或浏览器环境失败，PR 中要说明失败原因和已经完成的替代验证。
 
 第一次公开仓库前额外检查：
