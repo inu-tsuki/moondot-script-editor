@@ -1,7 +1,7 @@
 # Screenplay Document & Script AST Structure
 
-> 最近更新：2026-06-05  
-> 状态：v0.1 规划，用于 `feat/screenplay-ast` 分支。
+> 最近更新：2026-06-06
+> 状态：`ScreenplayDocument` v0.1 基础切片已落地。本文记录内部 AST 结构、已实现边界和后续扩展方向。
 
 本文细化 `ScreenplayDocument` 的内部结构，以及其中 `script: ScreenplayAst` 的节点形状。它服务代码实现，不替代 YAML Schema 文档。
 
@@ -17,11 +17,11 @@
 - diagnostics 是校验结果，不是 document 本体。
 - source adapter 是创作入口，小说导入只是当前 MVP 的 adapter。
 
-## 目标
+## v0.1 目标与状态
 
-`feat/screenplay-ast` 分支需要先交付一个可被 UI、校验器和 YAML serializer 共用的核心模型。
+`feat/screenplay-ast` 分支已经交付一个可被 UI、校验器和 YAML serializer 共用的核心模型。后续 Phase 3 的模型输出应先进入这些 typed structures，再进入编辑器和 YAML projection。
 
-第一版应支持：
+v0.1 已支持：
 
 - 多章节小说来源。
 - 剧本项目元信息。
@@ -32,7 +32,7 @@
 - 运行时校验。
 - demo/mock document。
 
-暂不支持：
+仍暂不支持：
 
 - 真实分支叙事图。
 - 完整 Fountain parser。

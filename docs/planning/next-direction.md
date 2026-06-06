@@ -1,206 +1,137 @@
 # Next Direction
 
 > 最近更新：2026-06-06  
-> 状态：Phase 2.5 启动规划，承接 Phase 2 完成后的工作台 UI 地基整理。
+> 状态：Phase 2.5 基础切片已完成，当前用于承接 Phase 3 启动前的状态同步、质量收口和模型层规划。
 
-本文用于承接当前 roadmap 之后的下一阶段开发。它不替代 roadmap；它只回答“下一两个 PR 先做什么”。阶段级边界见 `roadmap/phase-2-5-workbench-ui-foundation.md`。
+本文用于回答“下一两个 PR 先做什么”。阶段级边界见 `roadmap/README.md` 和 `roadmap/phase-2-5-workbench-ui-foundation.md`；长期产品愿景仍以 `../knowledge/product/vision.md` 为准。
 
 ## 当前基线
 
 主线已经具备：
 
 - React + TypeScript + Vite 工程脚手架。
-- `ScreenplayDocument` / `ScreenplayAst` 类型。
-- runtime validation diagnostics。
-- 小说 source ingestion 和章节解析。
-- `AdaptationPreferences`、`AdaptationPlan`、`SceneCard` 和两阶段 trace。
-- scene outline 预览与确认写入。
-- 基础语义块编辑。
-- YAML projection、复制和下载。
-- Phase 2 相关 PR review 文档。
+- `ScreenplayDocument` / `ScreenplayAst` 类型、runtime validation diagnostics 和 YAML projection。
+- 小说 source ingestion 和章节解析；章节只作为来源结构，不直接承担剧本转换。
+- `AdaptationPreferences`、`AdaptationPlan`、`SceneCard` 和两阶段 `GenerationTrace`。
+- scene outline 预览、确认写入和 YAML 复制 / 下载。
+- Tailwind、UI primitives、panel extraction、`WorkbenchLayout` 和 output tabs。
+- document-backed screenplay reading surface。
+- 基础语义编辑控件：新增、删除、移动 block，编辑 dialogue 字段和 scene metadata。
+- 工业化手稿 UI polish。
+- Vitest / Testing Library / Playwright 前端测试护栏。
 
-当前短板不在“功能是否存在”，而在“这些功能如何被组织成一个清晰的创作工作台”。
+当前短板已经从“UI 地基不足”转移到“真实模型层尚未接入，prompt contract、错误恢复、trace 展示和 demo 路径还需要收口”。
 
 ## 近期原则
 
-下一步不要立刻跳到真实模型调用。
+下一步可以进入 Phase 3，但不要把“接入模型”理解成直接从小说文本调用一次 LLM 并拼出剧本。
 
-原因：
-
-- 真实模型调用需要展示阶段状态、trace、错误恢复和 mock fallback。
-- Fountain-like preview、YAML 和 diagnostics 会进一步挤压当前右侧输出区。
-- 当前 `App.tsx` 同时承担状态、工作流、布局和所有 panel 渲染，后续会越来越难改。
-- 当前三栏布局让中部剧本编辑区不够像主舞台。
-
-更稳的方向是插入 Phase 2.5：先整理 UI foundation，再进入模型层。
-
-推荐近期主线：
+月点当前更适合保持已经确定的两阶段改编工作流：
 
 ```text
-Tailwind foundation
-  -> UI primitives
-  -> panel extraction
-  -> WorkbenchLayout
-  -> output tabs
-  -> screenplay reading surface
+用户输入 source
+  -> Architect 解析来源、生成问题和 scene outline
+  -> 用户确认目标长度、风格、忠实度和必要取舍
+  -> Architect 产出 writer brief
+  -> Writer 根据 brief 生成 ScreenplayDocument 初稿
+  -> 用户在语义块编辑器中打磨
+  -> YAML projection / diagnostics / demo
 ```
+
+这样做的好处是：
+
+- 保留 human review checkpoint，降低长文本一次性生成的失控风险。
+- 让跨章节合并成同一 scene 成为正常能力，而不是章节映射的例外处理。
+- trace 可以解释 Architect 和 Writer 两阶段分别做了什么。
+- mock fallback 和真实模型调用可以共用同一组输入 / 输出 contract。
+
+需要避免：
+
+- 把章节解析误当成剧本转换器。
+- 直接把 LLM 输出当作 YAML，而绕过 `ScreenplayDocument`。
+- 为了真实模型调用提前引入完整 agent graph runtime。
+- 在 Phase 3 同时做完整 Fountain parser、dock persistence 或多版本草稿 UI。
 
 ## 推荐 PR 顺序
 
-### PR A：Tailwind foundation
+### PR A：Status refresh
 
-目标：引入 Tailwind CSS，建立可持续重写 UI 的样式地基。
-
-建议内容：
-
-- 安装并配置 Tailwind CSS。
-- 建立全局样式入口。
-- 保留必要 base/reset。
-- 用 Tailwind 迁移少量通用按钮、panel 或 badge 样式，验证工具链。
-
-完成标准：
-
-- `pnpm lint` / `pnpm build` / `pnpm format:check` 通过。
-- 当前工作流不退化。
-- 不在同一个 PR 里重写全部 UI。
-
-### PR B：UI primitives
-
-目标：把重复 UI 结构抽成 React 组件。
+目标：让文档与 Phase 2.5 和测试护栏落地后的真实代码状态一致。
 
 建议内容：
 
-- `Button`
-- `PanelShell`
-- `PanelHeader`
-- `Badge`
-- `Tabs`
-- `Field`
-- `Toolbar`
+- 更新 README、TODO、roadmap、Phase 2.5 文档和 review 索引。
+- 明确 Phase 2.5 已完成基础切片，Phase 3 是下一产品阶段。
+- 将测试说明与 `AGENTS.md` 对齐：普通改动跑 `format:check` / `lint` / `build` / `test`；UI 和布局改动额外跑 `e2e`。
+- 记录 Playwright 固定使用 `127.0.0.1:5173` 和系统 Chromium 的约束。
 
 完成标准：
 
-- `App.tsx` 中重复结构减少。
-- primitives 不持有业务状态。
-- 图标继续来自 `lucide-react`。
+- 文档不再指向已完成的 Phase 2.5 PR 作为“下一步”。
+- 后续维护者能从 README、TODO 和 roadmap 得到同一张地图。
+- 本 PR 不改产品代码。
 
-### PR C：Panel extraction
+### PR B：Phase 3 model adapter contract
 
-目标：拆开当前单体 `App.tsx`。
+目标：在接真实模型前，先定义模型调用层的工程边界。
 
 建议内容：
 
-- `SourcePanel`
-- `AdaptationPreferencesPanel`
-- `SceneOutlinePanel`
-- `ScriptEditorPanel`
-- `YamlExportPanel`
-- `DiagnosticsPanel`
+- 定义 LLM provider config 的最小形态：provider、model、base URL / API key 来源、超时和 mock fallback 开关。
+- 定义 Architect / Writer 的请求和响应 envelope。
+- 明确真实模型输出必须先进入 typed contract，再进入 `ScreenplayDocument`。
+- 定义失败恢复：解析失败、validation warning、空输出、超时和 fallback。
+- 在 output tabs 中预留模型 trace / diagnostics 的展示位置。
 
 完成标准：
 
-- `App.tsx` 主要保留顶层状态、派生数据和工作流 handler。
-- panel 通过 props 接收数据和事件。
-- Phase 2 行为保持一致。
+- mock fallback 和未来真实 API 共用同一组 contract。
+- 不在 UI 组件中散落 provider 细节。
+- 不把 API key、私人 endpoint 或非公开日志写入仓库。
 
-### PR D：Workbench layout and output tabs
+### PR C：Architect review loop
 
-目标：把页面从固定三栏表单整理成剧本工作台。
+目标：把 Phase 2 的偏好表单推进为更像真实创作流程的 Architect 提问与确认。
 
 建议内容：
 
-- 新增 `WorkbenchLayout`。
-- 左侧放 source / preferences。
-- 中央放 semantic script editor。
-- 右侧 output tabs 承载 scene outline、YAML、diagnostics，预留 Fountain-like preview。
-- 窄屏按 section 堆叠。
+- Architect 根据 source analysis 和用户偏好生成少量开放问题或建议。
+- 用户可以接受默认建议，也可以补充长度、风格、重点角色、改编媒介和压缩策略。
+- Architect 产出 writer brief，Writer 只消费确认后的 brief。
 
 完成标准：
 
-- 剧本编辑区成为主区域。
-- YAML、outline 和 diagnostics 不再互相挤压。
-- layout state 不进入 `ScreenplayDocument`。
+- 用户不是被动等待一次性转换，而是在生成前参与改编取舍。
+- writer brief 可以被 trace 展示和调试。
+- 仍保持 MVP 简洁，不做复杂多轮 agent graph。
 
-### PR E：Document-backed Fountain-like reading surface
+### PR D：Demo hardening
 
-目标：把中央编辑区升级成由 `ScreenplayDocument` 支撑的 Fountain-like reading surface。用户看到的是更像剧本稿的阅读排版；底层仍使用 document metadata、source refs、character registry 和 `script: ScreenplayAst` 共同驱动编辑。
+目标：把提交演示路径固定下来。
 
 建议内容：
 
-- 将 `ScriptEditorPanel` 内部拆成 `ScenePage` 和 per-block editor。
-- 按 block type 建立 `ActionBlockEditor`、`DialogueBlockEditor`、`NarrationBlockEditor`、`TransitionBlockEditor`、`NoteBlockEditor`。
-- Scene heading 采用剧本场景行视觉。
-- Action / narration 呈现为正文段落。
-- Dialogue 突出角色名、parenthetical 和对白层级。
-- Transition 右对齐或独立成行。
-- Note 弱化或旁注化，不打断阅读。
-- 先使用受控 `textarea` 做排版化编辑，暂不引入 `contenteditable` 或 Fountain 反解析。
+- 准备 3+ 章节样例输入。
+- 确认 scene outline 能展示跨章节合并。
+- 确认基础语义编辑和 YAML 导出在 demo 中稳定。
+- 补必要 e2e 或手动验证记录。
+- README 补 demo 链接前的占位说明和最终检查项。
 
 完成标准：
 
-- 用户能看出主编辑区是剧本，而不是普通表单。
-- 仍保持 document / AST semantic block editing。
-- 不把 Fountain-like 变成主输入格式。
-
-### PR F：Basic semantic editor controls
-
-目标：让中央 reading surface 能完成完整基础编辑流程，而不只是编辑 block 文本。
-
-建议内容：
-
-- 定义 editor UX spec：selected / focused、block toolbar、add block menu、dialogue editing、scene metadata editing。
-- 支持按类型新增 block：Action / Dialogue / Narration / Transition / Note。
-- 支持 delete、move up/down、可选 duplicate。
-- 支持 dialogue character selector 和 parenthetical input。
-- 支持 scene title / synopsis / heading 编辑。
-- 在 `src/core/screenplay/operations.ts` 补齐 insert、delete、move、duplicate、update dialogue、update scene metadata 等纯函数。
-
-完成标准：
-
-- 用户能完成一轮基础剧本打磨。
-- 编辑持续回写 `ScreenplayDocument`，YAML / diagnostics 自动更新。
-- 不引入 `contenteditable`、Fountain parser、拖拽排序或复杂 AI 工具条。
-
-### PR G：Industrial manuscript UI polish
-
-目标：让整页视觉跟随中央手稿，而不是只让 `ScenePage` 像剧本。
-
-建议内容：
-
-- 统一页面背景、panel、tabs、button、badge 和 diagnostics 的工业化手稿风格。
-- 让 source / outline / YAML / diagnostics 成为安静的辅助区，不和中央剧本正文争抢注意力。
-- 减少普通 dashboard 卡片感，强调审稿台、批注栏、制片文档和稿纸的秩序。
-- 使用中性色、纸面色、墨色和少量状态色，避免营销式高饱和界面。
-- 不改变 `ScreenplayDocument`、工作流或 projection，只做 UI polish。
-
-完成标准：
-
-- 页面整体看起来像剧本改编工作台。
-- 中央手稿是第一视觉中心。
-- 辅助面板更像工具托盘和批注栏。
-- 不引入重型设计系统或主题系统。
+- 主分支可运行。
+- 演示路径可以从输入到导出连续走完。
+- README、Schema 文档和 demo 叙述不承诺尚未实现的长期 IDE 能力。
 
 ## 暂缓事项
 
-以下事项有价值，但不应抢在 Phase 2.5 前面：
+以下事项仍然有价值，但不应压过 Phase 3 主线：
 
-- 真实模型 API 接入。
-- 完整 agent graph runtime。
-- 完整拖拽 dock 系统。
-- Monaco 编辑器。
-- 完整 Fountain-like 导出器。
-- 多版本草稿 UI。
+- 完整 Fountain parser / reverse parser。
+- 完整 dock engine、layout tree 持久化和拖拽停靠。
+- Monaco / CodeMirror 专业文本编辑器。
+- 多版本草稿 UI 和 diff viewer。
+- 视觉小说脚本导出器。
+- 全量 source coverage map UI。
 
-原因：它们都需要更清楚的工作台结构来承载。
-
-## 推荐下一步
-
-下一步优先做 PR A：`Tailwind foundation`。
-
-它会把我们刚刚做出的 UI 技术判断落进工程：
-
-- Tailwind 成为主要新 UI 的样式工具。
-- 现有手写 CSS 先保留，避免一次性大迁移。
-- 后续 primitives / panels / layout PR 可以逐步减少 `App.css` 和 `App.tsx` 的压力。
-
-这一步完成后，再做 UI primitives 会很自然。
+它们适合在真实模型调用、demo 和提交材料稳定后继续拆分。

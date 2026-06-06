@@ -1,11 +1,11 @@
 # Phase 2.5: Workbench UI Foundation
 
 > 最近更新：2026-06-06  
-> 状态：规划启动，用于在真实模型调用层之前整理工作台 UI 地基。
+> 状态：基础切片已完成。本文保留 Phase 2.5 的设计边界、落地顺序和进入 Phase 3 前的质量收口标准。
 
-Phase 2.5 是插入阶段。它不改变月点的核心产品目标，也不扩大 submission 承诺；它只解决 Phase 2 完成后已经暴露出的界面结构问题：当前三栏 UI 能证明功能存在，但不适合继续承载真实模型调用、Fountain-like preview、diagnostics、source coverage 和后续编辑能力。
+Phase 2.5 是插入阶段。它不改变月点的核心产品目标，也不扩大 submission 承诺；它解决 Phase 2 完成后暴露出的界面结构问题：早期三栏 UI 能证明功能存在，但不适合继续承载真实模型调用、Fountain-like preview、diagnostics、source coverage 和后续编辑能力。
 
-这一步的目标是把月点从“功能堆在同一个页面里”整理成“可继续扩展的剧本工作台”。
+这一步的目标是把月点从“功能堆在同一个页面里”整理成“可继续扩展的剧本工作台”。当前基础切片已经落地，下一阶段可以在这个工作台上承载真实模型调用和 demo 强化。
 
 ```text
 Phase 2: Adaptation Plan / Scene Outline 工作流
@@ -23,14 +23,14 @@ Phase 2 已经让 MVP 主链路成立：
 - 用户确认后 Writer 写入 `ScreenplayDocument.script`。
 - YAML projection 可以复制或下载。
 
-继续直接进入真实模型层会让 UI 压力变得更大：
+当时如果直接进入真实模型层，会让 UI 压力变得更大：
 
 - 模型调用需要展示阶段状态、trace、失败恢复和 mock fallback。
 - Fountain-like preview 需要和 YAML / diagnostics 共存。
 - 语义块编辑区需要更像剧本阅读和编辑界面，而不是普通表单区。
 - `App.tsx` 已经同时承担状态管理、工作流编排、布局和所有 panel 渲染，后续改动会变得脆。
 
-因此 Phase 2.5 先整理 UI 地基，再接入真实模型。
+因此 Phase 2.5 先整理 UI 地基，再接入真实模型。这个决策已经通过 #18 到 #26 的 UI PR 和 #27 的测试护栏 PR 落地。
 
 ## 核心决策
 
@@ -74,16 +74,30 @@ Phase 2.5 的目标不是做完整 IDE dock，而是做 lightweight workbench。
 
 ### 3. 先模块化，再增强布局能力
 
-本阶段应按这个顺序推进：
+实际落地顺序与规划一致：
 
 1. 引入 Tailwind 和基础样式入口。
 2. 抽出基础 UI primitives。
 3. 拆分业务 panels。
 4. 建立 WorkbenchLayout。
 5. 让 output 进入 tabs。
-6. 再评估是否需要 resizable panels。
+6. 建立 screenplay reading surface。
+7. 补齐基础语义编辑控件。
+8. 做工业化手稿视觉收口。
+9. 作为 phase 外 engineering track 接入前端测试护栏。
 
-不要一开始就做完整拖拽停靠。当前 MVP 更需要稳定、可读、可演示的布局。
+没有在本阶段引入完整拖拽停靠。当前 MVP 更需要稳定、可读、可演示的布局；resizable panels、layout persistence 和完整 dock engine 继续暂缓。
+
+## 落地状态
+
+- Phase 2.5.1 Tailwind foundation：已完成。
+- Phase 2.5.2 UI primitives：已完成。
+- Phase 2.5.3 Panel extraction：已完成。
+- Phase 2.5.4 Workbench layout and output tabs：已完成。
+- Phase 2.5.5 Screenplay reading surface：已完成。
+- Phase 2.5.5b Basic semantic editor controls：已完成。
+- Phase 2.5.6 Industrial manuscript UI polish：已完成。
+- Engineering track Frontend test harness：已完成基础接入，不计入产品 phase，但作为后续 PR 的质量护栏。
 
 ## 推荐目标布局
 
@@ -316,4 +330,6 @@ Phase 2.5 完成时，月点应满足：
 - 页面整体视觉服务工业化手稿风格，而不是普通 SaaS dashboard。
 - Phase 2 的核心演示链路不退化。
 
-完成 Phase 2.5 后，再进入 Phase 3：真实模型调用层、prompt contract 强化、提交 demo 和质量收口。
+当前 Phase 2.5 的基础完成标准已经满足。进入 Phase 3 前，剩余工作是状态文档同步、确认 `pnpm e2e` 的本地运行路径，以及明确真实模型调用层的 contract。
+
+完成这些收口后，再进入 Phase 3：真实模型调用层、prompt contract 强化、提交 demo 和质量收口。

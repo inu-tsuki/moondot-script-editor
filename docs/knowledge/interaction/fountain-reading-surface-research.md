@@ -1,12 +1,12 @@
 # Fountain 阅读面调研笔记
 
 > 最近更新：2026-06-06
-> 状态：调研笔记，为 Phase 2.5.5 Screenplay Reading Surface 提供排版设计参考。
+> 状态：调研笔记，已为 Phase 2.5.5 Screenplay Reading Surface 的排版落地提供参考。
 > 参考：Fountain 官方语法文档 `https://fountain.io/syntax/`、2001: A Space Odyssey (IMSDB)。
 
 ## 调研目的
 
-Phase 2.5.5 的目标是把中央编辑区从卡片表单升级为剧本阅读面。Fountain 的核心哲学——"make it look like a screenplay"——恰好表达了同样的设计意图：排版即语义。
+Phase 2.5.5 已把中央编辑区从卡片表单升级为剧本阅读面。Fountain 的核心哲学——"make it look like a screenplay"——恰好表达了同样的设计意图：排版即语义。
 
 本文记录 Fountain 语法规则与 `ScriptBlock` 类型的映射关系，以及从中提取的排版设计决策。
 

@@ -1,7 +1,7 @@
 # AI Adaptation Workflow
 
 > 最近更新：2026-06-06  
-> 状态：Phase 2 改编工作流规划，用于后续模型调用层和 UI 工作流。
+> 状态：Phase 2 基础切片已落地，当前作为 Phase 3 模型调用层和 UI 工作流的长期契约。
 
 本文定义月点从创作来源到 `ScreenplayDocument` 的 AI 工作流。它参考了父目录 `ai-visual-novel-engine` 的分阶段叙事生成方式，但目标不是 VN runtime scene，而是可编辑、可校验、可导出的剧本文档。
 
@@ -250,9 +250,9 @@ Writer brief 应包含：
 - 把 VN 的 `WorldState` / graph 简化为 `ScreenplayDocument`、source coverage map、characters 和 generation trace。
 - 暂不引入完整后端图谱，但保留 typed trace，为未来 agent 工具调用做准备。
 
-## Phase 2 实现边界
+## 已落地的基础边界
 
-当前可做：
+Phase 2 已完成：
 
 - 保留 `parseNovelChapters`。
 - 建立 `AdaptationPreferences`、`AdaptationQuestion`、`AdaptationPlan` 和 `SceneCard` 的轻量类型。
@@ -261,13 +261,16 @@ Writer brief 应包含：
 - UI 中让“生成”触发 mock，并在 diagnostics 中标记 mock。
 - 文档明确真实流程需要“先规划，再写作”。
 - 增加 scene outline 确认点，避免 Writer 直接消费整部小说。
+- 让生成结果进入 `ScreenplayDocument.script`，再由 YAML projection 导出。
 
-后续模型调用层再做：
+Phase 3 模型调用层需要补齐：
 
-- `generateAdaptationPlan(document, preferences, questionAnswers)`。
-- 让用户确认 plan 或调整目标。
-- `generateSceneDraft(sceneCard, document)`。
+- `generateAdaptationPlan(source, preferences, questionAnswers)`。
+- Architect questions 的默认推荐和用户确认结果。
+- `buildWriterBrief(sceneCard, document, confirmedAnswers)`。
+- `generateSceneDraft(writerBrief, document)`。
 - `validateAndRepairGeneratedDocument(document)`。
+- 模型 trace / diagnostics / fallback 状态在 output tabs 中的展示。
 
 MVP 可以先把 plan / writer 的 JSON contract 做轻，避免在第一版引入过重后端。
 
