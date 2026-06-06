@@ -71,6 +71,8 @@ describe('mock model adapter', () => {
       expect(result.trace.outcome).toBe('error');
       expect(result.trace.fallbackReason).toBe('semantic');
       expect(result.diagnostics.some((d) => d.code === 'unsupported_adaptation_source')).toBe(true);
+      expect(result.error).toBeDefined();
+      expect(result.error?.reason).toBe('semantic');
     });
 
     it('returns null data and error trace when chapters are empty', async () => {
@@ -84,6 +86,8 @@ describe('mock model adapter', () => {
       expect(result.trace.outcome).toBe('error');
       expect(result.trace.fallbackReason).toBe('semantic');
       expect(result.diagnostics.some((d) => d.code === 'empty_adaptation_source')).toBe(true);
+      expect(result.error).toBeDefined();
+      expect(result.error?.reason).toBe('semantic');
     });
 
     it('echoes the runId from the request', async () => {
@@ -133,6 +137,8 @@ describe('mock model adapter', () => {
       expect(result.trace.outcome).toBe('error');
       expect(result.trace.fallbackReason).toBe('semantic');
       expect(result.diagnostics.some((d) => d.code === 'no_plan_for_draft')).toBe(true);
+      expect(result.error).toBeDefined();
+      expect(result.error?.reason).toBe('semantic');
     });
   });
 

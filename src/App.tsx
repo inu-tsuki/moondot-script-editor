@@ -125,6 +125,15 @@ function App() {
   // Track the latest call to ignore stale async results.
   const latestRunIdRef = useRef<string | null>(null);
 
+  /**
+   * Invalidate any in-flight model run so a stale response cannot
+   * overwrite state after the user has changed source, preferences,
+   * or document content.
+   */
+  const invalidateModelRun = () => {
+    latestRunIdRef.current = null;
+  };
+
   const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
   const workingDocument = useMemo<ScreenplayDocument>(
     () => withParsedNovelChapters(screenplayDocument, parsedNovel.chapters),
@@ -195,6 +204,12 @@ function App() {
   // ---------------------------------------------------------------------------
 
   const handleEdit = (action: EditAction) => {
+    // Any document mutation invalidates in-flight model runs — a stale
+    // plan or draft must not overwrite the user's manual edits.
+    if (action.type !== 'select-block') {
+      invalidateModelRun();
+    }
+
     switch (action.type) {
       case 'select-block':
         setSelectedBlockId(action.blockId);
@@ -244,6 +259,7 @@ function App() {
   };
 
   const handleUpdateBlockText = (id: BlockId, text: string) => {
+    invalidateModelRun();
     setScreenplayDocument((currentDocument) => updateDocumentBlockText(currentDocument, id, text));
     setExportFeedback('');
   };
@@ -251,6 +267,7 @@ function App() {
   const clearSelection = () => setSelectedBlockId(null);
 
   const updateSourceText = (text: string) => {
+    invalidateModelRun();
     setSourceText(text);
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
@@ -260,6 +277,7 @@ function App() {
   };
 
   const clearAdaptationRun = () => {
+    invalidateModelRun();
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
@@ -271,6 +289,7 @@ function App() {
     key: Key,
     value: AdaptationPreferences[Key],
   ) => {
+    invalidateModelRun();
     setAdaptationPreferences((currentPreferences) => ({
       ...currentPreferences,
       [key]: value,

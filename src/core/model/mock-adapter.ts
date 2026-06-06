@@ -50,8 +50,10 @@ const mapResult = <TData>(
   stage: string,
   data: TData | null,
   runId?: string,
+  errorMessage?: string,
 ): ModelCallResult<TData> => {
   const artifactPresent = data !== null && data !== undefined;
+  const firstError = result.diagnostics.find((d) => d.severity === 'error');
 
   return {
     data,
@@ -62,6 +64,13 @@ const mapResult = <TData>(
       outcome: artifactPresent ? 'success' : 'error',
       fallbackReason: artifactPresent ? undefined : 'semantic',
     },
+    error: artifactPresent
+      ? undefined
+      : {
+          reason: 'semantic',
+          message:
+            errorMessage ?? firstError?.message ?? 'Model did not produce the expected artifact.',
+        },
     runId,
   };
 };
@@ -81,6 +90,10 @@ const unknownStageResult = <TData>(stage: string, runId?: string): ModelCallResu
     stage,
     outcome: 'fallback',
     fallbackReason: 'semantic',
+  },
+  error: {
+    reason: 'semantic',
+    message: `No handler registered for model stage: ${stage}`,
   },
   runId,
 });
@@ -131,6 +144,10 @@ export const createMockModelAdapter = (ctx: MockAdapterContext): ModelAdapter =>
             stage,
             outcome: 'error',
             fallbackReason: 'semantic',
+          },
+          error: {
+            reason: 'semantic',
+            message: 'No adaptation plan available — generate an outline first.',
           },
           runId,
         } as ModelCallResult<ModelStagePayloadMap[S]>;
