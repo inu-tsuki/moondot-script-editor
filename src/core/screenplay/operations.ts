@@ -1,6 +1,7 @@
 import type {
   BlockId,
   CharacterId,
+  CharacterProfile,
   SceneHeading,
   SceneId,
   ScreenplayDocument,
@@ -72,6 +73,39 @@ export const createBlockIdFactory = (document: ScreenplayDocument) => {
 };
 
 // ---------------------------------------------------------------------------
+// Shared block draft factory
+// ---------------------------------------------------------------------------
+
+/** Build a default BlockDraft for the given type. Returns null for dialogue when no characters exist. */
+export const buildDefaultBlockDraft = (
+  type: string,
+  characters: CharacterProfile[],
+): BlockDraft | null => {
+  const firstCharacterId = characters[0]?.id;
+
+  switch (type) {
+    case 'action':
+      return { type: 'action', text: '新的动作描写。' };
+    case 'dialogue': {
+      if (!firstCharacterId) return null;
+      return {
+        type: 'dialogue',
+        characterId: firstCharacterId,
+        text: '新的对白。',
+      };
+    }
+    case 'narration':
+      return { type: 'narration', text: '新的旁白。' };
+    case 'transition':
+      return { type: 'transition', text: 'CUT TO:' };
+    case 'note':
+      return { type: 'note', text: '新的批注。' };
+    default:
+      return null;
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Block CRUD
 // ---------------------------------------------------------------------------
 
@@ -79,22 +113,23 @@ export const appendBlockToScene = (
   document: ScreenplayDocument,
   sceneId: SceneId,
   draft: BlockDraft,
-): ScreenplayDocument => {
-  const nextBlock: ScriptBlock = {
-    id: createNextBlockId(document),
-    ...draft,
-  } as ScriptBlock;
+): ScreenplayDocument => ({
+  ...document,
+  script: {
+    ...document.script,
+    scenes: document.script.scenes.map((scene) => {
+      if (scene.id !== sceneId) return scene;
 
-  return {
-    ...document,
-    script: {
-      ...document.script,
-      scenes: document.script.scenes.map((scene) =>
-        scene.id === sceneId ? { ...scene, blocks: [...scene.blocks, nextBlock] } : scene,
-      ),
-    },
-  };
-};
+      const nextBlock: ScriptBlock = {
+        id: createNextBlockId(document),
+        sourceRefs: scene.sourceRefs,
+        ...draft,
+      } as ScriptBlock;
+
+      return { ...scene, blocks: [...scene.blocks, nextBlock] };
+    }),
+  },
+});
 
 export const appendBlockToFirstScene = (
   document: ScreenplayDocument,
@@ -113,30 +148,29 @@ export const insertBlockAfter = (
   sceneId: SceneId,
   afterBlockId: BlockId,
   draft: BlockDraft,
-): ScreenplayDocument => {
-  const nextBlock: ScriptBlock = {
-    id: createNextBlockId(document),
-    ...draft,
-  } as ScriptBlock;
+): ScreenplayDocument => ({
+  ...document,
+  script: {
+    ...document.script,
+    scenes: document.script.scenes.map((scene) => {
+      if (scene.id !== sceneId) return scene;
 
-  return {
-    ...document,
-    script: {
-      ...document.script,
-      scenes: document.script.scenes.map((scene) => {
-        if (scene.id !== sceneId) return scene;
+      const afterIndex = scene.blocks.findIndex((b) => b.id === afterBlockId);
+      if (afterIndex === -1) return scene;
 
-        const afterIndex = scene.blocks.findIndex((b) => b.id === afterBlockId);
-        if (afterIndex === -1) return scene;
+      const nextBlock: ScriptBlock = {
+        id: createNextBlockId(document),
+        sourceRefs: scene.sourceRefs,
+        ...draft,
+      } as ScriptBlock;
 
-        const blocks = [...scene.blocks];
-        blocks.splice(afterIndex + 1, 0, nextBlock);
+      const blocks = [...scene.blocks];
+      blocks.splice(afterIndex + 1, 0, nextBlock);
 
-        return { ...scene, blocks };
-      }),
-    },
-  };
-};
+      return { ...scene, blocks };
+    }),
+  },
+});
 
 export const deleteBlock = (
   document: ScreenplayDocument,

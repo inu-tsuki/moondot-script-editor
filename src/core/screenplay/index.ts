@@ -2,6 +2,7 @@ export { demoNovelText, demoScreenplayDocument } from './demoDocument';
 export {
   appendBlockToFirstScene,
   appendBlockToScene,
+  buildDefaultBlockDraft,
   createBlockIdFactory,
   createNextBlockId,
   deleteBlock,

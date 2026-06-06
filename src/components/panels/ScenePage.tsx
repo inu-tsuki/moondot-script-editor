@@ -182,40 +182,38 @@ export function ScenePage({
           </div>
           <PanelMeta>{scene.id}</PanelMeta>
         </div>
-        {scene.title ? (
-          <div className="mt-2">
-            <input
-              aria-label="Scene title"
-              className={`${ghostInput} w-full text-lg font-extrabold text-[#17211d]`}
-              onChange={(e) =>
-                onEdit({
-                  type: 'update-scene-metadata',
-                  sceneId: scene.id,
-                  patch: { title: e.target.value },
-                })
-              }
-              type="text"
-              value={scene.title}
-            />
-          </div>
-        ) : null}
-        {scene.synopsis ? (
-          <div className="mt-1">
-            <textarea
-              aria-label="Scene synopsis"
-              className={`${ghostTextarea} w-full text-[13px] leading-relaxed text-[#56615a]`}
-              onChange={(e) =>
-                onEdit({
-                  type: 'update-scene-metadata',
-                  sceneId: scene.id,
-                  patch: { synopsis: e.target.value },
-                })
-              }
-              rows={2}
-              value={scene.synopsis}
-            />
-          </div>
-        ) : null}
+        <div className="mt-2">
+          <input
+            aria-label="Scene title"
+            className={`${ghostInput} w-full text-lg font-extrabold text-[#17211d] placeholder:font-extrabold placeholder:text-[#b0a89a]`}
+            onChange={(e) =>
+              onEdit({
+                type: 'update-scene-metadata',
+                sceneId: scene.id,
+                patch: { title: e.target.value },
+              })
+            }
+            placeholder="场景标题"
+            type="text"
+            value={scene.title ?? ''}
+          />
+        </div>
+        <div className="mt-1">
+          <textarea
+            aria-label="Scene synopsis"
+            className={`${ghostTextarea} w-full text-[13px] leading-relaxed text-[#56615a] placeholder:text-[#b0a89a]`}
+            onChange={(e) =>
+              onEdit({
+                type: 'update-scene-metadata',
+                sceneId: scene.id,
+                patch: { synopsis: e.target.value },
+              })
+            }
+            placeholder="场景梗概"
+            rows={2}
+            value={scene.synopsis ?? ''}
+          />
+        </div>
       </div>
       <div className="flex flex-col gap-1 px-4 py-4">
         {scene.blocks.map((block, index) => renderBlockEditor(block, index))}
