@@ -1,58 +1,3 @@
-:root {
-  color: #17211d;
-  background: #f6f3ee;
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-button,
-textarea,
-input,
-select {
-  font: inherit;
-}
-
-button {
-  align-items: center;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  cursor: pointer;
-  display: inline-flex;
-  font-weight: 650;
-  gap: 8px;
-  justify-content: center;
-  min-height: 36px;
-  padding: 0 12px;
-}
-
-button:focus-visible,
-textarea:focus-visible,
-input:focus-visible,
-select:focus-visible {
-  outline: 2px solid #1f7667;
-  outline-offset: 2px;
-}
-
 .app-shell {
   min-height: 100vh;
   background: #f6f3ee;
@@ -130,11 +75,6 @@ select:focus-visible {
 
 .button-secondary:hover {
   background: #f2ece2;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
 }
 
 .workbench {
