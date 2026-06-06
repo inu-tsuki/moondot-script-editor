@@ -57,7 +57,9 @@ MVP 要完成一条可演示链路：
 ## 当前状态
 
 - Phase 0：需求、范围、文档库和开发流程已建立。
-- Phase 1：React + TypeScript + Vite 脚手架已创建，基础工作台 UI 开始搭建。
+- Phase 1：React + TypeScript + Vite 脚手架、`ScreenplayDocument`、validation、source ingestion、YAML projection 和基础语义块编辑已建立。
+- Phase 2：Adaptation Plan / Scene Outline / 确认写入 / YAML 复制下载链路已完成基础切片。
+- Phase 2.5：Workbench UI Foundation 规划启动，准备在真实模型调用前整理 Tailwind、UI primitives、panel 拆分和工作台布局。
 - Demo：待实现。
 
 ## 文档
@@ -70,6 +72,7 @@ MVP 要完成一条可演示链路：
 - [docs/knowledge/product/vision.md](docs/knowledge/product/vision.md)：月点长期产品愿景和 IDE 边界。
 - [docs/planning/submission-fit-review.md](docs/planning/submission-fit-review.md)：brainstorm 与提交需求的适配审计。
 - [docs/planning/roadmap/README.md](docs/planning/roadmap/README.md)：阶段路线。
+- [docs/planning/roadmap/phase-2-5-workbench-ui-foundation.md](docs/planning/roadmap/phase-2-5-workbench-ui-foundation.md)：工作台 UI 地基规划。
 - [docs/planning/development-workflow.md](docs/planning/development-workflow.md)：PR、commit 和第一次提交后的开发流程。
 - [docs/knowledge/architecture/screenplay-ast-contract.md](docs/knowledge/architecture/screenplay-ast-contract.md)：AST 核心模型边界。
 - [docs/knowledge/schema/script-yaml-schema.md](docs/knowledge/schema/script-yaml-schema.md)：剧本 YAML Schema 草案。
@@ -85,14 +88,14 @@ MVP 要完成一条可演示链路：
 - 是否复用旧项目代码或第三方代码。
 - 这次改动如何对应提交需求。
 
-第一次提交用于建立项目文档和仓库入口。之后的第一组 PR：
+当前已完成的主要 PR 方向：
 
 1. `feat/app-scaffold`：搭建 React + TypeScript + Vite 脚手架。
-2. `feat/screenplay-ast`：定义 AST 类型和校验层。
-3. `feat/novel-import`：实现文本导入和章节解析。
-4. `feat/yaml-export`：实现 AST 到 YAML 的导出。
-5. `feat/semantic-editor`：实现基础语义块编辑。
-6. `feat/model-adapter`：实现模型调用层和 mock fallback。
+2. `feat/screenplay-*`：定义文档模型、validation、YAML projection、source ingestion 和基础语义块编辑。
+3. `feat/adaptation-*`：建立 Adaptation Plan、生成前偏好、scene outline 确认和 Writer 写入链路。
+4. `feat/yaml-export-actions`：实现 YAML 复制、下载和导出前 validation 状态。
+
+接下来优先推进 `Phase 2.5 Workbench UI Foundation`，再进入真实模型调用层。
 
 完整流程见 [docs/planning/development-workflow.md](docs/planning/development-workflow.md)。
 
