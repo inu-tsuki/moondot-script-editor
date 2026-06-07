@@ -42,7 +42,6 @@ const createSceneDraftBlocks = (
 ): SceneBlockDraft[] => {
   const primaryCharacterId = document.characters[0]?.id;
   const counterpartCharacterId = document.characters[1]?.id ?? document.characters[0]?.id;
-  const sourceRefText = sceneCard.sourceRefs.map((sourceRef) => sourceRef.sourceId).join('、');
   const chapters = document.source.type === 'novel' ? document.source.chapters : [];
   const sourceExcerpts = sceneCard.sourceRefs
     .map((sourceRef) => {
@@ -55,25 +54,25 @@ const createSceneDraftBlocks = (
   const blocks: SceneBlockDraft[] = [
     {
       type: 'action',
-      text: `【${sceneCard.id}】${sceneCard.dramaticPurpose}`,
-      sourceRefs: sceneCard.sourceRefs,
-    },
-    {
-      type: 'narration',
-      voice: 'narrator',
-      text: [
-        `Writer brief：${sceneCard.writerBrief}`,
-        `可用原文素材：${sourceExcerpts || '（无可用原文）'}`,
-      ].join('\n'),
+      text: `开场动作描写：${sceneCard.writerBrief}`,
       sourceRefs: sceneCard.sourceRefs,
     },
   ];
+
+  if (sourceExcerpts) {
+    blocks.push({
+      type: 'narration',
+      voice: 'narrator',
+      text: `参考原文：${sourceExcerpts}`,
+      sourceRefs: sceneCard.sourceRefs,
+    });
+  }
 
   if (primaryCharacterId) {
     blocks.push({
       type: 'dialogue',
       characterId: primaryCharacterId,
-      text: `这不是复述 ${sourceRefText}，我们得把它变成能看见的选择。`,
+      text: '（待用户根据原文和对白风格填充具体台词）',
       sourceRefs: sceneCard.sourceRefs,
     });
   }
@@ -82,16 +81,10 @@ const createSceneDraftBlocks = (
     blocks.push({
       type: 'dialogue',
       characterId: counterpartCharacterId,
-      text: `那就把冲突放到台面上，让这一场真的往前走。`,
+      text: '（待用户根据原文和对白风格填充具体台词）',
       sourceRefs: sceneCard.sourceRefs,
     });
   }
-
-  blocks.push({
-    type: 'note',
-    text: `待确认：${sceneCard.title} 仍是 mock scene draft，后续应允许用户在 outline 阶段调整。`,
-    sourceRefs: sceneCard.sourceRefs,
-  });
 
   return blocks;
 };
@@ -104,14 +97,24 @@ export const createMockWriterScenePatch = (
   plan: AdaptationPlan,
   document: ScreenplayDocument,
 ): { patch: WriterScenePatch; diagnostics: Diagnostic[] } => {
-  const scenes = plan.sceneOutline.map((sceneCard) => ({
-    sceneCardId: sceneCard.id,
-    title: sceneCard.title,
-    synopsis: sceneCard.dramaticPurpose,
-    heading: sceneCard.headingSuggestion,
-    sourceRefs: sceneCard.sourceRefs,
-    blocks: createSceneDraftBlocks(sceneCard, document),
-  }));
+  const scenes = plan.sceneOutline.map((sceneCard) => {
+    // Build a scene synopsis from writerBrief and dramaticPurpose
+    // without copying planning metadata verbatim — the mock Writer
+    // output should read like a screenplay draft, not a repackaged
+    // scene card.
+    const synopsis = sceneCard.writerBrief
+      ? `${sceneCard.writerBrief}（改编意图：${sceneCard.dramaticPurpose}）`
+      : sceneCard.dramaticPurpose;
+
+    return {
+      sceneCardId: sceneCard.id,
+      title: sceneCard.title,
+      synopsis,
+      heading: sceneCard.headingSuggestion,
+      sourceRefs: sceneCard.sourceRefs,
+      blocks: createSceneDraftBlocks(sceneCard, document),
+    };
+  });
 
   const sourceIds = plan.sceneOutline.flatMap((sceneCard) =>
     sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),

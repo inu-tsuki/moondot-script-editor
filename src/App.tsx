@@ -119,6 +119,9 @@ function App() {
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
   const hasWriterDraft = writerDraft !== null;
+  // Synchronous gate to prevent duplicate Writer calls within the same event
+  // batch (useState closures are stale until next render).
+  const generatingRef = useRef(false);
 
   // ---------------------------------------------------------------------------
   // Model adapter — stable reference, reads latest state via refs
@@ -482,6 +485,15 @@ function App() {
       return;
     }
 
+    // Prevent duplicate Writer calls when the Topbar "剧本" or SceneOutline
+    // "确认生成" button is clicked while a generation is already in flight.
+    // Uses a ref (not state) for synchronous guard — useState closures are
+    // stale until the next render.
+    if (generatingRef.current) {
+      return;
+    }
+    generatingRef.current = true;
+
     // Clear any previous draft before starting a new generation so the
     // "应用到剧本" button cannot apply a stale patch while generating.
     setWriterDraft(null);
@@ -546,6 +558,7 @@ function App() {
         },
       ]);
     } finally {
+      generatingRef.current = false;
       setIsGeneratingWriter(false);
     }
   };
@@ -616,7 +629,7 @@ function App() {
   return (
     <div className="app-shell">
       <Topbar
-        canGenerate={!!adaptationPlan && !hasWriterDraft && !isDraftApplied}
+        canGenerate={!!adaptationPlan && !hasWriterDraft && !isDraftApplied && !isGeneratingWriter}
         canApply={hasWriterDraft && !isDraftApplied}
         isExportReady={exportStatus.isReady}
         onGenerateOutline={generateSceneOutline}
