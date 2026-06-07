@@ -70,7 +70,7 @@ export function DockLayout({ preset: _preset, left, right }: DockLayoutProps) {
         /* ── Narrow: stacked vertically ── */
         <div className="flex flex-col flex-1 min-h-0 gap-3 overflow-auto">
           <div className="flex flex-col min-h-[360px] flex-shrink-0">{left}</div>
-          <div className="min-h-[380px] flex-1">{right}</div>
+          <div className="flex flex-col min-h-[380px] flex-1 min-w-0">{right}</div>
         </div>
       ) : (
         /* ── Wide: side-by-side with splitter ── */
