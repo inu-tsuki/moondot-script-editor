@@ -1,5 +1,6 @@
 export { ConverterPanel } from './ConverterPanel';
 export { DiagnosticsBand } from './DiagnosticsBand';
+export { RunBadge } from './RunBadge';
 export { SourcePanel } from './SourcePanel';
 export { AdaptationPreferencesPanel } from './AdaptationPreferencesPanel';
 export { SceneOutlinePanel } from './SceneOutlinePanel';

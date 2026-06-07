@@ -68,7 +68,12 @@ const mockWriterDraft: WriterScenePatch = {
 describe('WriterDraftPanel', () => {
   it('returns null when writerDraft is null', () => {
     const { container } = render(
-      <WriterDraftPanel writerDraft={null} isDraftApplied={false} onApplyDraft={vi.fn()} />,
+      <WriterDraftPanel
+        writerDraft={null}
+        isDraftApplied={false}
+        onApplyDraft={vi.fn()}
+        providerType="mock"
+      />,
     );
 
     expect(container.firstChild).toBeNull();
@@ -80,6 +85,7 @@ describe('WriterDraftPanel', () => {
         writerDraft={mockWriterDraft}
         isDraftApplied={false}
         onApplyDraft={vi.fn()}
+        providerType="mock"
       />,
     );
 
@@ -118,6 +124,7 @@ describe('WriterDraftPanel', () => {
         writerDraft={mockWriterDraft}
         isDraftApplied={false}
         onApplyDraft={vi.fn()}
+        providerType="mock"
       />,
     );
 
@@ -130,6 +137,7 @@ describe('WriterDraftPanel', () => {
         writerDraft={mockWriterDraft}
         isDraftApplied={true}
         onApplyDraft={vi.fn()}
+        providerType="mock"
       />,
     );
 
@@ -146,6 +154,7 @@ describe('WriterDraftPanel', () => {
         writerDraft={mockWriterDraft}
         isDraftApplied={false}
         onApplyDraft={onApplyDraft}
+        providerType="mock"
       />,
     );
 

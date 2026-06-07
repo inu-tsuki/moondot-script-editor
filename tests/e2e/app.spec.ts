@@ -29,6 +29,30 @@ test('selected block toolbar does not drive manuscript block height', async ({ p
   expect(blockBox?.height).toBeLessThan(72);
 });
 
+test('full converter workflow: outline generation and draft application', async ({ page }) => {
+  await page.goto('/');
+
+  // 1. Click 「大纲」 in Preferences card
+  await page.getByRole('button', { name: '大纲' }).click();
+
+  // 2. Scene Outline card appears with scene cards
+  await expect(page.getByText('Scene Outline', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '确认生成' })).toBeVisible();
+
+  // 3. Click 「确认生成」 to trigger Writer draft
+  await page.getByRole('button', { name: '确认生成' }).click();
+
+  // 4. Writer Draft card appears with apply button
+  await expect(page.getByText('Writer Draft', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '应用到剧本' })).toBeVisible();
+
+  // 5. Click 「应用到剧本」 to write to document
+  await page.getByRole('button', { name: '应用到剧本' }).click();
+
+  // 6. Writer Draft panel disappears after draft is applied
+  await expect(page.getByText('Writer Draft', { exact: true })).not.toBeVisible();
+});
+
 test('mobile toolbar falls below content instead of squeezing the block row', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');

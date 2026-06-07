@@ -659,6 +659,7 @@ function App() {
             hasDraft={hasWriterDraft}
             isDraftApplied={isDraftApplied}
             onGenerateDraft={generateWriterDraft}
+            providerType={providerType}
           />
           <DiagnosticsBand diagnostics={planDiagnostics} />
 
@@ -666,6 +667,7 @@ function App() {
             writerDraft={writerDraft}
             isDraftApplied={isDraftApplied}
             onApplyDraft={applyWriterDraft}
+            providerType={providerType}
           />
           <DiagnosticsBand diagnostics={documentExportDiagnostics} />
         </ConverterPanel>

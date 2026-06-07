@@ -1,6 +1,8 @@
 import { CheckCircle2 } from 'lucide-react';
 import { Button, PanelMeta, PanelTitle } from '../../components/ui';
 import type { SceneBlockDraft, WriterScenePatch } from '../../core/adaptation';
+import type { ModelProviderType } from '../../core/model';
+import { RunBadge } from './RunBadge';
 
 const MAX_BLOCK_PREVIEW = 3;
 const BLOCK_TEXT_LIMIT = 48;
@@ -33,12 +35,14 @@ type WriterDraftPanelProps = {
   writerDraft: WriterScenePatch | null;
   isDraftApplied: boolean;
   onApplyDraft: () => void;
+  providerType: ModelProviderType;
 };
 
 export function WriterDraftPanel({
   writerDraft,
   isDraftApplied,
   onApplyDraft,
+  providerType,
 }: WriterDraftPanelProps) {
   if (!writerDraft) return null;
 
@@ -51,7 +55,10 @@ export function WriterDraftPanel({
     >
       <div className="flex items-center gap-2 justify-between">
         <PanelTitle icon={<CheckCircle2 size={16} />}>Writer Draft</PanelTitle>
-        <PanelMeta>{sceneCount} drafts</PanelMeta>
+        <div className="flex items-center gap-2">
+          <RunBadge provider={providerType} />
+          <PanelMeta>{sceneCount} drafts</PanelMeta>
+        </div>
       </div>
 
       {/* Apply action */}

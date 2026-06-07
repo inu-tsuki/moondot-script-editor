@@ -69,6 +69,7 @@ describe('SceneOutlinePanel', () => {
         hasDraft={false}
         isDraftApplied={false}
         onGenerateDraft={vi.fn()}
+        providerType="mock"
       />,
     );
 
@@ -95,6 +96,7 @@ describe('SceneOutlinePanel', () => {
         hasDraft={false}
         isDraftApplied={false}
         onGenerateDraft={onGenerateDraft}
+        providerType="mock"
       />,
     );
 
@@ -111,6 +113,7 @@ describe('SceneOutlinePanel', () => {
         hasDraft={false}
         isDraftApplied={false}
         onGenerateDraft={vi.fn()}
+        providerType="mock"
       />,
     );
 
@@ -127,6 +130,7 @@ describe('SceneOutlinePanel', () => {
         hasDraft={false}
         isDraftApplied={false}
         onGenerateDraft={vi.fn()}
+        providerType="mock"
       />,
     );
 

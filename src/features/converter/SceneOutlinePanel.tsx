@@ -1,6 +1,8 @@
 import { ListChecks, PenLine } from 'lucide-react';
 import { Badge, Button, PanelMeta, PanelTitle } from '../../components/ui';
 import type { AdaptationPlan, NovelAdaptationTraceStep } from '../../core/adaptation';
+import type { ModelProviderType } from '../../core/model';
+import { RunBadge } from './RunBadge';
 
 type SceneOutlinePanelProps = {
   plan: AdaptationPlan | undefined;
@@ -12,6 +14,7 @@ type SceneOutlinePanelProps = {
   /** Draft has been applied to the screenplay document. */
   isDraftApplied: boolean;
   onGenerateDraft: () => void;
+  providerType: ModelProviderType;
 };
 
 export function SceneOutlinePanel({
@@ -21,6 +24,7 @@ export function SceneOutlinePanel({
   hasDraft,
   isDraftApplied,
   onGenerateDraft,
+  providerType,
 }: SceneOutlinePanelProps) {
   if (!plan) {
     return null;
@@ -33,7 +37,10 @@ export function SceneOutlinePanel({
     >
       <div className="flex items-center gap-2 justify-between">
         <PanelTitle icon={<ListChecks size={16} />}>Scene Outline</PanelTitle>
-        <PanelMeta>{plan.sceneOutline.length} scenes</PanelMeta>
+        <div className="flex items-center gap-2">
+          <RunBadge provider={providerType} />
+          <PanelMeta>{plan.sceneOutline.length} scenes</PanelMeta>
+        </div>
       </div>
 
       {/* Generate Writer draft */}
