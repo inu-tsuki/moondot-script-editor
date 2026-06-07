@@ -42,6 +42,7 @@ import { ZodObject, z } from 'zod';
 import type { ServerEnv } from './env';
 import { canMakeRealCall, readServerEnv } from './env';
 import { createOpenAIClient } from './openai-client';
+import { writeModelDebugDump } from './model-debug';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -460,6 +461,14 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
     })) as unknown as typeof response;
   } catch (err) {
     const sdkError = classifySDKError(err);
+    await writeModelDebugDump({
+      runId,
+      stage,
+      schemaId,
+      outcome: `sdk_error_${sdkError.reason}`,
+      env,
+      error: sdkError,
+    });
     sendJson(200, buildErrorResult(sdkError, runId, stage));
     return;
   }
@@ -476,6 +485,15 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
     const message = refusalText
       ? `Model refused to generate output. Reason: ${reason}. Refusal: "${refusalText.slice(0, 200)}"`
       : `Model refused to generate output. Reason: ${reason}.`;
+    await writeModelDebugDump({
+      runId,
+      stage,
+      schemaId,
+      outcome: 'refusal',
+      env,
+      response,
+      error: { reason, message },
+    });
     sendJson(200, buildErrorResult(makeError('refusal', message), runId, stage));
     return;
   }
@@ -483,6 +501,15 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
   // -- 12. Extract output text --
   const outputText = extractOutputText(response);
   if (!outputText) {
+    await writeModelDebugDump({
+      runId,
+      stage,
+      schemaId,
+      outcome: 'empty_output',
+      env,
+      response,
+      outputText,
+    });
     sendJson(
       200,
       buildErrorResult(makeError('empty_output', 'Model returned no output text.'), runId, stage),
@@ -495,6 +522,15 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
   try {
     outputJson = JSON.parse(outputText);
   } catch {
+    await writeModelDebugDump({
+      runId,
+      stage,
+      schemaId,
+      outcome: 'parse_error',
+      env,
+      response,
+      outputText,
+    });
     sendJson(
       200,
       buildErrorResult(makeError('parse', 'Model output is not valid JSON.'), runId, stage),
@@ -505,6 +541,17 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
   // -- 14. Provider schema parse + normalize --
   const normalizedResult = parseAndNormalizeProviderOutput(entry, outputJson);
   if (!normalizedResult.success) {
+    await writeModelDebugDump({
+      runId,
+      stage,
+      schemaId,
+      outcome: 'provider_schema_error',
+      env,
+      response,
+      outputText,
+      outputJson,
+      error: normalizedResult,
+    });
     sendJson(200, buildErrorResult(makeError('schema', normalizedResult.message), runId, stage));
     return;
   }
@@ -530,12 +577,35 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
     const message = firstIssue
       ? `App-side schema validation failed at ${firstIssue.path.join('.')}: ${firstIssue.message}`
       : 'App-side schema validation failed.';
+    await writeModelDebugDump({
+      runId,
+      stage,
+      schemaId,
+      outcome: 'app_schema_error',
+      env,
+      response,
+      outputText,
+      outputJson,
+      normalized: normalizedResult.normalized,
+      error: appParsed.error.issues,
+    });
     sendJson(200, buildErrorResult(makeError('schema', message), runId, stage));
     return;
   }
 
   // -- 16. Success --
   const durationMs = Date.now() - startedAt;
+  await writeModelDebugDump({
+    runId,
+    stage,
+    schemaId,
+    outcome: 'success',
+    env,
+    response,
+    outputText,
+    outputJson,
+    normalized: normalizedResult.normalized,
+  });
   sendJson(
     200,
     buildSuccessResult(normalizedResult.normalized, runId, { stage, schemaId, durationMs }),
