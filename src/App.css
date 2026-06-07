@@ -1,5 +1,8 @@
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: #f6f3ee;
 }
 
@@ -118,9 +121,10 @@
 
 .app-main {
   display: grid;
+  flex: 1;
   gap: 16px;
   grid-template-columns: 1fr minmax(280px, 380px);
-  height: calc(100vh - 64px);
+  min-height: 0;
   overflow: hidden;
   padding: 16px;
 }
@@ -131,12 +135,13 @@
   gap: 12px;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
 }
 
 .app-right {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  overflow: hidden;
+  min-height: 0;
 }
 
 /* ── Converter actions ──────────────────────────────────── */
