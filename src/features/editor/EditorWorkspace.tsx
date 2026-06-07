@@ -54,7 +54,7 @@ export function EditorWorkspace({
     <section className="flex flex-col min-h-0 gap-3" aria-label="Editor workspace">
       <SceneNavigator scenes={scenes} activeIndex={activeSceneIndex} onSelect={onSelectScene} />
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <ScriptEditorPanel
           charactersById={charactersById}
           scene={activeScene}
