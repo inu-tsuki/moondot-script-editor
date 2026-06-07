@@ -1,7 +1,7 @@
 # Phase 3: Model Workflow
 
 > 最近更新：2026-06-07  
-> 状态：Phase 3.4 Vite local proxy handler 已完成；当前准备 Phase 3.4b frontend proxy adapter，并将 Phase 3.5 升级为分段 Agent tool UI。
+> 状态：Phase 3.4b frontend proxy adapter 已完成；当前准备 Phase 3.5 Editor / Converter workspace and dock UI。
 
 Phase 3 是月点 MVP 中风险最高的一段。它不是简单地把 mock 替换成一次 LLM 调用；它要把真实模型接入已经建立的 typed workflow：
 
@@ -290,40 +290,123 @@ Phase 3 暂不做：
 - refusal、empty output、parse、schema、semantic 和 config missing 至少有 adapter 层测试或手动验证记录。
 - PR 明确验证方式和未配置 key 时的行为。
 
-### Phase 3.5：Agent tool surfaces / IDE-ready UI
+### Phase 3.5：Editor / Converter workspace and dock UI
 
-目标：在真实调用闭环稳定后，把模型工作流从“按钮 + output tabs”升级为可观察、可切换、可审查的工具型 UI。3.5 不引入完整 agent graph runtime，也不一次性重做整座工作台；它把 IDE 化拆成多个可独立 review 的 tool surfaces。
+目标：在真实调用闭环稳定后，先修正 UI 信息架构，再继续拆 tool surfaces。当前工作台已经暴露出布局模型问题：scene navigator 挤占中央编辑空间，右栏在中等宽度下被压到下方，source / preferences 与 output 分裂在不同栏，Topbar 混合了 app、agent 和 export 动作，而 `Output` 的 outline / YAML / diagnostics 三个 tab 不是同一层级对象。
+
+Phase 3.5 的第一刀不是继续增加工具页，而是把产品重新收敛成两个一级 workspace：
+
+- `Editor`：承载已经写入 `ScreenplayDocument.script.scenes` 的剧本文档编辑。
+- `Converter`：承载 source input、preferences、Architect outline、Writer draft、validation、YAML projection 和 export。
+
+3.5 不引入完整 agent graph runtime，不承诺自由形态 agent 对话页，也不一次性实现完整多 scene 文档流编辑器。它先建立稳定的 workspace / dock 结构，让后续 Architect、Writer、Validation 和 run monitor 都有正确落点。
+
+代码组织也应跟随这个边界。当前代码已经在 core 层接近分区：`src/core/screenplay/` 属于 Editor document/editing domain，`src/core/adaptation/` 和 `src/core/model/` 属于 Converter / agent workflow domain。但组件层仍是 `src/components/panels/` 平铺，`App.tsx` 直接编排 source、preferences、outline、Writer draft、editor、YAML、diagnostics 和 Topbar actions。3.5a 应把 render 结构拆成 shell / editor / converter，而不是只改 CSS。
 
 总体原则：
 
-- 中央 `ScriptEditorPanel` 仍是主工作区，三栏或 activity rail 不能挤压手稿版心。
+- `Editor` 和 `Converter` 是一级功能，不把 Source、Outline、YAML、Diagnostics 拆成互不相关的首级页面。
+- Topbar 只保留 app-level 行为：品牌、provider 状态、workspace switch、全局状态。`大纲`、`剧本`、`应用`、`YAML` 等 workflow action 移入 `Converter`。
+- 使用 dock / panel model 统一承载输入、artifact、validation 和 export。dock 的开合、宽度和选中状态只属于 UI state，不写入 `ScreenplayDocument`。
+- 中央手稿编辑区仍是主工作区；scene navigator 不能作为外部布局补丁挤压稿纸版心，应归入 `Editor` 自己的 header / rail / document flow。
+- `Converter` 只通过 typed artifacts 驱动：`AdaptationPlan`、`WriterScenePatch`、diagnostics、`ModelCallResult` 和 `GenerationTrace`，不直接读写 provider 私有结构。
 - 每个 tool surface 只消费 typed artifacts、`GenerationRun`、diagnostics 和 `ModelCallResult`，不直接读写 provider 私有结构。
 - `mock` 与 `local_proxy` 共用同一 UI 状态模型；provider 差异只体现在 config、trace 和 failure reason。
 - Agent 对话页先作为“typed workflow transcript / command surface”，不承诺自由形态多工具 agent runtime。
 - 任何 UI 改动都保留窄屏回退，并运行 `pnpm e2e` 或在 PR 中说明缺口。
 
+目标代码组织：
+
+```text
+src/components/shell/
+  AppShell.tsx
+  WorkspaceSwitcher.tsx
+  DockLayout.tsx
+
+src/features/editor/
+  EditorWorkspace.tsx
+  SceneNavigator.tsx
+  ScriptEditorPanel.tsx
+  ScenePage.tsx
+  editors/
+
+src/features/converter/
+  ConverterWorkspace.tsx
+  SourceInputPanel.tsx
+  PreferencesPanel.tsx
+  PlanPanel.tsx
+  WriterDraftPanel.tsx
+  ValidationExportPanel.tsx
+  ConverterActions.tsx
+```
+
+这个目录结构可以分 PR 渐进迁移，不要求一次性移动所有文件；但新增代码应优先落在新的 feature / shell 边界内，避免继续扩大 `components/panels/` 平铺层。
+
 建议分段：
 
-#### Phase 3.5a：Workbench shell and activity rail
+#### Phase 3.5a：Workspace shell and dock foundation
 
-目标：建立 IDE-ready 的外壳，而不是立刻塞满功能。
+目标：建立 Editor / Converter 双 workspace 和统一 dock 基础，而不是继续在旧三栏中堆按钮与 tabs。
 
 建议内容：
 
-- 把现有 source / outline / YAML / diagnostics output tabs 梳理成可被 activity rail 或右侧 tool dock 承载的结构。
-- 引入稳定的 tool navigation：Source、Outline、Agent、Validation、Export 等入口可以先是轻量切换，不要求全部实现新功能。
-- 保持三栏工作台可变但克制：左侧来源与配置、中央手稿、右侧工具区；窄屏下工具区进入 tab / drawer 回退。
-- 不在这一段引入真实 agent 对话逻辑，只搭载后续 tool surfaces 的布局容器和状态边界。
+- 新增或重构 `AppShell`、`WorkspaceSwitcher`、`DockLayout`、`EditorWorkspace`、`ConverterWorkspace` 等 UI shell 组件。
+- 将 `App.tsx` 的 render 编排瘦身为 workspace composition：`AppShell` 负责 app chrome，`EditorWorkspace` / `ConverterWorkspace` 负责各自 UI。业务 handlers 可暂时留在 `App.tsx`，但不再让 `App.tsx` 直接拼装所有 panels。
+- 迁移或封装现有 `components/panels`：`ScriptEditorPanel` / `ScenePage` 归入 editor feature；`SourcePanel` / `AdaptationPreferencesPanel` / `SceneOutlinePanel` / `YamlExportPanel` / `DiagnosticsPanel` 归入 converter feature 或由 converter wrapper 统一承载。
+- Topbar 从 workflow command bar 降级为 app shell：provider 状态和 workspace switch 留在这里，agent / export 动作移出。
+- `EditorWorkspace` 先承载当前 `ScriptEditorPanel` 和 scene navigation；不在 3.5a 强行完成文档流编辑器。
+- `ConverterWorkspace` 先承载现有 source、preferences、outline、writer draft preview、diagnostics 和 YAML，但通过 dock / mode 组织，而不是拆成左右栏加 output tabs。
+- 1180px 以下不能把主要工具面板无提示地压到页面底部；窄屏下可进入 drawer / stacked workspace，但必须保持用户知道自己在 Editor 还是 Converter。
 
 完成标准：
 
-- 中央手稿编辑区不被新工具栏或右侧 dock 挤压到不可用。
-- 现有 source ingestion、outline preview、YAML export、diagnostics 和编辑器 e2e smoke 不退化。
-- activity rail / tool dock 的选中状态只属于 UI state，不写入 `ScreenplayDocument`。
+- 用户能在一级导航中清楚区分 `Editor` 与 `Converter`。
+- Source / preferences / outline / writer draft / diagnostics / YAML 被统一收进 `Converter`，不再分裂在左右栏和 output tabs。
+- `Editor` 中的 scene navigation 不再作为外部布局补丁挤占主编辑器空间。
+- 现有 source ingestion、outline generation、Writer draft preview / apply、multi-scene editing、YAML export 和 diagnostics 不退化。
+- UI state 不写入 `ScreenplayDocument`；document changes 仍只通过现有 screenplay operations / `applySceneDrafts()`。
+- 新增组件有清晰 ownership：shell 不知道 Converter workflow internals，Editor 不消费 pending `WriterScenePatch`，Converter 不直接编辑 `ScreenplayDocument.script.scenes`，只通过 explicit apply handler 写回。
+- `App.tsx` 不再 import 每一个 leaf panel；它最多组合 shell / workspace 级组件。
 
-#### Phase 3.5b：Model run monitor tool
+#### Phase 3.5b：Converter workspace consolidation
 
-目标：把 3.4b 的真实调用状态变成可见的 run monitor。
+目标：把 converter 从散落的 panels / buttons / output tabs 收敛为一个可审查的 agent workflow surface。
+
+建议内容：
+
+- 将 converter 内部组织成明确模式：Input、Plan、Draft、Validate / Export。
+- `大纲`、`剧本`、`应用到剧本`、YAML copy / download 等动作放在 Converter 内部，与对应 artifact 同屏或近邻。
+- Outline、Writer draft、diagnostics、YAML 不再作为同级 “Output tabs”；它们是 converter workflow 的不同部分。
+- 保留 human review pause：用户确认 outline 后才允许进入 Writer；Writer patch apply 前必须可见。
+- Provider trace、validation status 和 export readiness 在 Converter 内形成连续状态，而不是散在 Topbar / Output / Diagnostics。
+
+完成标准：
+
+- 从 3+ 章节输入到 YAML 导出可以在 Converter 内顺序完成。
+- 用户能判断当前结果来自 mock、真实模型、fallback 还是 validation failure。
+- invalid plan / patch 不会进入下一阶段或写入 document。
+- 组件测试或 e2e 覆盖核心 Converter workflow。
+
+#### Phase 3.5c：Editor workspace stabilization
+
+目标：让 Editor 成为稳定的剧本文档工作区，而不是被临时 scene tab 和外部 panels 拼接起来。
+
+建议内容：
+
+- 将 scene navigation 收进 Editor header / rail / document flow，避免挤压稿纸主体。
+- 明确 Editor 只编辑已写入 `ScreenplayDocument.script.scenes` 的内容；Converter preview 不混入 Editor。
+- 为多 scene document flow 预留结构，但 3.5c 可以先保持 “active scene + navigation”。
+- 保留现有 block editing、scene metadata editing、selected block toolbar 和窄屏回退。
+
+完成标准：
+
+- 多 scene 都可在 Editor 中发现、切换和编辑。
+- Editor 版心不会因为 Converter / dock 开合而坍缩。
+- 现有 editor e2e smoke 和 selected block toolbar layout 不退化。
+
+#### Phase 3.5d：Run monitor and artifact trace
+
+目标：把 3.4b 的真实调用状态变成可见的 run monitor，但作为 Converter / dock 的内部工具，而不是新的首级页面。
 
 建议内容：
 
@@ -338,56 +421,22 @@ Phase 3 暂不做：
 - run monitor 不取代 diagnostics；它解释调用过程，diagnostics 解释 artifact/document 问题。
 - 有组件测试或 e2e 覆盖 provider 状态、loading、failure 和 success summary。
 
-#### Phase 3.5c：Architect tool surface
+#### Phase 3.5e：Dedicated Architect / Writer / Validation surfaces
 
-目标：把改编方案生成从单个按钮升级成可审查的 Architect 工具页。
-
-建议内容：
-
-- 集中展示 source summary、adaptation preferences、prompt messages 摘要、`AdaptationPlan`、questions 和 scene outline。
-- 支持按 scene card 查看 source refs、writer brief、风险提示和 validation diagnostics。
-- 保留 human review pause：用户确认 outline 后才允许进入 Writer。
-- 不让 Architect 直接写 `ScreenplayDocument.script`。
-
-完成标准：
-
-- Architect 工具能同时展示 mock 与 local proxy 的 plan 结果。
-- invalid plan 不会被确认，不会进入 Writer。
-- 现有 outline preview 行为不退化，必要时迁移到 Architect tool 中。
-
-#### Phase 3.5d：Writer tool surface
-
-目标：把 Writer 从“确认后直接生成并写入”升级为可观察的 scene patch 工具。
+目标：在 workspace / dock 稳定后，再把 Architect、Writer、Validation / Export 拆成更强的专用工具，而不是一开始就铺开一组孤立页面。
 
 建议内容：
 
-- 用户可见主动作命名为“确认生成剧本”或“生成剧本”；“写入”只用于 validation 通过后的内部 apply / write-back 步骤。
-- 以 confirmed `SceneCard` 为单位展示 Writer queue / run status / patch preview。
-- 展示 `WriterScenePatch` 的结构化摘要：scene metadata、blocks、source refs、characters、warnings。
-- Apply 前展示 semantic validation 结果；失败时保留当前 document，不写入坏 patch。
+- Architect：集中展示 source summary、preferences、prompt messages 摘要、`AdaptationPlan`、questions 和 scene outline。
+- Writer：以 confirmed `SceneCard` 为单位展示 Writer queue、patch preview、semantic validation 和 apply 前状态。
+- Validation / Export：整合 document diagnostics、model diagnostics、schema validation、YAML projection、schema 链接和 demo readiness。
 - 为 retry / fallback / repair 预留入口，但自动 repair 仍放到 Phase 3.6。
 
 完成标准：
 
-- Writer 工具只处理 `WriterScenePatch`，不接受完整 `ScreenplayDocument` 模型输出。
-- scene patch 写回仍通过 document operation。
-- Writer failure 不破坏当前手稿。
-
-#### Phase 3.5e：Validation and export tool surface
-
-目标：把 diagnostics、YAML 和提交前质量检查从“输出 tab”升级成发布工具。
-
-建议内容：
-
-- 合并 document diagnostics、model diagnostics、schema validation、YAML projection 状态。
-- 保留 YAML copy / download，显示导出版本、schema 链接和当前 document health。
-- 为 demo path 显示关键 readiness：3+ 章节来源、outline confirmed、writer draft generated、YAML valid。
-
-完成标准：
-
-- YAML projection 与 `ScreenplayDocument` validation 保持一致。
-- 用户能在一个工具页内看到“能否导出 / 不能导出的原因”。
-- 不把 YAML 变成模型输入或主事实来源。
+- Architect 不直接写 `ScreenplayDocument.script`。
+- Writer 只处理 `WriterScenePatch`，写回仍通过 document operation。
+- YAML projection 与 `ScreenplayDocument` validation 保持一致，不变成模型输入或主事实来源。
 
 可选后续切片：
 
@@ -396,7 +445,7 @@ Phase 3 暂不做：
 完成标准：
 
 - 3.5 每个 PR 都能独立合并，不要求一次性完成全部 IDE shell。
-- 用户能在工具区理解：当前在做什么、由哪个 provider 做、产出了哪个 artifact、是否通过 validation、下一步能做什么。
+- 用户能清楚知道当前在 Editor 还是 Converter，以及 converter 正处在 input / plan / draft / validate / export 的哪一步。
 - 新 UI 不破坏 3.4b 的真实调用闭环，也不绕过 3.2 / 3.3 的 schema 与 semantic validation。
 
 ### Phase 3.6：Repair and fallback hardening

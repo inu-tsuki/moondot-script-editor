@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-Phase 3 已完成 model adapter contract、Structured Architect contract、Writer scene patch contract、OpenAI structured output compatibility audit 和 Vite local proxy handler。当前重点是 Phase 3.4b frontend proxy adapter，先打通 UI -> `/api/model/call` -> OpenAI -> validated artifact 的真实调用闭环；随后进入升级后的 Phase 3.5 Agent tool surfaces / IDE-ready UI。
+Phase 3 已完成 model adapter contract、Structured Architect contract、Writer scene patch contract、OpenAI structured output compatibility audit、Vite local proxy handler 和 Phase 3.4b frontend proxy adapter。当前进入 Phase 3.5 Editor / Converter workspace and dock UI：先修正 UI 信息架构，再继续拆 Architect、Writer、Validation 和 run monitor 工具能力。
 
 ## 已完成
 
@@ -77,11 +77,11 @@ Phase 3 已完成 model adapter contract、Structured Architect contract、Write
 ## 下一步
 
 - [ ] Phase 3.4b follow-up：Topbar 中 import 按钮当前无功能，可考虑连接文件导入。
-- [ ] Phase 3.5a：Workbench shell and activity rail，建立 IDE-ready 的工具外壳，承载 Source、Outline、Agent、Validation、Export 等 tool surfaces；不在这一段引入完整 agent runtime。
-- [ ] Phase 3.5b：Model run monitor tool，展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类；不显示 secret。
-- [ ] Phase 3.5c：Architect tool surface，集中展示 source summary、preferences、prompt 摘要、`AdaptationPlan`、questions、scene outline 和 plan validation。
-- [ ] Phase 3.5d：Writer tool surface，以 confirmed `SceneCard` 为单位展示 Writer queue、patch preview、semantic validation 和 apply 前状态。
-- [ ] Phase 3.5e：Validation and export tool surface，整合 diagnostics、YAML projection、schema 链接和 demo readiness。
+- [ ] Phase 3.5a：Workspace shell and dock foundation，建立 `Editor` / `Converter` 双 workspace、统一 dock、Topbar app-level 行为边界，并把组件组织从 `components/panels` 平铺迁移到 shell / editor / converter 边界；不在这一段引入完整 agent runtime。
+- [ ] Phase 3.5b：Converter workspace consolidation，将 source、preferences、outline、Writer draft preview、diagnostics、YAML 组织为 Input / Plan / Draft / Validate / Export 的单一 converter workflow。
+- [ ] Phase 3.5c：Editor workspace stabilization，把 scene navigation 收进 Editor 自身 header / rail / document flow，保留多 scene 可发现、可切换、可编辑。
+- [ ] Phase 3.5d：Run monitor and artifact trace，展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类；不显示 secret。
+- [ ] Phase 3.5e：Dedicated Architect / Writer / Validation surfaces，在 workspace / dock 稳定后强化 Architect、Writer、Validation / Export 专用工具视图。
 - [ ] 做 Phase 3.6 repair and fallback hardening，覆盖 parse、schema、semantic validation、network 和 config failures。
 - [ ] 准备正式 demo 路径：3+ 章节输入、改编方案确认、语义块编辑、YAML 导出、Schema 文档链接。
 

@@ -1,7 +1,7 @@
 # Next Direction
 
 > 最近更新：2026-06-07
-> 状态：Phase 3.4b frontend proxy adapter 已完成；当前准备 Phase 3.5 workbench tool surfaces。
+> 状态：Phase 3.4b frontend proxy adapter 已完成；当前准备 Phase 3.5 Editor / Converter workspace and dock UI。
 
 本文用于回答“下一两个 PR 先做什么”。阶段级边界见 `roadmap/README.md` 和 `roadmap/phase-3-model-workflow.md`；长期产品愿景仍以 `../knowledge/product/vision.md` 为准。
 
@@ -26,7 +26,7 @@
 - Phase 3.4 Vite local proxy handler：`/api/model/call` dev-server endpoint 已实现，挂在 Vite `configureServer()` middleware 上。Pipeline：`ModelCallRequest → OpenAI Responses API → structured output → parseAndNormalizeProviderOutput → app-side Zod structural validation → ModelCallResult`。Structural error 映射覆盖 config_missing / network / refusal / empty_output / parse / schema（semantic 由 client 端 `validateAdaptationPlan` / `validateWriterScenePatch` 负责）。Handler 和 19 个测试已在 `src/server/handler.ts` 和 `tests/server/handler.test.ts`。注意：`pnpm build` 产物不包含 `/api/model/call`；部署需要额外 API host 或继续走 `pnpm dev` local proxy。
 - Phase 3.4b frontend proxy adapter：`createProxyModelAdapter()` 实现 `ModelAdapter` 接口，通过 `fetch()` 调用 `/api/model/call`。支持挂载时自动探测代理可用性（`stage: '_probe'` 触达 handler step 5 快速返回，不发起 OpenAI 调用）。Topbar 显示 provider 状态指示器（Mock / 代理），可手动切换。App.tsx 继续走 `validateAdaptationPlan` / `validateWriterScenePatch` semantic validation。21 proxy adapter tests in `tests/core/model/proxy-adapter.test.ts`。Production build 通过 `import.meta.env.PROD` 自动禁止代理探测。总计 157 tests 全部通过。
 
-Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.5 Agent tool surfaces / IDE-ready UI。
+Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.5 Editor / Converter workspace and dock UI。
 
 ## 近期原则
 
@@ -158,22 +158,32 @@ Phase 3.4b 收口边界：
 - 不做三栏可变 IDE shell、不做 agent conversation page、不迁移 output tabs；这些放入 3.5。
 - 测试覆盖 proxy adapter success/failure、provider switching、semantic validation 不被绕过，以及未配置 key 的 fallback / diagnostic 行为。
 
-### PR E：Agent tool surfaces / IDE-ready UI
+### PR E：Editor / Converter workspace and dock UI
 
-目标：把真实调用闭环上的状态、artifact 和 validation 结果整理成一组可独立审查的工具 UI，而不是一次性重做完整 IDE。
+目标：先修正 UI 信息架构，再继续拆工具能力。当前应用实际只有两个一级功能：`Editor` 负责已写入的剧本文档，`Converter` 负责 source input、preferences、Architect outline、Writer draft、validation、YAML projection 和 export。3.5 不应继续把 source、outline、YAML、diagnostics 拆成互不相关的首级 panels / tabs。
+
+代码组织目标：
+
+- 新增 `src/components/shell/` 承载 `AppShell`、`WorkspaceSwitcher`、`DockLayout`。
+- 新增 `src/features/editor/` 承载 `EditorWorkspace`、scene navigation、script editor 和 block editors。
+- 新增 `src/features/converter/` 承载 `ConverterWorkspace`、source / preferences、plan、writer draft、validation / export。
+- `App.tsx` 短期可保留 workflow state 和 handlers，但 render 层应只组合 shell / workspace 级组件，不再直接拼装所有 leaf panels。
 
 建议顺序：
 
-- Phase 3.5a：Workbench shell and activity rail。建立 Source、Outline、Agent、Validation、Export 等 tool entry，但先不引入完整 agent runtime。
-- Phase 3.5b：Model run monitor tool。展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类。
-- Phase 3.5c：Architect tool surface。集中展示 source summary、preferences、prompt 摘要、`AdaptationPlan`、questions、scene outline 和 plan validation。
-- Phase 3.5d：Writer tool surface。以 confirmed `SceneCard` 为单位展示 Writer queue、patch preview、semantic validation 和 apply 前状态。
-- Phase 3.5e：Validation and export tool surface。整合 diagnostics、YAML projection、schema 链接和 demo readiness。
+- Phase 3.5a：Workspace shell and dock foundation。建立 `AppShell`、`WorkspaceSwitcher`、`DockLayout`、`EditorWorkspace`、`ConverterWorkspace`；Topbar 只保留 app-level 行为，agent / export commands 移入 Converter；开始迁移 `components/panels` 平铺结构到 shell / editor / converter 边界。
+- Phase 3.5b：Converter workspace consolidation。把 source、preferences、outline、Writer draft preview、diagnostics、YAML 收进一个 converter workflow，组织成 Input / Plan / Draft / Validate / Export，而不是旧 `Output` tabs。
+- Phase 3.5c：Editor workspace stabilization。把 scene navigation 收进 Editor 自身的 header / rail / document flow，保留多 scene 可发现、可切换、可编辑。
+- Phase 3.5d：Run monitor and artifact trace。展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类，作为 Converter / dock 内部工具。
+- Phase 3.5e：Dedicated Architect / Writer / Validation surfaces。在 workspace / dock 稳定后，再强化 Architect、Writer、Validation / Export 的专用工具视图。
 
 完成标准：
 
-- 每个 tool surface 都能单独 review 和合并，不要求一次性完成整套 IDE shell。
-- 中央手稿编辑区仍是主工作区；新三栏 / activity rail 不能破坏已有编辑、outline、YAML 和 diagnostics 流程。
+- 每个切片都能单独 review 和合并，不要求一次性完成整套 IDE shell。
+- 用户能清楚知道当前在 `Editor` 还是 `Converter`，以及 Converter 正处在 input / plan / draft / validate / export 的哪一步。
+- `Source` / preferences / outline / Writer draft / diagnostics / YAML 不再分裂在左右栏和旧 Output tabs。
+- 中央手稿编辑区仍是主工作区；dock / workspace switch 不能破坏已有编辑、outline、YAML 和 diagnostics 流程。
+- shell 不知道 Converter workflow internals，Editor 不消费 pending `WriterScenePatch`，Converter 不直接编辑 `ScreenplayDocument.script.scenes`，只通过 explicit apply handler 写回。
 - Agent 对话式页面只作为后续可选切片，必须调用 typed workflow，不直接开放任意工具执行。
 - UI、editor、toolbar、output panel 或 responsive layout 改动运行 `pnpm e2e`，或在 PR 中明确说明环境缺口。
 

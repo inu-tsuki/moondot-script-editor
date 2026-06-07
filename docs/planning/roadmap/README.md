@@ -119,7 +119,7 @@ Phase 0: 文档和范围锁定
 - 强化 structured prompt contract、输出解析和修复策略。
 - 将 Architect 解析 / 提问 / writer brief 与 Writer 初稿生成的 contract 固化到代码。
 - 建立安全 server-side / local proxy 边界，避免 API key 暴露在浏览器端。
-- 将模型 trace、失败恢复、diagnostics 和导出状态整理进分段 tool surfaces。
+- 将 UI 信息架构收敛为 Editor / Converter 双 workspace，再把模型 trace、失败恢复、diagnostics 和导出状态整理进 dock / tool surfaces。
 - 完成导出交互和提交演示路径。
 - README 链接到 Schema 文档、运行方式和 demo 视频。
 - 检查 README、Schema 文档和 demo 没有把长期 IDE 能力写成当前 MVP 承诺。
@@ -132,7 +132,7 @@ Phase 0: 文档和范围锁定
 
 详细计划见 `phase-3-model-workflow.md`。
 
-状态：3.4 Vite local proxy handler 已完成；下一步 3.4b 前端 proxy adapter，随后 3.5 分段 Agent tool surfaces。
+状态：3.4b frontend proxy adapter 已完成；下一步 3.5 Editor / Converter workspace and dock UI。
 
 ### Phase 4：Demo、README、提交材料和质量收口
 
