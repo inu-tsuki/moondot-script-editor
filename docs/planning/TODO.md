@@ -70,6 +70,7 @@ Phase 3 已完成 model adapter contract、Structured Architect contract 和 Wri
 - [x] 实现 Phase 3.2 Structured Architect contract，为 Architect plan 建立 Zod schema / runtime validation，并预留可序列化 `structuredOutput: { schemaId }` envelope。
 - [x] 实现 Phase 3.3 WriterBrief and scene draft contract，让 Writer 输出收窄为可验证 `WriterScenePatch` 并通过 document operation 写回。
 - [x] 审计 `adaptation_plan_v1` / `writer_scene_patch_v1` 的 OpenAI strict structured output 兼容性，明确 optional 字段、provider-facing strict schema 和 failure mapping 风险。
+- [x] 完成 Phase 3.4-pre (Golden Fox)：安装 `openai` SDK v6.42.0，建立 provider-facing Zod schemas（`adaptation-plan-provider.ts`、`writer-scene-patch-provider.ts`）、normalizer、schema registry、compatibility snapshot 测试和 roundtrip 测试。Writer optional → nullable + discriminatedUnion → flat object 已完成。Vite dev server `/api/model/call` skeleton 已建立。`.env.example` 模板已创建。
 
 ## 下一步
 

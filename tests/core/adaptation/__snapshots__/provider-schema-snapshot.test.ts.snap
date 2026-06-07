@@ -1,0 +1,577 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`provider-facing JSON Schema snapshots > generates the Architect provider schema > architect-provider-schema 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "adaptationOptions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+          },
+          "title": {
+            "type": "string",
+          },
+          "tradeoffs": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "id",
+          "title",
+          "tradeoffs",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "adaptationQuestions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+          },
+          "options": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                },
+                "impact": {
+                  "type": "string",
+                },
+                "label": {
+                  "type": "string",
+                },
+              },
+              "required": [
+                "id",
+                "label",
+                "impact",
+              ],
+              "type": "object",
+            },
+            "type": "array",
+          },
+          "question": {
+            "type": "string",
+          },
+          "recommendedOptionId": {
+            "type": "string",
+          },
+          "sourceRefs": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "chapter",
+                  "type": "string",
+                },
+                "sourceId": {
+                  "type": "string",
+                },
+              },
+              "required": [
+                "kind",
+                "sourceId",
+              ],
+              "type": "object",
+            },
+            "type": "array",
+          },
+          "whyItMatters": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "id",
+          "question",
+          "whyItMatters",
+          "sourceRefs",
+          "options",
+          "recommendedOptionId",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "characterUpdates": {
+      "items": {
+        "type": "string",
+      },
+      "type": "array",
+    },
+    "id": {
+      "type": "string",
+    },
+    "preferences": {
+      "additionalProperties": false,
+      "properties": {
+        "allowCharacterMerge": {
+          "type": "boolean",
+        },
+        "allowSubplotCompression": {
+          "type": "boolean",
+        },
+        "allowTimelineReorder": {
+          "type": "boolean",
+        },
+        "fidelity": {
+          "enum": [
+            "faithful",
+            "core_rewrite",
+            "free",
+          ],
+          "type": "string",
+        },
+        "pacing": {
+          "enum": [
+            "slow",
+            "balanced",
+            "fast",
+          ],
+          "type": "string",
+        },
+        "source": {
+          "enum": [
+            "system_default",
+            "user",
+          ],
+          "type": "string",
+        },
+        "style": {
+          "enum": [
+            "realist",
+            "suspense",
+            "light_comedy",
+            "cold",
+            "romantic",
+          ],
+          "type": "string",
+        },
+        "targetLength": {
+          "enum": [
+            "short_scene",
+            "short_drama_3_min",
+            "ten_scene_outline",
+            "episode_outline",
+          ],
+          "type": "string",
+        },
+        "targetMedium": {
+          "enum": [
+            "screenplay",
+            "short_drama",
+            "visual_novel",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "targetMedium",
+        "targetLength",
+        "fidelity",
+        "pacing",
+        "style",
+        "allowCharacterMerge",
+        "allowSubplotCompression",
+        "allowTimelineReorder",
+        "source",
+      ],
+      "type": "object",
+    },
+    "questionAnswers": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "optionId": {
+            "type": "string",
+          },
+          "questionId": {
+            "type": "string",
+          },
+          "source": {
+            "enum": [
+              "recommended",
+              "user",
+            ],
+            "type": "string",
+          },
+        },
+        "required": [
+          "questionId",
+          "optionId",
+          "source",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "recommendedPlan": {
+      "type": "string",
+    },
+    "risks": {
+      "items": {
+        "type": "string",
+      },
+      "type": "array",
+    },
+    "sceneOutline": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "dramaticPurpose": {
+            "type": "string",
+          },
+          "estimatedBlocks": {
+            "type": "number",
+          },
+          "headingSuggestion": {
+            "additionalProperties": false,
+            "properties": {
+              "location": {
+                "type": "string",
+              },
+              "locationType": {
+                "enum": [
+                  "INT",
+                  "EXT",
+                  "INT_EXT",
+                ],
+                "type": "string",
+              },
+              "timeOfDay": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "locationType",
+              "location",
+              "timeOfDay",
+            ],
+            "type": "object",
+          },
+          "id": {
+            "type": "string",
+          },
+          "pacing": {
+            "enum": [
+              "slow",
+              "balanced",
+              "fast",
+            ],
+            "type": "string",
+          },
+          "sourceRefs": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "chapter",
+                  "type": "string",
+                },
+                "sourceId": {
+                  "type": "string",
+                },
+              },
+              "required": [
+                "kind",
+                "sourceId",
+              ],
+              "type": "object",
+            },
+            "type": "array",
+          },
+          "title": {
+            "type": "string",
+          },
+          "writerBrief": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "id",
+          "title",
+          "dramaticPurpose",
+          "sourceRefs",
+          "pacing",
+          "estimatedBlocks",
+          "writerBrief",
+          "headingSuggestion",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "sourceAnalysis": {
+      "additionalProperties": false,
+      "properties": {
+        "characterArcs": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "compressibleParts": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "coreEvents": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "exteriorizationNotes": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "mustKeeps": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "timeline": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "coreEvents",
+        "characterArcs",
+        "timeline",
+        "mustKeeps",
+        "compressibleParts",
+        "exteriorizationNotes",
+      ],
+      "type": "object",
+    },
+  },
+  "required": [
+    "id",
+    "preferences",
+    "sourceAnalysis",
+    "adaptationQuestions",
+    "questionAnswers",
+    "adaptationOptions",
+    "recommendedPlan",
+    "sceneOutline",
+    "characterUpdates",
+    "risks",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`provider-facing JSON Schema snapshots > generates the Writer provider schema > writer-provider-schema 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "characterUpdates": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        {
+          "type": "null",
+        },
+      ],
+    },
+    "planId": {
+      "type": "string",
+    },
+    "scenes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "blocks": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "characterId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                    },
+                    {
+                      "type": "null",
+                    },
+                  ],
+                },
+                "parenthetical": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                    },
+                    {
+                      "type": "null",
+                    },
+                  ],
+                },
+                "sourceRefs": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "kind": {
+                            "const": "chapter",
+                            "type": "string",
+                          },
+                          "sourceId": {
+                            "type": "string",
+                          },
+                        },
+                        "required": [
+                          "kind",
+                          "sourceId",
+                        ],
+                        "type": "object",
+                      },
+                      "type": "array",
+                    },
+                    {
+                      "type": "null",
+                    },
+                  ],
+                },
+                "text": {
+                  "type": "string",
+                },
+                "type": {
+                  "enum": [
+                    "action",
+                    "dialogue",
+                    "narration",
+                    "transition",
+                    "note",
+                  ],
+                  "type": "string",
+                },
+                "voice": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "voice_over",
+                        "off_screen",
+                        "narrator",
+                      ],
+                      "type": "string",
+                    },
+                    {
+                      "type": "null",
+                    },
+                  ],
+                },
+              },
+              "required": [
+                "type",
+                "text",
+                "sourceRefs",
+                "characterId",
+                "parenthetical",
+                "voice",
+              ],
+              "type": "object",
+            },
+            "type": "array",
+          },
+          "heading": {
+            "additionalProperties": false,
+            "properties": {
+              "location": {
+                "type": "string",
+              },
+              "locationType": {
+                "enum": [
+                  "INT",
+                  "EXT",
+                  "INT_EXT",
+                ],
+                "type": "string",
+              },
+              "timeOfDay": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "locationType",
+              "location",
+              "timeOfDay",
+            ],
+            "type": "object",
+          },
+          "sceneCardId": {
+            "type": "string",
+          },
+          "sourceRefs": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "chapter",
+                  "type": "string",
+                },
+                "sourceId": {
+                  "type": "string",
+                },
+              },
+              "required": [
+                "kind",
+                "sourceId",
+              ],
+              "type": "object",
+            },
+            "type": "array",
+          },
+          "synopsis": {
+            "anyOf": [
+              {
+                "type": "string",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+          "title": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "sceneCardId",
+          "title",
+          "synopsis",
+          "heading",
+          "sourceRefs",
+          "blocks",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+  },
+  "required": [
+    "planId",
+    "scenes",
+    "characterUpdates",
+  ],
+  "type": "object",
+}
+`;

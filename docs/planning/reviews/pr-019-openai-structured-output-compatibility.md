@@ -132,6 +132,45 @@
 - [ ] unsupported JSON Schema keyword 不会进入 OpenAI strict schema。
 - [ ] refusal / empty / parse / schema / semantic / config missing 都有测试或手动验证记录。
 
+## Phase 3.4-pre 实施结果（2026-06-07）
+
+已安装 `openai` SDK v6.42.0 并使用 `zodResponseFormat()` 生成了两个 schema 的实际 provider-facing JSON Schema snapshot。
+
+### 确认的发现
+
+1. **SDK v6 主动拒绝 `.optional()` without `.nullable()`**：`writerScenePatchSchema` 在 `zodResponseFormat()` 调用时直接抛出错误 `"Zod field at properties/characterUpdates uses .optional() without .nullable() which is not supported by the API"`。这比审计时预计的 "warning" 更严格 — SDK 已经在做 compatibility enforcement。
+
+2. **SDK 自动添加 `additionalProperties: false`**：所有层级 object 都会自动设置，不需要我们手工添加。✅
+
+3. **`z.literal()` → `const`**：例如 `z.literal('chapter')` 生成 `{"const": "chapter", "type": "string"}`。`const` 在 OpenAI strict mode 中应被接受。
+
+4. **`z.enum()` → `enum`**：正常工作，生成 `{"enum": [...], "type": "string"}`。✅
+
+5. **`z.number().int().positive()` → `exclusiveMinimum` + `maximum`**：`estimatedBlocks` 生成了 `exclusiveMinimum: 0` 和 `maximum: 9007199254740991`，这两个 keywords 在 strict mode 中不支持。
+
+6. **`.min(1)` → `minItems`**：多处数组生成了 `minItems: 1`，strict mode 不支持。
+
+### 实施的修复
+
+- **Architect**：创建 `adaptation-plan-provider.ts`，移除 `.min(1)`、`.int().positive()`，其余结构与 app-side 相同。Normalizer = identity。
+- **Writer**：创建 `writer-scene-patch-provider.ts`，`.optional()` → `.nullable()`，`z.discriminatedUnion` → flat object + `type` enum。创建 normalizer：null → omit key，flat block → discriminated union。
+- **Registry**：`src/core/adaptation/provider-schemas/index.ts` 映射 `schemaId` → provider schema + normalizer。
+- **Server skeleton**：`src/server/` + Vite middleware `/api/model/call` (501 not implemented)。
+- **测试**：snapshot + compatibility + roundtrip 覆盖两个 schema，112 测试全通过。
+
+### 进入 Phase 3.4 正式阶段的前置条件
+
+- [x] `openai` SDK 已安装，build 不含 SDK
+- [x] 两个 schema 的 provider-facing snapshot 已生成
+- [x] Architect provider schema 已 sanitize
+- [x] Writer provider schema optional→nullable + flat block 已完成
+- [x] Normalizer roundtrip 测试通过
+- [x] Unsupported keywords 不会进入 provider schema
+- [x] `additionalProperties: false` 全局覆盖
+- [ ] 真实 API key 验证（Phase 3.4）
+- [ ] refusal / empty / parse error 映射（Phase 3.4）
+- [ ] Proxy adapter 对接前端 `ModelCallRequest`（Phase 3.4）
+
 ## Recommendation
 
 Phase 3.4 可以启动，且应该引入 OpenAI SDK；但第一步不是直接发真实请求，而是把 `schemaId -> provider-facing structured output schema -> app-side validation` 这条链路建稳。Architect schema 适合作为第一条真实 structured output smoke；Writer schema 需要先处理 optional / union / normalizer，再进入真实调用。
