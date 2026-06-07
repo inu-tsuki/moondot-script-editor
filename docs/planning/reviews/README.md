@@ -26,6 +26,7 @@
 - [pr-018-writer-brief-scene-draft-contract.md](pr-018-writer-brief-scene-draft-contract.md)：PR #18 `feat/phase3.3-writer-contract-planning` 的 review，关注 WriterScenePatch validation、document write-back 边界和 sceneCard/sourceRef/character 引用完整性。
 - [pr-019-openai-structured-output-compatibility.md](pr-019-openai-structured-output-compatibility.md)：Phase 3.4 前置审计，关注 OpenAI structured output strict schema、Zod helper、optional 字段、schema registry 和 failure mapping。
 - [pr-020-phase-3-4-pre-golden-fox.md](pr-020-phase-3-4-pre-golden-fox.md)：Review #20 / GitHub #34 `feat/phase3.4-pre-golden-fox` 的 review，关注 provider-facing schema、OpenAI SDK server boundary、Responses `text.format` envelope 和 normalizer failure mapping。
+- [pr-021-phase-3-4-server-wire-up.md](pr-021-phase-3-4-server-wire-up.md)：Review #21 / GitHub #36 `feat/phase3.4-server-wire-up` 的 review，关注 `/api/model/call` handler、stage/schema runtime contract、Responses refusal mapping 和 Vite local proxy 部署边界。
 
 ## 维护规则
 
