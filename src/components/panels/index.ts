@@ -4,11 +4,10 @@
 export { SceneNavigator, ScriptEditorPanel } from '../../features/editor';
 export {
   AdaptationPreferencesPanel,
-  ConverterActions,
   ConverterPanel,
   DiagnosticsBand,
   DiagnosticsPanel,
   SceneOutlinePanel,
   SourcePanel,
-  YamlExportPanel,
+  WriterDraftPanel,
 } from '../../features/converter';

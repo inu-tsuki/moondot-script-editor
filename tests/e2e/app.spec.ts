@@ -9,12 +9,12 @@ test('loads the workbench with editor and converter panels', async ({ page }) =>
   // Converter right panel — source card
   await expect(page.getByLabel('小说来源文本')).toBeVisible();
 
-  // Scene outline card is hidden when no plan (returns null internally)
-  // ConverterActions buttons are visible
+  // "大纲" button is in Preferences card
   await expect(page.getByRole('button', { name: '大纲' })).toBeVisible();
 
-  // YAML preview is visible in the converter flow
-  await expect(page.locator('.yaml-preview')).toContainText('schemaVersion');
+  // Export bar at bottom of editor (compact, no YAML preview)
+  await expect(page.getByRole('button', { name: '复制' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '下载' })).toBeVisible();
 });
 
 test('selected block toolbar does not drive manuscript block height', async ({ page }) => {

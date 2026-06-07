@@ -1,15 +1,16 @@
+import { Copy, Download } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
+import { Badge, Button } from './components/ui';
 import { AppShell } from './components/shell';
 import { SceneNavigator, ScriptEditorPanel } from './features/editor';
 import {
   AdaptationPreferencesPanel,
-  ConverterActions,
   ConverterPanel,
   DiagnosticsBand,
   SceneOutlinePanel,
   SourcePanel,
-  YamlExportPanel,
+  WriterDraftPanel,
 } from './features/converter';
 import {
   ADAPTATION_PLAN_SCHEMA_ID,
@@ -609,23 +610,34 @@ function App() {
             onEdit={handleEdit}
             onUpdateBlockText={handleUpdateBlockText}
           />
+
+          {/* Export bar — compact, no YAML preview */}
+          <div className="flex items-center gap-3 border-t border-[#e4ded3] px-4 py-2">
+            <Badge variant={exportStatus.isReady ? 'success' : 'error'}>
+              {exportStatus.isReady ? 'export ready' : `${exportStatus.errorCount} errors`}
+            </Badge>
+            {exportStatus.warningCount > 0 && <Badge>{exportStatus.warningCount} warnings</Badge>}
+            {exportFeedback && <Badge>{exportFeedback}</Badge>}
+            <div className="ml-auto flex gap-2">
+              <Button title="复制 YAML" onClick={copyYaml} disabled={!exportStatus.isReady}>
+                <Copy size={16} />
+                复制
+              </Button>
+              <Button
+                title="下载 YAML"
+                variant="primary"
+                onClick={downloadYaml}
+                disabled={!exportStatus.isReady}
+              >
+                <Download size={16} />
+                下载
+              </Button>
+            </div>
+          </div>
         </>
       }
       right={
         <ConverterPanel>
-          {/* Workflow actions — at the top of the converter card flow */}
-          <ConverterActions
-            canGenerate={
-              !!adaptationPlan && !hasWriterDraft && !isDraftApplied && !isGeneratingWriter
-            }
-            canApply={hasWriterDraft && !isDraftApplied}
-            isExportReady={exportStatus.isReady}
-            onGenerateOutline={generateSceneOutline}
-            onGenerateDraft={generateWriterDraft}
-            onApplyDraft={applyWriterDraft}
-            onDownloadYaml={downloadYaml}
-          />
-
           <SourcePanel
             chapterCount={chapterCount}
             sourceText={sourceText}
@@ -637,26 +649,24 @@ function App() {
           <AdaptationPreferencesPanel
             preferences={adaptationPreferences}
             onPreferenceChange={updateAdaptationPreference}
+            onGenerateOutline={generateSceneOutline}
           />
 
           <SceneOutlinePanel
             plan={adaptationPlan}
             trace={adaptationTrace}
-            writerDraft={writerDraft}
             isGeneratingWriter={isGeneratingWriter}
+            hasDraft={hasWriterDraft}
             isDraftApplied={isDraftApplied}
             onGenerateDraft={generateWriterDraft}
-            onApplyDraft={applyWriterDraft}
           />
           <DiagnosticsBand diagnostics={planDiagnostics} />
 
-          <YamlExportPanel
-            exportStatus={exportStatus}
-            feedback={exportFeedback}
-            onCopy={copyYaml}
-            onDownload={downloadYaml}
+          <WriterDraftPanel
+            writerDraft={writerDraft}
+            isDraftApplied={isDraftApplied}
+            onApplyDraft={applyWriterDraft}
           />
-          <pre className="yaml-preview">{yamlPreview}</pre>
           <DiagnosticsBand diagnostics={documentExportDiagnostics} />
         </ConverterPanel>
       }
