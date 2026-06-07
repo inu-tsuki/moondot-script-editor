@@ -106,7 +106,7 @@ Phase 0: 文档和范围锁定
 - 中央剧本编辑区获得主要空间。
 - Source、scene outline、YAML 和 diagnostics 不再杂乱垂直堆叠。
 - Tailwind 已接入并用于主要新 UI。
-- Phase 2 的导入、规划、确认、写入和 YAML 导出链路不退化。
+- Phase 2 的导入、规划、确认生成剧本和 YAML 导出链路不退化。
 
 详细计划见 `phase-2-5-workbench-ui-foundation.md`。
 

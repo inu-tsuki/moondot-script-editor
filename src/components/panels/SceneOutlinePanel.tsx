@@ -1,18 +1,67 @@
-import { CheckCircle2, ListChecks } from 'lucide-react';
+import { CheckCircle2, ListChecks, PenLine } from 'lucide-react';
 import { Badge, Button, PanelMeta, PanelTitle } from '../ui';
-import type { AdaptationPlan, NovelAdaptationTraceStep } from '../../core/adaptation';
+import type {
+  AdaptationPlan,
+  NovelAdaptationTraceStep,
+  SceneBlockDraft,
+  WriterScenePatch,
+} from '../../core/adaptation';
 
-type SceneOutlinePanelProps = {
-  isDrafted: boolean;
-  plan: AdaptationPlan | undefined;
-  trace: NovelAdaptationTraceStep[];
-  onConfirm: () => void;
+const MAX_BLOCK_PREVIEW = 3;
+const BLOCK_TEXT_LIMIT = 48;
+
+const blockTypeLabel = (block: SceneBlockDraft): string => {
+  switch (block.type) {
+    case 'action':
+      return '动作';
+    case 'dialogue':
+      return block.characterId ? `${block.characterId} 对白` : '对白';
+    case 'narration':
+      return block.voice ? `叙述 (${block.voice})` : '叙述';
+    case 'transition':
+      return '转场';
+    case 'note':
+      return '注释';
+  }
 };
 
-export function SceneOutlinePanel({ isDrafted, plan, trace, onConfirm }: SceneOutlinePanelProps) {
+const truncateText = (text: string, limit: number): string =>
+  text.length <= limit ? text : `${text.slice(0, limit)}…`;
+
+const formatHeading = (heading: {
+  locationType: string;
+  location: string;
+  timeOfDay: string;
+}): string => `${heading.locationType}. ${heading.location} — ${heading.timeOfDay}`;
+
+type SceneOutlinePanelProps = {
+  plan: AdaptationPlan | undefined;
+  trace: NovelAdaptationTraceStep[];
+  /** Pending Writer draft (validated, not yet applied). */
+  writerDraft: WriterScenePatch | null;
+  /** Writer call is in flight. */
+  isGeneratingWriter: boolean;
+  /** Draft has been applied to the screenplay document. */
+  isDraftApplied: boolean;
+  onGenerateDraft: () => void;
+  onApplyDraft: () => void;
+};
+
+export function SceneOutlinePanel({
+  plan,
+  trace,
+  writerDraft,
+  isGeneratingWriter,
+  isDraftApplied,
+  onGenerateDraft,
+  onApplyDraft,
+}: SceneOutlinePanelProps) {
   if (!plan) {
     return null;
   }
+
+  const hasDraft = writerDraft !== null;
+  const sceneCount = writerDraft?.scenes.length ?? plan.sceneOutline.length;
 
   return (
     <section
@@ -23,17 +72,117 @@ export function SceneOutlinePanel({ isDrafted, plan, trace, onConfirm }: SceneOu
         <PanelTitle icon={<ListChecks size={16} />}>Scene Outline</PanelTitle>
         <PanelMeta>{plan.sceneOutline.length} scenes</PanelMeta>
       </div>
-      <div className="flex justify-end">
-        <Button
-          title="确认大纲并写入剧本"
-          variant="primary"
-          onClick={onConfirm}
-          disabled={isDrafted}
+
+      {/* Phase 1: Generate Writer draft */}
+      {!isDraftApplied && (
+        <div className="flex justify-end gap-2">
+          <Button
+            title="确认大纲并生成剧本草稿"
+            variant={hasDraft ? undefined : 'primary'}
+            onClick={onGenerateDraft}
+            disabled={isGeneratingWriter || isDraftApplied}
+          >
+            <PenLine size={16} />
+            {isGeneratingWriter ? '生成中...' : hasDraft ? '重新生成' : '确认生成'}
+          </Button>
+          {/* Phase 2: Apply draft to document */}
+          {hasDraft && (
+            <Button
+              title="将 Writer 草稿应用到当前剧本"
+              variant="primary"
+              onClick={onApplyDraft}
+              disabled={isDraftApplied}
+            >
+              <CheckCircle2 size={16} />
+              应用到剧本
+            </Button>
+          )}
+        </div>
+      )}
+      {isDraftApplied && (
+        <div className="flex justify-end">
+          <Button title="Writer 草稿已应用到剧本" variant="secondary" disabled>
+            <CheckCircle2 size={16} />
+            已应用到剧本
+          </Button>
+        </div>
+      )}
+
+      {/* Writer draft preview */}
+      {hasDraft && !isDraftApplied && (
+        <div
+          aria-label="Writer 草稿预览"
+          className="grid gap-1.5 rounded-md border border-[#b8d8ce] bg-[#e6f3ee] p-2"
         >
-          <CheckCircle2 size={16} />
-          {isDrafted ? '已写入' : '确认写入'}
-        </Button>
-      </div>
+          <span className="text-[11px] font-extrabold text-[#2f665c]">
+            Writer 草稿 — {sceneCount} 个 scene draft 已通过 validation
+          </span>
+          <div className="grid gap-2">
+            {writerDraft!.scenes.map((draft) => {
+              const blockPreviews = draft.blocks.slice(0, MAX_BLOCK_PREVIEW);
+              const moreBlockCount = draft.blocks.length - blockPreviews.length;
+              return (
+                <div
+                  key={draft.sceneCardId}
+                  className="grid gap-1 rounded border border-[#b3d6c9] bg-white p-1.5 text-[11px] leading-relaxed"
+                >
+                  {/* Heading + title */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-extrabold text-[#17211d]">{draft.title}</span>
+                    <span className="text-[#5f6b64]">({draft.sceneCardId})</span>
+                  </div>
+                  <span className="text-[#53635b]">{formatHeading(draft.heading)}</span>
+
+                  {/* Synopsis */}
+                  {draft.synopsis && (
+                    <span className="italic text-[#53635b]">
+                      {truncateText(draft.synopsis, 100)}
+                    </span>
+                  )}
+
+                  {/* Source refs */}
+                  {draft.sourceRefs.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {draft.sourceRefs.map((ref) => (
+                        <span
+                          key={`${ref.sourceId}-${ref.kind}`}
+                          className="inline-block rounded-sm bg-[#e6f3ee] px-1 text-[10px] font-extrabold text-[#2f665c]"
+                        >
+                          {String(ref.sourceId)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Block previews */}
+                  {blockPreviews.length > 0 && (
+                    <div className="grid gap-[3px] border-t border-[#e0ece4] pt-1">
+                      {blockPreviews.map((block, index) => (
+                        <div
+                          key={`${draft.sceneCardId}-block-${index}`}
+                          className="flex items-start gap-1.5"
+                        >
+                          <span className="shrink-0 rounded-sm bg-[#dce9e3] px-[3px] text-[10px] font-extrabold text-[#3d5a50]">
+                            {blockTypeLabel(block)}
+                          </span>
+                          <span className="text-[#53635b]">
+                            {truncateText(block.text, BLOCK_TEXT_LIMIT)}
+                          </span>
+                        </div>
+                      ))}
+                      {moreBlockCount > 0 && (
+                        <span className="text-[10px] text-[#66716b]">
+                          …还有 {moreBlockCount} 个 block
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap gap-1.5">
         <Badge variant="accent">{plan.preferences.targetMedium}</Badge>
         <Badge variant="accent">{plan.preferences.targetLength}</Badge>

@@ -27,6 +27,7 @@
 - [pr-019-openai-structured-output-compatibility.md](pr-019-openai-structured-output-compatibility.md)：Phase 3.4 前置审计，关注 OpenAI structured output strict schema、Zod helper、optional 字段、schema registry 和 failure mapping。
 - [pr-020-phase-3-4-pre-golden-fox.md](pr-020-phase-3-4-pre-golden-fox.md)：Review #20 / GitHub #34 `feat/phase3.4-pre-golden-fox` 的 review，关注 provider-facing schema、OpenAI SDK server boundary、Responses `text.format` envelope 和 normalizer failure mapping。
 - [pr-021-phase-3-4-server-wire-up.md](pr-021-phase-3-4-server-wire-up.md)：Review #21 / GitHub #36 `feat/phase3.4-server-wire-up` 的 review，关注 `/api/model/call` handler、stage/schema runtime contract、Responses refusal mapping 和 Vite local proxy 部署边界。
+- [pr-022-phase-3-4b-proxy-adapter.md](pr-022-phase-3-4b-proxy-adapter.md)：Review #22 / GitHub #38 `feat/phase3.4b-proxy-adapter` 的 review，关注前端 `ProxyModelAdapter`、provider auto-detect、mock fallback 默认路径和 provider 切换竞态。
 
 ## 维护规则
 

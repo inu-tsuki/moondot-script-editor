@@ -1,7 +1,7 @@
 # Next Direction
 
 > 最近更新：2026-06-07
-> 状态：Phase 3.4 Vite local proxy handler 已完成；当前准备 Phase 3.4b frontend proxy adapter。
+> 状态：Phase 3.4b frontend proxy adapter 已完成；当前准备 Phase 3.5 workbench tool surfaces。
 
 本文用于回答“下一两个 PR 先做什么”。阶段级边界见 `roadmap/README.md` 和 `roadmap/phase-3-model-workflow.md`；长期产品愿景仍以 `../knowledge/product/vision.md` 为准。
 
@@ -13,7 +13,7 @@
 - `ScreenplayDocument` / `ScreenplayAst` 类型、runtime validation diagnostics 和 YAML projection。
 - 小说 source ingestion 和章节解析；章节只作为来源结构，不直接承担剧本转换。
 - `AdaptationPreferences`、`AdaptationPlan`、`SceneCard` 和两阶段 `GenerationTrace`。
-- scene outline 预览、确认写入和 YAML 复制 / 下载。
+- scene outline 预览、确认生成剧本和 YAML 复制 / 下载。
 - Tailwind、UI primitives、panel extraction、`WorkbenchLayout` 和 output tabs。
 - document-backed screenplay reading surface。
 - 基础语义编辑控件和工业化手稿 UI polish。
@@ -24,8 +24,9 @@
 
 - Phase 3.4-pre (Golden Fox)：provider-facing schema 兼容性验证已完成。安装了 `openai` SDK（v6.42.0），建立了 `src/core/adaptation/provider-schemas/` 目录包含 Architect / Writer 的 provider-facing Zod schemas、normalizer 和 registry。`src/server/` 目录已建立 middleware 骨架。两个 schema id 的 provider-facing JSON Schema snapshot 和 roundtrip 测试已通过。
 - Phase 3.4 Vite local proxy handler：`/api/model/call` dev-server endpoint 已实现，挂在 Vite `configureServer()` middleware 上。Pipeline：`ModelCallRequest → OpenAI Responses API → structured output → parseAndNormalizeProviderOutput → app-side Zod structural validation → ModelCallResult`。Structural error 映射覆盖 config_missing / network / refusal / empty_output / parse / schema（semantic 由 client 端 `validateAdaptationPlan` / `validateWriterScenePatch` 负责）。Handler 和 19 个测试已在 `src/server/handler.ts` 和 `tests/server/handler.test.ts`。注意：`pnpm build` 产物不包含 `/api/model/call`；部署需要额外 API host 或继续走 `pnpm dev` local proxy。
+- Phase 3.4b frontend proxy adapter：`createProxyModelAdapter()` 实现 `ModelAdapter` 接口，通过 `fetch()` 调用 `/api/model/call`。支持挂载时自动探测代理可用性（`stage: '_probe'` 触达 handler step 5 快速返回，不发起 OpenAI 调用）。Topbar 显示 provider 状态指示器（Mock / 代理），可手动切换。App.tsx 继续走 `validateAdaptationPlan` / `validateWriterScenePatch` semantic validation。21 proxy adapter tests in `tests/core/model/proxy-adapter.test.ts`。Production build 通过 `import.meta.env.PROD` 自动禁止代理探测。总计 157 tests 全部通过。
 
-Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.4b：前端 ProxyModelAdapter 实现。3.4b 只负责打通真实调用闭环，不做完整 IDE 化；完成后进入升级后的 Phase 3.5 Agent tool surfaces / IDE-ready UI。
+Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.5 Agent tool surfaces / IDE-ready UI。
 
 ## 近期原则
 
@@ -121,7 +122,7 @@ typed workflow
 
 目标：建立真实模型调用的安全入口，用 OpenAI JS SDK 证明 `schemaId -> structured output -> app-side validation` 的真实路径。
 
-状态：3.4-pre provider schema compatibility 和 3.4 Vite local proxy handler 已完成；剩余 3.4b 负责前端 `ProxyModelAdapter` 与最小 provider switching UI。
+状态：3.4-pre、3.4 Vite local proxy handler、3.4b frontend proxy adapter 已全部完成并合并。
 
 建议内容：
 
@@ -148,7 +149,7 @@ typed workflow
 - 两个 schema id 都有 OpenAI structured output compatibility 检查或等价测试。
 - Writer optional 字段有 required nullable / required empty-array / normalizer 策略。
 
-3.4b 收口边界：
+Phase 3.4b 收口边界：
 
 - 实现 `ProxyModelAdapter`，通过 `fetch('/api/model/call')` 发送可序列化 `ModelCallRequest`。
 - UI 可在 `mock` / `local_proxy` 间切换，并清楚展示当前 provider 与配置状态。

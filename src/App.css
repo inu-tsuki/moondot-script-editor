@@ -58,6 +58,67 @@
   justify-content: flex-end;
 }
 
+/* Provider toggle indicator in Topbar */
+.provider-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid #d9d1c4;
+  border-radius: 6px;
+  color: #5f6b64;
+  cursor: default;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 6px;
+  padding: 4px 10px;
+  transition: border-color 150ms;
+}
+
+.provider-toggle--interactive {
+  cursor: pointer;
+}
+
+.provider-toggle--interactive:hover {
+  border-color: #8ba89a;
+  color: #3d4a44;
+}
+
+.provider-dot {
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  height: 8px;
+  width: 8px;
+}
+
+.provider-dot--probing {
+  animation: dot-pulse 1s ease-in-out infinite;
+  background: #c2a34f;
+}
+
+.provider-dot--mock {
+  background: #9ba8a2;
+}
+
+.provider-dot--proxy {
+  background: #3b8a6f;
+}
+
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.provider-label {
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .workbench {
   display: grid;
   gap: 16px;

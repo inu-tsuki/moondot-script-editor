@@ -1,5 +1,5 @@
 import { FileText, Layout } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import { PanelBody, PanelHeader, PanelMeta, PanelShell, PanelTitle, Tabs } from './components/ui';
 import {
@@ -22,7 +22,8 @@ import {
   validateAdaptationPlan,
   validateWriterScenePatch,
 } from './core/adaptation';
-import { createMockModelAdapter } from './core/model';
+import { createMockModelAdapter, createProxyModelAdapter } from './core/model';
+import type { ModelProviderType } from './core/model';
 import { serializeDocumentToYaml } from './core/serialization';
 import {
   appendBlockToScene,
@@ -43,6 +44,7 @@ import type {
   AdaptationPlan,
   AdaptationPreferences,
   NovelAdaptationTraceStep,
+  WriterScenePatch,
 } from './core/adaptation';
 import type { BlockId, EditAction, ScreenplayDocument } from './core/screenplay';
 import type { Diagnostic } from './core/validation';
@@ -104,9 +106,24 @@ function App() {
   const [exportFeedback, setExportFeedback] = useState('');
   const [outputTab, setOutputTab] = useState('outline');
   const [selectedBlockId, setSelectedBlockId] = useState<BlockId | null>(null);
-  const isCurrentPlanDrafted = adaptationTrace.some(
+  const [providerType, setProviderType] = useState<ModelProviderType>('mock');
+  const [isProxyAvailable, setIsProxyAvailable] = useState(false);
+  const [isProbing, setIsProbing] = useState(true);
+  // Writer two-phase workflow (per PR #38 Second Review):
+  // Phase 1 — click "确认生成" triggers Writer, stores validated patch here.
+  // Phase 2 — click "应用到剧本" calls applySceneDrafts() and writes to document.
+  const [writerDraft, setWriterDraft] = useState<WriterScenePatch | null>(null);
+  const [isGeneratingWriter, setIsGeneratingWriter] = useState(false);
+  // Derived: draft has been applied to document (Writer trace step exists).
+  const isDraftApplied = adaptationTrace.some(
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
+  const hasWriterDraft = writerDraft !== null;
+  // Synchronous gate to prevent duplicate Writer calls within the same event
+  // batch (useState closures are stale until next render).
+  const generatingRef = useRef(false);
+  // Which scene is currently shown in the central editor.
+  const [activeSceneIndex, setActiveSceneIndex] = useState(0);
 
   // ---------------------------------------------------------------------------
   // Model adapter — stable reference, reads latest state via refs
@@ -117,15 +134,16 @@ function App() {
   const planRef = useRef(adaptationPlan);
   planRef.current = adaptationPlan;
 
-  const modelAdapter = useMemo(
-    () =>
-      createMockModelAdapter({
-        getDocument: () => docRef.current,
-        getPreferences: () => prefsRef.current,
-        getPlan: () => planRef.current,
-      }),
-    [],
-  );
+  const modelAdapter = useMemo(() => {
+    if (providerType === 'local_proxy' && isProxyAvailable) {
+      return createProxyModelAdapter();
+    }
+    return createMockModelAdapter({
+      getDocument: () => docRef.current,
+      getPreferences: () => prefsRef.current,
+      getPlan: () => planRef.current,
+    });
+  }, [providerType, isProxyAvailable]);
 
   // Track the latest call to ignore stale async results.
   const latestRunIdRef = useRef<string | null>(null);
@@ -139,6 +157,82 @@ function App() {
     latestRunIdRef.current = null;
   };
 
+  /**
+   * Invalidate the pending Writer draft so an outdated patch
+   * cannot be applied after the user has changed source text,
+   * preferences, document content, provider, or outline.
+   *
+   * This must be called at every context-change site that could
+   * make a previously generated draft stale.  Skipping it would
+   * allow the "应用到剧本" button to write old source refs /
+   * old provider output into the current document.
+   */
+  const invalidateWriterDraft = () => {
+    setWriterDraft(null);
+  };
+
+  /**
+   * Switch model provider and invalidate any in-flight model run so a
+   * stale response from the old provider cannot write state after the
+   * user has already switched back.
+   */
+  const handleProviderChange = (next: ModelProviderType) => {
+    invalidateModelRun();
+    invalidateWriterDraft();
+    setProviderType(next);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Auto-detect /api/model/call availability on mount
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    let cancelled = false;
+
+    const probe = async () => {
+      try {
+        const res = await fetch('/api/model/call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'probe' }],
+            stage: '_probe',
+            structuredOutput: { schemaId: '_probe' },
+          }),
+        });
+
+        if (!cancelled) {
+          const ct = res.headers.get('Content-Type') ?? '';
+          if (ct.includes('application/json')) {
+            try {
+              const body = await res.json();
+              if (body?.trace?.provider === 'local_proxy') {
+                setIsProxyAvailable(true);
+                // Keep default providerType='mock' — the user can
+                // manually switch once they confirm a working API key.
+              }
+            } catch {
+              // JSON parse failed — not our endpoint
+            }
+          }
+        }
+      } catch {
+        // fetch failed — proxy not available
+      } finally {
+        if (!cancelled) setIsProbing(false);
+      }
+    };
+
+    if (import.meta.env.DEV) {
+      probe();
+    } else {
+      setIsProbing(false);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
   const workingDocument = useMemo<ScreenplayDocument>(
     () => withParsedNovelChapters(screenplayDocument, parsedNovel.chapters),
@@ -146,7 +240,17 @@ function App() {
   );
   // Keep docRef in sync with the derived working document used by all call sites.
   docRef.current = workingDocument;
-  const activeScene = workingDocument.script.scenes[0];
+  // Clamp activeSceneIndex when scenes array shrinks below current index
+  // (e.g. document reset, outline regeneration).  Using useEffect keeps
+  // the setState out of the render path.
+  useEffect(() => {
+    const maxIndex = Math.max(0, workingDocument.script.scenes.length - 1);
+    if (activeSceneIndex > maxIndex) {
+      setActiveSceneIndex(maxIndex);
+    }
+  }, [workingDocument.script.scenes.length, activeSceneIndex]);
+  const activeScene =
+    workingDocument.script.scenes[activeSceneIndex] ?? workingDocument.script.scenes[0];
   const chapterCount =
     workingDocument.source.type === 'novel'
       ? workingDocument.source.chapters.length
@@ -209,10 +313,12 @@ function App() {
   // ---------------------------------------------------------------------------
 
   const handleEdit = (action: EditAction) => {
-    // Any document mutation invalidates in-flight model runs — a stale
-    // plan or draft must not overwrite the user's manual edits.
+    // Any document mutation invalidates in-flight model runs and
+    // pending Writer drafts — a stale plan or patch must not
+    // overwrite the user's manual edits.
     if (action.type !== 'select-block') {
       invalidateModelRun();
+      invalidateWriterDraft();
     }
 
     switch (action.type) {
@@ -265,6 +371,7 @@ function App() {
 
   const handleUpdateBlockText = (id: BlockId, text: string) => {
     invalidateModelRun();
+    invalidateWriterDraft();
     setScreenplayDocument((currentDocument) => updateDocumentBlockText(currentDocument, id, text));
     setExportFeedback('');
   };
@@ -277,6 +384,7 @@ function App() {
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
+    setWriterDraft(null);
     setExportFeedback('');
     clearSelection();
   };
@@ -286,6 +394,7 @@ function App() {
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
+    setWriterDraft(null);
     setExportFeedback('');
     clearSelection();
   };
@@ -306,9 +415,11 @@ function App() {
   const generateSceneOutline = async () => {
     const runId = crypto.randomUUID();
     latestRunIdRef.current = runId;
-    // Clear previous plan immediately so stale outline is not displayed or confirmed.
+    // Clear previous plan and draft immediately so stale outline
+    // or Writer patch is not displayed or confirmed.
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
+    setWriterDraft(null);
 
     try {
       const messages = buildNovelAdaptationPrompt(workingDocument, adaptationPreferences);
@@ -381,13 +492,27 @@ function App() {
     }
   };
 
-  const confirmSceneOutline = async () => {
+  const generateWriterDraft = async () => {
     if (!adaptationPlan) {
       return;
     }
 
+    // Prevent duplicate Writer calls when the Topbar "剧本" or SceneOutline
+    // "确认生成" button is clicked while a generation is already in flight.
+    // Uses a ref (not state) for synchronous guard — useState closures are
+    // stale until the next render.
+    if (generatingRef.current) {
+      return;
+    }
+    generatingRef.current = true;
+
+    // Clear any previous draft before starting a new generation so the
+    // "应用到剧本" button cannot apply a stale patch while generating.
+    setWriterDraft(null);
+
     const runId = crypto.randomUUID();
     latestRunIdRef.current = runId;
+    setIsGeneratingWriter(true);
 
     try {
       const messages = buildNovelSceneWriterPrompt(workingDocument, adaptationPlan);
@@ -405,10 +530,12 @@ function App() {
 
       if (!result.data) {
         setAdaptationDiagnostics(result.diagnostics);
+        setWriterDraft(null);
         return;
       }
 
-      // Validate the Writer output before applying it.
+      // Validate the Writer output. Do NOT apply to document yet —
+      // the user must review the draft and explicitly apply it.
       const knownChapterIds = new Set(
         workingDocument.source.type === 'novel'
           ? workingDocument.source.chapters.map((c) => c.id)
@@ -422,25 +549,18 @@ function App() {
       });
 
       if (!validated.patch) {
+        setWriterDraft(null);
         setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
         return;
       }
 
-      // Apply via document operation — only script.scenes is replaced.
-      setScreenplayDocument((prev) => applySceneDrafts(prev, validated.patch!));
-      setAdaptationTrace((currentTrace) => [
-        ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
-        {
-          label: 'model-writing',
-          detail: `通过 ${result.trace.provider} provider 写入 ${validated.patch!.scenes.length} 个 scene draft。`,
-          stage: 'scene_draft',
-          artifactType: 'writer_draft',
-        },
-      ]);
+      // Store validated patch as pending draft — NOT applied yet.
+      setWriterDraft(validated.patch);
       setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
       setExportFeedback('');
-      clearSelection();
+      setOutputTab('outline');
     } catch (err) {
+      setWriterDraft(null);
       setAdaptationDiagnostics([
         {
           severity: 'error',
@@ -449,7 +569,36 @@ function App() {
           path: 'model',
         },
       ]);
+    } finally {
+      generatingRef.current = false;
+      setIsGeneratingWriter(false);
     }
+  };
+
+  /**
+   * Apply the pending Writer draft to the screenplay document.
+   *
+   * This is the ONLY function allowed to call applySceneDrafts().
+   * The user must explicitly click "应用到剧本" after reviewing the
+   * generated draft — the outline confirmation flow no longer writes
+   * directly to ScreenplayDocument.script.
+   */
+  const applyWriterDraft = () => {
+    if (!writerDraft) return;
+
+    setScreenplayDocument((prev) => applySceneDrafts(prev, writerDraft));
+    setAdaptationTrace((currentTrace) => [
+      ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
+      {
+        label: 'model-writing',
+        detail: `Writer 生成的 ${writerDraft.scenes.length} 个 scene draft 已通过 validation 并写入剧本初稿。`,
+        stage: 'scene_draft',
+        artifactType: 'writer_draft',
+      },
+    ]);
+    setWriterDraft(null);
+    setExportFeedback('');
+    clearSelection();
   };
 
   const copyYaml = async () => {
@@ -492,11 +641,17 @@ function App() {
   return (
     <div className="app-shell">
       <Topbar
-        canConfirm={!!adaptationPlan && !isCurrentPlanDrafted}
+        canGenerate={!!adaptationPlan && !hasWriterDraft && !isDraftApplied && !isGeneratingWriter}
+        canApply={hasWriterDraft && !isDraftApplied}
         isExportReady={exportStatus.isReady}
         onGenerateOutline={generateSceneOutline}
-        onConfirmOutline={confirmSceneOutline}
+        onGenerateDraft={generateWriterDraft}
+        onApplyDraft={applyWriterDraft}
         onDownloadYaml={downloadYaml}
+        providerType={providerType}
+        isProxyAvailable={isProxyAvailable}
+        isProbing={isProbing}
+        onProviderChange={handleProviderChange}
       />
 
       <WorkbenchLayout
@@ -523,13 +678,36 @@ function App() {
           </PanelShell>
         }
         center={
-          <ScriptEditorPanel
-            charactersById={charactersById}
-            scene={activeScene}
-            selectedBlockId={selectedBlockId}
-            onEdit={handleEdit}
-            onUpdateBlockText={handleUpdateBlockText}
-          />
+          <>
+            {workingDocument.script.scenes.length > 1 && (
+              <nav
+                aria-label="场景导航"
+                className="flex flex-wrap gap-1 rounded-md bg-[#f2ece2] p-1"
+              >
+                {workingDocument.script.scenes.map((scene, index) => (
+                  <button
+                    key={scene.id}
+                    className={
+                      index === activeSceneIndex
+                        ? 'min-h-8 rounded bg-white px-2.5 text-xs font-extrabold text-[#17211d] shadow-sm'
+                        : 'min-h-8 rounded bg-transparent px-2.5 text-xs font-extrabold text-[#66716b] hover:bg-[#fffaf2]'
+                    }
+                    type="button"
+                    onClick={() => setActiveSceneIndex(index)}
+                  >
+                    Scene {index + 1} · {scene.title}
+                  </button>
+                ))}
+              </nav>
+            )}
+            <ScriptEditorPanel
+              charactersById={charactersById}
+              scene={activeScene}
+              selectedBlockId={selectedBlockId}
+              onEdit={handleEdit}
+              onUpdateBlockText={handleUpdateBlockText}
+            />
+          </>
         }
         right={
           <PanelShell className="panel-output">
@@ -551,10 +729,13 @@ function App() {
                 {outputTab === 'outline' &&
                   (adaptationPlan ? (
                     <SceneOutlinePanel
-                      isDrafted={isCurrentPlanDrafted}
                       plan={adaptationPlan}
                       trace={adaptationTrace}
-                      onConfirm={confirmSceneOutline}
+                      writerDraft={writerDraft}
+                      isGeneratingWriter={isGeneratingWriter}
+                      isDraftApplied={isDraftApplied}
+                      onGenerateDraft={generateWriterDraft}
+                      onApplyDraft={applyWriterDraft}
                     />
                   ) : (
                     <div className="flex items-start gap-2 rounded-md border border-[#d9d1c4] bg-[#fffdf8] p-4 text-sm leading-relaxed text-[#66716b]">
