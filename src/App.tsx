@@ -44,6 +44,7 @@ import type {
   AdaptationPlan,
   AdaptationPreferences,
   NovelAdaptationTraceStep,
+  WriterScenePatch,
 } from './core/adaptation';
 import type { BlockId, EditAction, ScreenplayDocument } from './core/screenplay';
 import type { Diagnostic } from './core/validation';
@@ -108,9 +109,16 @@ function App() {
   const [providerType, setProviderType] = useState<ModelProviderType>('mock');
   const [isProxyAvailable, setIsProxyAvailable] = useState(false);
   const [isProbing, setIsProbing] = useState(true);
-  const isCurrentPlanDrafted = adaptationTrace.some(
+  // Writer two-phase workflow (per PR #38 Second Review):
+  // Phase 1 — click "确认生成" triggers Writer, stores validated patch here.
+  // Phase 2 — click "应用到剧本" calls applySceneDrafts() and writes to document.
+  const [writerDraft, setWriterDraft] = useState<WriterScenePatch | null>(null);
+  const [isGeneratingWriter, setIsGeneratingWriter] = useState(false);
+  // Derived: draft has been applied to document (Writer trace step exists).
+  const isDraftApplied = adaptationTrace.some(
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
+  const hasWriterDraft = writerDraft !== null;
 
   // ---------------------------------------------------------------------------
   // Model adapter — stable reference, reads latest state via refs
@@ -352,6 +360,7 @@ function App() {
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
+    setWriterDraft(null);
     setExportFeedback('');
     clearSelection();
   };
@@ -447,13 +456,14 @@ function App() {
     }
   };
 
-  const confirmSceneOutline = async () => {
+  const generateWriterDraft = async () => {
     if (!adaptationPlan) {
       return;
     }
 
     const runId = crypto.randomUUID();
     latestRunIdRef.current = runId;
+    setIsGeneratingWriter(true);
 
     try {
       const messages = buildNovelSceneWriterPrompt(workingDocument, adaptationPlan);
@@ -471,10 +481,12 @@ function App() {
 
       if (!result.data) {
         setAdaptationDiagnostics(result.diagnostics);
+        setWriterDraft(null);
         return;
       }
 
-      // Validate the Writer output before applying it.
+      // Validate the Writer output. Do NOT apply to document yet —
+      // the user must review the draft and explicitly apply it.
       const knownChapterIds = new Set(
         workingDocument.source.type === 'novel'
           ? workingDocument.source.chapters.map((c) => c.id)
@@ -488,25 +500,18 @@ function App() {
       });
 
       if (!validated.patch) {
+        setWriterDraft(null);
         setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
         return;
       }
 
-      // Apply via document operation — only script.scenes is replaced.
-      setScreenplayDocument((prev) => applySceneDrafts(prev, validated.patch!));
-      setAdaptationTrace((currentTrace) => [
-        ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
-        {
-          label: 'model-writing',
-          detail: `通过 ${result.trace.provider} Writer 生成 ${validated.patch!.scenes.length} 个 scene draft，并通过 validation 写入剧本初稿。`,
-          stage: 'scene_draft',
-          artifactType: 'writer_draft',
-        },
-      ]);
+      // Store validated patch as pending draft — NOT applied yet.
+      setWriterDraft(validated.patch);
       setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
       setExportFeedback('');
-      clearSelection();
+      setOutputTab('outline');
     } catch (err) {
+      setWriterDraft(null);
       setAdaptationDiagnostics([
         {
           severity: 'error',
@@ -515,7 +520,35 @@ function App() {
           path: 'model',
         },
       ]);
+    } finally {
+      setIsGeneratingWriter(false);
     }
+  };
+
+  /**
+   * Apply the pending Writer draft to the screenplay document.
+   *
+   * This is the ONLY function allowed to call applySceneDrafts().
+   * The user must explicitly click "应用到剧本" after reviewing the
+   * generated draft — the outline confirmation flow no longer writes
+   * directly to ScreenplayDocument.script.
+   */
+  const applyWriterDraft = () => {
+    if (!writerDraft) return;
+
+    setScreenplayDocument((prev) => applySceneDrafts(prev, writerDraft));
+    setAdaptationTrace((currentTrace) => [
+      ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
+      {
+        label: 'model-writing',
+        detail: `Writer 生成的 ${writerDraft.scenes.length} 个 scene draft 已通过 validation 并写入剧本初稿。`,
+        stage: 'scene_draft',
+        artifactType: 'writer_draft',
+      },
+    ]);
+    setWriterDraft(null);
+    setExportFeedback('');
+    clearSelection();
   };
 
   const copyYaml = async () => {
@@ -558,10 +591,12 @@ function App() {
   return (
     <div className="app-shell">
       <Topbar
-        canConfirm={!!adaptationPlan && !isCurrentPlanDrafted}
+        canGenerate={!!adaptationPlan && !hasWriterDraft && !isDraftApplied}
+        canApply={hasWriterDraft && !isDraftApplied}
         isExportReady={exportStatus.isReady}
         onGenerateOutline={generateSceneOutline}
-        onConfirmOutline={confirmSceneOutline}
+        onGenerateDraft={generateWriterDraft}
+        onApplyDraft={applyWriterDraft}
         onDownloadYaml={downloadYaml}
         providerType={providerType}
         isProxyAvailable={isProxyAvailable}
@@ -621,10 +656,13 @@ function App() {
                 {outputTab === 'outline' &&
                   (adaptationPlan ? (
                     <SceneOutlinePanel
-                      isDrafted={isCurrentPlanDrafted}
                       plan={adaptationPlan}
                       trace={adaptationTrace}
-                      onConfirm={confirmSceneOutline}
+                      writerDraft={writerDraft}
+                      isGeneratingWriter={isGeneratingWriter}
+                      isDraftApplied={isDraftApplied}
+                      onGenerateDraft={generateWriterDraft}
+                      onApplyDraft={applyWriterDraft}
                     />
                   ) : (
                     <div className="flex items-start gap-2 rounded-md border border-[#d9d1c4] bg-[#fffdf8] p-4 text-sm leading-relaxed text-[#66716b]">

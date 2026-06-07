@@ -3,10 +3,14 @@ import type { ModelProviderType } from '../../core/model';
 import { Button, Toolbar } from '../ui';
 
 type TopbarProps = {
-  canConfirm: boolean;
+  /** Plan exists and Writer draft is neither pending nor applied. */
+  canGenerate: boolean;
+  /** Writer draft is available and not yet applied to document. */
+  canApply: boolean;
   isExportReady: boolean;
   onGenerateOutline: () => void;
-  onConfirmOutline: () => void;
+  onGenerateDraft: () => void;
+  onApplyDraft: () => void;
   onDownloadYaml: () => void;
   /** Current model provider type. */
   providerType: ModelProviderType;
@@ -19,10 +23,12 @@ type TopbarProps = {
 };
 
 export function Topbar({
-  canConfirm,
+  canGenerate,
+  canApply,
   isExportReady,
   onGenerateOutline,
-  onConfirmOutline,
+  onGenerateDraft,
+  onApplyDraft,
   onDownloadYaml,
   providerType,
   isProxyAvailable,
@@ -92,10 +98,20 @@ export function Topbar({
           <WandSparkles size={16} />
           大纲
         </Button>
-        <Button title="确认大纲并生成剧本" onClick={onConfirmOutline} disabled={!canConfirm}>
-          <CheckCircle2 size={16} />
+        <Button title="确认大纲并生成剧本" onClick={onGenerateDraft} disabled={!canGenerate}>
+          <WandSparkles size={16} />
           剧本
         </Button>
+        {canApply && (
+          <Button
+            title="将生成的 Writer 草稿应用到当前剧本"
+            variant="primary"
+            onClick={onApplyDraft}
+          >
+            <CheckCircle2 size={16} />
+            应用
+          </Button>
+        )}
         <Button title="下载 YAML" onClick={onDownloadYaml} disabled={!isExportReady}>
           <Download size={16} />
           YAML

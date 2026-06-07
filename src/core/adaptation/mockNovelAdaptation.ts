@@ -224,7 +224,7 @@ export const draftNovelAdaptationFromPlanMock = ({
     {
       label: 'mock-writing',
       detail:
-        '用户确认 scene outline 后，根据 mock SceneCard.writerBrief 写入 ScreenplayAst 草稿。',
+        '用户确认 scene outline 后，根据 mock SceneCard.writerBrief 生成 ScreenplayAst 草稿。',
       stage: 'scene_draft',
       artifactType: 'writer_draft',
       sourceIds,
@@ -245,7 +245,7 @@ export const draftNovelAdaptationFromPlanMock = ({
       createDiagnostic(
         'info',
         'mock_writer_draft_used',
-        '已确认改编方案，并使用本地 mock Writer 写入剧本初稿。',
+        '已确认改编方案，并使用本地 mock Writer 生成剧本初稿。',
         'adaptation',
       ),
     ],

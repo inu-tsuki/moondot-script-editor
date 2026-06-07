@@ -127,7 +127,7 @@ export const createMockWriterScenePatch = (
       createDiagnostic(
         'info',
         'mock_writer_draft_used',
-        `已确认改编方案，并使用本地 mock Writer 写入 ${scenes.length} 个 scene draft；引用章节：${sourceIds.join('、')}。`,
+        `已确认改编方案，并使用本地 mock Writer 生成 ${scenes.length} 个 scene draft；引用章节：${sourceIds.join('、')}。`,
         'adaptation',
       ),
     ],
