@@ -24,7 +24,7 @@
 
 - Phase 3.4-pre (Golden Fox)：provider-facing schema 兼容性验证已完成。安装了 `openai` SDK（v6.42.0），建立了 `src/core/adaptation/provider-schemas/` 目录包含 Architect / Writer 的 provider-facing Zod schemas、normalizer 和 registry。`src/server/` 目录已建立 middleware 骨架。两个 schema id 的 provider-facing JSON Schema snapshot 和 roundtrip 测试已通过。
 - Phase 3.4 Vite local proxy handler：`/api/model/call` dev-server endpoint 已实现，挂在 Vite `configureServer()` middleware 上。Pipeline：`ModelCallRequest → OpenAI Responses API → structured output → parseAndNormalizeProviderOutput → app-side Zod structural validation → ModelCallResult`。Structural error 映射覆盖 config_missing / network / refusal / empty_output / parse / schema（semantic 由 client 端 `validateAdaptationPlan` / `validateWriterScenePatch` 负责）。Handler 和 19 个测试已在 `src/server/handler.ts` 和 `tests/server/handler.test.ts`。注意：`pnpm build` 产物不包含 `/api/model/call`；部署需要额外 API host 或继续走 `pnpm dev` local proxy。
-- Phase 3.4b frontend proxy adapter：`createProxyModelAdapter()` 实现 `ModelAdapter` 接口，通过 `fetch()` 调用 `/api/model/call`。支持挂载时自动探测代理可用性（`stage: '_probe'` 触达 handler step 5 快速返回，不发起 OpenAI 调用）。Topbar 显示 provider 状态指示器（Mock / 代理），可手动切换。App.tsx 继续走 `validateAdaptationPlan` / `validateWriterScenePatch` semantic validation。17 proxy adapter tests in `tests/core/model/proxy-adapter.test.ts`。Production build 通过 `import.meta.env.PROD` 自动禁止代理探测。总计 153 tests 全部通过。
+- Phase 3.4b frontend proxy adapter：`createProxyModelAdapter()` 实现 `ModelAdapter` 接口，通过 `fetch()` 调用 `/api/model/call`。支持挂载时自动探测代理可用性（`stage: '_probe'` 触达 handler step 5 快速返回，不发起 OpenAI 调用）。Topbar 显示 provider 状态指示器（Mock / 代理），可手动切换。App.tsx 继续走 `validateAdaptationPlan` / `validateWriterScenePatch` semantic validation。21 proxy adapter tests in `tests/core/model/proxy-adapter.test.ts`。Production build 通过 `import.meta.env.PROD` 自动禁止代理探测。总计 157 tests 全部通过。
 
 Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.5 Agent tool surfaces / IDE-ready UI。
 
@@ -122,7 +122,7 @@ typed workflow
 
 目标：建立真实模型调用的安全入口，用 OpenAI JS SDK 证明 `schemaId -> structured output -> app-side validation` 的真实路径。
 
-状态：3.4-pre provider schema compatibility 和 3.4 Vite local proxy handler 已完成；剩余 3.4b 负责前端 `ProxyModelAdapter` 与最小 provider switching UI。
+状态：3.4-pre、3.4 Vite local proxy handler、3.4b frontend proxy adapter 已全部完成并合并。
 
 建议内容：
 
