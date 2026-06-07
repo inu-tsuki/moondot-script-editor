@@ -137,7 +137,7 @@ export const buildNovelSceneWriterPrompt = (
     role: 'system',
     stage: 'writer_brief',
     content: [
-      '你是”月点”的 Lead Screenwriter，负责根据 Adaptation Architect 的 scene outline 写剧本初稿。',
+      '你是“月点”的 Lead Screenwriter，负责根据 Adaptation Architect 的 scene outline 写剧本初稿。',
       '你接收的是 writerBrief，不是整部小说的自由发挥请求。',
       '输出目标是 Writer scene patch——由 scene draft 组成的结构化产物，可通过 document operation 写入 ScreenplayDocument。',
       formatSourceCoverageRule(),

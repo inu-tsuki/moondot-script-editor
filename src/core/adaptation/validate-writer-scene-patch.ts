@@ -65,10 +65,16 @@ const zodIssuesToDiagnostics = (
 // Semantic checks (post-Zod, depend on runtime data)
 // ---------------------------------------------------------------------------
 
+/**
+ * Check that a sourceRef's sourceId exists in knownChapterIds.
+ * Used at both scene-level and block-level.
+ */
+const validateChapterSourceRef = (sourceId: string, knownChapterIds: Set<string>): boolean =>
+  knownChapterIds.has(sourceId);
+
 const runSemanticChecks = (
   patch: WriterScenePatch,
   options: ValidateWriterScenePatchOptions,
-  diagnostics: Diagnostic[],
 ): ValidateWriterScenePatchResult | null => {
   // -- planId must match the current plan --
   if (patch.planId !== options.plan.id) {
@@ -89,37 +95,78 @@ const runSemanticChecks = (
   // -- Build plan sceneCardId set --
   const planSceneCardIds = new Set(options.plan.sceneOutline.map((card) => card.id));
 
-  // -- Validate each scene draft --
+  // -- sceneCardId coverage: exact set match against plan --
+  const patchSceneCardIds = new Set<string>();
   for (let i = 0; i < patch.scenes.length; i++) {
-    const draft = patch.scenes[i];
+    const sceneCardId = patch.scenes[i].sceneCardId;
 
     // -- sceneCardId must exist in plan.sceneOutline --
-    if (!planSceneCardIds.has(draft.sceneCardId)) {
+    if (!planSceneCardIds.has(sceneCardId)) {
       return fail(
         'semantic',
         [
           diag(
             'error',
             'unknown_scene_card_id',
-            `SceneDraft[${i}].sceneCardId "${draft.sceneCardId}" does not match any SceneCard in the plan.`,
+            `SceneDraft[${i}].sceneCardId "${sceneCardId}" does not match any SceneCard in the plan.`,
             `writerScenePatch.scenes[${i}].sceneCardId`,
           ),
         ],
-        `SceneDraft[${i}] references unknown scene card "${draft.sceneCardId}".`,
+        `SceneDraft[${i}] references unknown scene card "${sceneCardId}".`,
       );
     }
 
-    // -- sourceRefs must reference known chapters --
+    // -- duplicate sceneCardId --
+    if (patchSceneCardIds.has(sceneCardId)) {
+      return fail(
+        'semantic',
+        [
+          diag(
+            'error',
+            'duplicate_scene_card_id',
+            `SceneDraft[${i}].sceneCardId "${sceneCardId}" appears more than once in the patch.`,
+            `writerScenePatch.scenes[${i}].sceneCardId`,
+          ),
+        ],
+        `Duplicate sceneCardId "${sceneCardId}" in Writer patch.`,
+      );
+    }
+    patchSceneCardIds.add(sceneCardId);
+  }
+
+  // -- missing sceneCardIds: plan has cards not covered by patch --
+  for (const planCardId of planSceneCardIds) {
+    if (!patchSceneCardIds.has(planCardId)) {
+      return fail(
+        'semantic',
+        [
+          diag(
+            'error',
+            'missing_scene_card_draft',
+            `SceneCard "${planCardId}" from the plan has no corresponding SceneDraft in the Writer patch.`,
+            'writerScenePatch.scenes',
+          ),
+        ],
+        `Writer patch is missing draft for scene card "${planCardId}".`,
+      );
+    }
+  }
+
+  // -- Validate each scene draft --
+  for (let i = 0; i < patch.scenes.length; i++) {
+    const draft = patch.scenes[i];
+
+    // -- scene-level sourceRefs must reference known chapters --
     for (let j = 0; j < draft.sourceRefs.length; j++) {
       const sourceId = draft.sourceRefs[j].sourceId;
-      if (!options.knownChapterIds.has(sourceId)) {
+      if (!validateChapterSourceRef(sourceId, options.knownChapterIds)) {
         return fail(
           'semantic',
           [
             diag(
               'error',
               'unknown_source_ref',
-              `SceneDraft "${draft.sceneCardId}" references unknown chapter: ${sourceId}`,
+              `SceneDraft "${draft.sceneCardId}" scene-level sourceRefs[${j}] references unknown chapter: ${sourceId}`,
               `writerScenePatch.scenes[${i}].sourceRefs[${j}].sourceId`,
             ),
           ],
@@ -128,18 +175,44 @@ const runSemanticChecks = (
       }
     }
 
-    // -- dialogue block characterId should reference known characters --
+    // -- block-level sourceRefs must also reference known chapters --
     for (let k = 0; k < draft.blocks.length; k++) {
       const block = draft.blocks[k];
+
+      // -- dialogue block characterId must reference known characters --
       if (block.type === 'dialogue' && !options.knownCharacterIds.has(block.characterId)) {
-        diagnostics.push(
-          diag(
-            'warning',
-            'unknown_character_ref',
-            `SceneDraft "${draft.sceneCardId}" block[${k}] references unknown character: "${block.characterId}".`,
-            `writerScenePatch.scenes[${i}].blocks[${k}].characterId`,
-          ),
+        return fail(
+          'semantic',
+          [
+            diag(
+              'error',
+              'unknown_character_ref',
+              `SceneDraft "${draft.sceneCardId}" block[${k}] references unknown character: "${block.characterId}".`,
+              `writerScenePatch.scenes[${i}].blocks[${k}].characterId`,
+            ),
+          ],
+          `SceneDraft "${draft.sceneCardId}" references unknown character "${block.characterId}".`,
         );
+      }
+
+      if (block.sourceRefs) {
+        for (let m = 0; m < block.sourceRefs.length; m++) {
+          const sourceId = block.sourceRefs[m].sourceId;
+          if (!validateChapterSourceRef(sourceId, options.knownChapterIds)) {
+            return fail(
+              'semantic',
+              [
+                diag(
+                  'error',
+                  'unknown_source_ref',
+                  `SceneDraft "${draft.sceneCardId}" block[${k}].sourceRefs[${m}] references unknown chapter: ${sourceId}`,
+                  `writerScenePatch.scenes[${i}].blocks[${k}].sourceRefs[${m}].sourceId`,
+                ),
+              ],
+              `SceneDraft "${draft.sceneCardId}" block[${k}] references unknown chapter: ${sourceId}`,
+            );
+          }
+        }
       }
     }
   }
@@ -166,11 +239,10 @@ export const validateWriterScenePatch = (
   }
 
   const patch = parsed.data as WriterScenePatch;
-  const diagnostics: Diagnostic[] = [];
 
   // -- Semantic checks --
-  const semanticErr = runSemanticChecks(patch, options, diagnostics);
+  const semanticErr = runSemanticChecks(patch, options);
   if (semanticErr) return semanticErr;
 
-  return { patch, diagnostics };
+  return { patch, diagnostics: [] };
 };
