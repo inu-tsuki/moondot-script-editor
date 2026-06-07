@@ -1,4 +1,4 @@
-export { ConverterPanel } from './ConverterPanel';
+export { ConverterWorkspace } from './ConverterWorkspace';
 export { DiagnosticsBand } from './DiagnosticsBand';
 export { RunBadge } from './RunBadge';
 export { SourcePanel } from './SourcePanel';

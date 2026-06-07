@@ -30,6 +30,7 @@
 - [pr-022-phase-3-4b-proxy-adapter.md](pr-022-phase-3-4b-proxy-adapter.md)：Review #22 / GitHub #38 `feat/phase3.4b-proxy-adapter` 的 review，关注前端 `ProxyModelAdapter`、provider auto-detect、mock fallback 默认路径和 provider 切换竞态。
 - [pr-023-phase-3-5a-workspace-shell.md](pr-023-phase-3-5a-workspace-shell.md)：Review #23 / GitHub #40 `feat/phase3.5a-shell-and-dock` 的 review，关注 Editor / Converter 边界、默认双栏 dock preset 和 source diagnostics 分流。
 - [pr-024-phase-3-5b-card-controls.md](pr-024-phase-3-5b-card-controls.md)：Review #24 / GitHub #41 `feat/phase3.5b-card-controls` 的 review，关注 per-card workflow controls、WriterDraftPanel 拆分、Editor export 归属和 artifact provider badge。
+- [pr-025-phase-3-5c-dock-foundation.md](pr-025-phase-3-5c-dock-foundation.md)：Review #25 / GitHub #42 `feat/phase3.5c-dock-foundation` 的 review，关注 DockLayout preset、workspace composition 边界、窄屏 flex 语义和 SplitterBar 可访问性。
 
 ## 维护规则
 

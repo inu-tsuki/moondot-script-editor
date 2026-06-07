@@ -4,7 +4,7 @@
 export { SceneNavigator, ScriptEditorPanel } from '../../features/editor';
 export {
   AdaptationPreferencesPanel,
-  ConverterPanel,
+  ConverterWorkspace,
   DiagnosticsBand,
   DiagnosticsPanel,
   SceneOutlinePanel,
