@@ -17,6 +17,15 @@ export type { WriterScenePatchParsed } from './writer-scene-patch-schema';
 export { defaultAdaptationPreferences, resolveAdaptationPreferences } from './preferences';
 export { validateAdaptationPlan } from './validate-adaptation-plan';
 export { validateWriterScenePatch } from './validate-writer-scene-patch';
+export {
+  adaptationPlanProviderSchema,
+  normalizeArchitectOutput,
+  normalizeWriterOutput,
+  PROVIDER_SCHEMA_REGISTRY,
+  resolveProviderSchema,
+  writerScenePatchProviderSchema,
+} from './provider-schemas';
+export type { ProviderSchemaEntry, WriterScenePatchProviderOutput } from './provider-schemas';
 export type {
   ValidateWriterScenePatchOptions,
   ValidateWriterScenePatchResult,

@@ -1,7 +1,7 @@
 # Next Direction
 
 > 最近更新：2026-06-07
-> 状态：Phase 3.3 已合并；当前用于启动 Phase 3.4 local proxy / OpenAI structured output。
+> 状态：Phase 3.4-pre (Golden Fox) 已完成；当前准备 Phase 3.4 local proxy / OpenAI structured output 正式实现。
 
 本文用于回答“下一两个 PR 先做什么”。阶段级边界见 `roadmap/README.md` 和 `roadmap/phase-3-model-workflow.md`；长期产品愿景仍以 `../knowledge/product/vision.md` 为准。
 
@@ -22,7 +22,9 @@
 - Phase 3.2 Structured Architect contract：Architect Zod schema、`ADAPTATION_PLAN_SCHEMA_ID`、`structuredOutput: { schemaId }` envelope、app-side semantic validation。
 - Phase 3.3 WriterBrief / scene draft contract：Writer stage 已收窄为 `WriterScenePatch`，并有 `WRITER_SCENE_PATCH_SCHEMA_ID`、Zod schema、semantic validation 和 document write-back operation。
 
-Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步可以进入 Phase 3.4 local proxy / server boundary，但要先把现有 Zod schemas 做 OpenAI strict structured output 兼容性审计。
+- Phase 3.4-pre (Golden Fox)：provider-facing schema 兼容性验证已完成。安装了 `openai` SDK（v6.42.0），建立了 `src/core/adaptation/provider-schemas/` 目录包含 Architect / Writer 的 provider-facing Zod schemas、normalizer 和 registry。`src/server/` 目录已建立 middleware 骨架。两个 schema id 的 provider-facing JSON Schema snapshot 和 roundtrip 测试已通过。
+
+Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.4 正式实现：搭建 local proxy 可工作的 OpenAI API 调用路径。
 
 ## 近期原则
 
