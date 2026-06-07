@@ -1,7 +1,7 @@
 # Next Direction
 
 > 最近更新：2026-06-07
-> 状态：Phase 3.2 已合并；当前用于承接 Phase 3.3 / 3.4 的下一组模型工作流 PR。
+> 状态：Phase 3.3 已合并；当前用于启动 Phase 3.4 local proxy / OpenAI structured output。
 
 本文用于回答“下一两个 PR 先做什么”。阶段级边界见 `roadmap/README.md` 和 `roadmap/phase-3-model-workflow.md`；长期产品愿景仍以 `../knowledge/product/vision.md` 为准。
 
@@ -20,8 +20,9 @@
 - Vitest / Testing Library / Playwright 前端测试护栏。
 - Phase 3.1 model adapter contract：`ModelCallRequest` / `ModelCallResult` / `ModelCallError`、typed stage payload、mock adapter。
 - Phase 3.2 Structured Architect contract：Architect Zod schema、`ADAPTATION_PLAN_SCHEMA_ID`、`structuredOutput: { schemaId }` envelope、app-side semantic validation。
+- Phase 3.3 WriterBrief / scene draft contract：Writer stage 已收窄为 `WriterScenePatch`，并有 `WRITER_SCENE_PATCH_SCHEMA_ID`、Zod schema、semantic validation 和 document write-back operation。
 
-Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步应进入 WriterBrief / scene draft contract，而不是直接接 local proxy 或真实 SDK。
+Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步可以进入 Phase 3.4 local proxy / server boundary，但要先把现有 Zod schemas 做 OpenAI strict structured output 兼容性审计。
 
 ## 近期原则
 
@@ -44,6 +45,8 @@ typed workflow
 - 把 mock fallback 和真实模型做成两套互不相干的路径。
 - 让 Writer stage 直接返回完整 `ScreenplayDocument`，绕过 scene patch / document operation。
 - 在 prompt 中要求模型伪造“最小有效 artifact”来吞掉失败。
+- 把 app-side optional Zod 字段未经处理直接传给 OpenAI strict structured output。
+- 为当前 MVP 引入 OpenAI Agents SDK；3.4 只需要普通 OpenAI JS SDK + Responses API structured output。
 
 ## 推荐 PR 顺序
 
@@ -88,6 +91,8 @@ typed workflow
 
 目标：让 Writer 只根据确认后的 scene-level brief 生成 scene draft / scene patch。
 
+状态：已合并。
+
 建议内容：
 
 - 定义 `WriterBrief` 代码 contract。
@@ -111,19 +116,22 @@ typed workflow
 
 ### PR D：Local model proxy / server boundary
 
-目标：建立真实模型调用的安全入口。
+目标：建立真实模型调用的安全入口，用 OpenAI JS SDK 证明 `schemaId -> structured output -> app-side validation` 的真实路径。
 
 建议内容：
 
 - 增加最小 local proxy 或 dev server endpoint。
+- 在 proxy / server 侧引入 `openai` npm dependency；React client 不直接 import SDK。
 - 从环境变量读取模型配置。
 - 前端只调用本地 endpoint。
-- 建立 server-side schema registry / resolver，把 Architect / Writer `schemaId` 映射到真实 SDK structured output 参数。
+- 建立 server-side schema registry / resolver，把 Architect / Writer `schemaId` 映射到 OpenAI Responses API `text.format` structured output 参数。
+- 优先使用 OpenAI JS SDK 的 Zod helper；若现有 Zod contract 不落在 OpenAI 支持子集内，则建立 provider-facing strict schema 和 normalizer。
+- 在实现 proxy 前审计 `adaptation_plan_v1` / `writer_scene_patch_v1`：root object、required 字段、`additionalProperties: false`、optional/nullability、nested union 和 literal 输出都要明确。
 - 前端到 proxy 只传可序列化 request envelope，不传 Zod runtime object。
 - 未知 `schemaId` 明确返回 schema configuration diagnostic 或 `ModelCallError`。
 - 文档说明 `.env.local` 示例变量名。
-- 请求超时、取消、错误状态进入 `ModelCallError`。
-- refusal / empty output / parse / schema mismatch 不进入假成功 artifact。
+- 请求超时、取消、错误状态进入 `ModelCallError.reason === 'network'` 或更具体原因。
+- refusal / empty output / parse / schema mismatch 不进入假成功 artifact，并统一映射到 `ModelCallError`。
 
 完成标准：
 
@@ -131,6 +139,9 @@ typed workflow
 - 有 API key 时可触发真实 Architect 或 Writer 调用。
 - 浏览器 bundle 中不包含 API key。
 - 真实调用路径能证明 `schemaId` 已被解析并传入 provider structured output 配置。
+- `openai` SDK 只在 proxy / server import path 中出现。
+- 两个 schema id 都有 OpenAI structured output compatibility 检查或等价测试。
+- Writer optional 字段有 required nullable / required empty-array / normalizer 策略。
 
 ## 暂缓事项
 

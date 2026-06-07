@@ -24,6 +24,7 @@
 - [pr-016-model-adapter-contract.md](pr-016-model-adapter-contract.md)：PR #16 `feat/model-adapter-contract`（Phase 3.1）的 review，关注模型适配层 contract、typed artifact、失败分类、异步边界和测试缺口。
 - [pr-017-structured-architect-contract.md](pr-017-structured-architect-contract.md)：PR #17 `phase-3.2-structured-architect-contract` 的 review，关注 Architect Zod schema、structured output envelope、semantic validation 和 prompt 失败语义。
 - [pr-018-writer-brief-scene-draft-contract.md](pr-018-writer-brief-scene-draft-contract.md)：PR #18 `feat/phase3.3-writer-contract-planning` 的 review，关注 WriterScenePatch validation、document write-back 边界和 sceneCard/sourceRef/character 引用完整性。
+- [pr-019-openai-structured-output-compatibility.md](pr-019-openai-structured-output-compatibility.md)：Phase 3.4 前置审计，关注 OpenAI structured output strict schema、Zod helper、optional 字段、schema registry 和 failure mapping。
 
 ## 维护规则
 
