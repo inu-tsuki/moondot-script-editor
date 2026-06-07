@@ -96,21 +96,39 @@ export const normalizeArchitectOutput = (providerOutput: unknown): unknown => {
   if (providerOutput === null || typeof providerOutput !== 'object') return providerOutput;
 
   const out = providerOutput as Record<string, unknown>;
-  if (!Array.isArray(out.sceneOutline)) return providerOutput;
 
   return {
     ...out,
-    sceneOutline: out.sceneOutline.map((scene) => {
-      if (scene === null || typeof scene !== 'object') return scene;
-      const sceneRecord = scene as Record<string, unknown>;
-      const estimatedBlocks = sceneRecord.estimatedBlocks;
-      if (typeof estimatedBlocks !== 'number' || !Number.isFinite(estimatedBlocks)) return scene;
+    ...(Array.isArray(out.characters)
+      ? {
+          characters: out.characters.map((character) => {
+            if (character === null || typeof character !== 'object') return character;
+            const characterRecord = character as Record<string, unknown>;
+            return {
+              ...characterRecord,
+              ...(characterRecord.description === null ? { description: undefined } : {}),
+              ...(characterRecord.tags === null ? { tags: undefined } : {}),
+            };
+          }),
+        }
+      : {}),
+    ...(Array.isArray(out.sceneOutline)
+      ? {
+          sceneOutline: out.sceneOutline.map((scene) => {
+            if (scene === null || typeof scene !== 'object') return scene;
+            const sceneRecord = scene as Record<string, unknown>;
+            const estimatedBlocks = sceneRecord.estimatedBlocks;
+            if (typeof estimatedBlocks !== 'number' || !Number.isFinite(estimatedBlocks)) {
+              return scene;
+            }
 
-      return {
-        ...sceneRecord,
-        estimatedBlocks: Math.max(1, Math.round(estimatedBlocks)),
-      };
-    }),
+            return {
+              ...sceneRecord,
+              estimatedBlocks: Math.max(1, Math.round(estimatedBlocks)),
+            };
+          }),
+        }
+      : {}),
   };
 };
 

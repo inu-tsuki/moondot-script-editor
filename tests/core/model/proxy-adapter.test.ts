@@ -56,6 +56,7 @@ const validArchitectResult: ModelCallResult = {
     adaptationOptions: [],
     recommendedPlan: 'Test plan.',
     sceneOutline: [],
+    characters: [],
     characterUpdates: [],
     risks: [],
   },

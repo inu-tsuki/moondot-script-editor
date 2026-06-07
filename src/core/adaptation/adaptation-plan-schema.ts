@@ -69,6 +69,14 @@ const sourceAnalysisSchema = z.object({
   exteriorizationNotes: z.array(z.string()),
 });
 
+const characterProfileSchema = z.object({
+  id: z.custom<`char_${string}`>((value) => typeof value === 'string' && value.startsWith('char_')),
+  name: z.string(),
+  aliases: z.array(z.string()),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
 const preferencesSchema = z.object({
   targetMedium: z.enum(['screenplay', 'short_drama', 'visual_novel']),
   targetLength: z.enum([
@@ -94,6 +102,7 @@ export const adaptationPlanSchema = z.object({
   id: z.string(),
   preferences: preferencesSchema,
   sourceAnalysis: sourceAnalysisSchema,
+  characters: z.array(characterProfileSchema),
   adaptationQuestions: z.array(adaptationQuestionSchema),
   questionAnswers: z.array(questionAnswerSchema),
   adaptationOptions: z.array(adaptationOptionSchema),

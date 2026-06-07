@@ -86,6 +86,34 @@ describe('Architect roundtrip', () => {
       expect(parsed.data.sceneOutline.map((scene) => scene.estimatedBlocks)).toEqual([1, 2]);
     }
   });
+
+  it('normalizes provider nullable character fields to app-side optional fields', () => {
+    const plan = makeValidPlan();
+    const providerOutput = {
+      ...plan,
+      characters: [
+        {
+          id: 'char_rick',
+          name: '里克',
+          aliases: ['德卡德'],
+          description: null,
+          tags: null,
+        },
+      ],
+    };
+
+    const normalized = normalizeArchitectOutput(providerOutput);
+    const parsed = adaptationPlanSchema.safeParse(normalized);
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.characters[0]).toEqual({
+        id: 'char_rick',
+        name: '里克',
+        aliases: ['德卡德'],
+      });
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

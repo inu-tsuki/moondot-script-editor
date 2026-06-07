@@ -75,6 +75,14 @@ const sourceAnalysisSchema = z.object({
   exteriorizationNotes: z.array(z.string()),
 });
 
+const characterProfileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  aliases: z.array(z.string()),
+  description: z.string().nullable(),
+  tags: z.array(z.string()).nullable(),
+});
+
 const preferencesSchema = z.object({
   targetMedium: z.enum(['screenplay', 'short_drama', 'visual_novel']),
   targetLength: z.enum([
@@ -100,6 +108,7 @@ export const adaptationPlanProviderSchema = z.object({
   id: z.string(),
   preferences: preferencesSchema,
   sourceAnalysis: sourceAnalysisSchema,
+  characters: z.array(characterProfileSchema),
   adaptationQuestions: z.array(adaptationQuestionSchema), // no .min(1) — app-side validates
   questionAnswers: z.array(questionAnswerSchema),
   adaptationOptions: z.array(adaptationOptionSchema),

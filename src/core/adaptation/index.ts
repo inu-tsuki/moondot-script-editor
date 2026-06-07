@@ -1,4 +1,5 @@
 export { applySceneDrafts } from './apply-scene-drafts';
+export { applyPlanCharacters } from './apply-plan-characters';
 export {
   buildNovelAdaptationPrompt,
   buildNovelSceneWriterPrompt,

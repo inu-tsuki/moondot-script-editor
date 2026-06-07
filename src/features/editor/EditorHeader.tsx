@@ -45,14 +45,14 @@ export function EditorHeader({
   const showSceneTabs = scenes.length > 1;
 
   return (
-    <header className="flex min-h-12 items-center gap-3 border-b border-[#e4ded3] bg-[#faf9f6] px-5 max-[500px]:flex-wrap">
+    <header className="grid min-h-12 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[#e4ded3] bg-[#faf9f6] px-5 py-2 max-[500px]:grid-cols-1">
       {/* ── Scene tabs (left) ── */}
       {showSceneTabs && (
         <nav
           aria-label="场景导航"
-          className="min-w-0 flex-1 overflow-x-auto max-[500px]:order-3 max-[500px]:flex-[1_1_100%]"
+          className="min-w-0 overflow-x-auto overflow-y-hidden max-[500px]:order-2"
         >
-          <div className="flex items-center gap-1">
+          <div className="flex w-max max-w-none items-center gap-1 pr-2">
             {scenes.map((scene, index) => (
               <button
                 key={scene.id}
@@ -71,11 +71,8 @@ export function EditorHeader({
         </nav>
       )}
 
-      {/* ── Spacer (collapses to 0 when nav is wide, hidden when wrapped) ── */}
-      <div className="flex-1 max-[500px]:hidden" />
-
       {/* ── Editor title + block actions (right) ── */}
-      <div className="flex shrink-0 items-center gap-3 max-[500px]:order-2">
+      <div className="flex shrink-0 items-center justify-end gap-3 max-[500px]:order-1 max-[500px]:justify-between">
         <PanelTitle icon={<Sparkles size={16} />}>Semantic Blocks</PanelTitle>
         <div className="relative">
           <Button
