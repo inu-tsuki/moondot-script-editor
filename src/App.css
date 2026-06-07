@@ -117,41 +117,6 @@
   white-space: nowrap;
 }
 
-/* ── Main layout ────────────────────────────────────────── */
-
-.app-main {
-  display: grid;
-  flex: 1;
-  gap: 16px;
-  grid-template-columns: 1fr minmax(280px, 380px);
-  min-height: 0;
-  overflow: hidden;
-  padding: 16px;
-}
-
-.app-center {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 0;
-  min-height: 0;
-}
-
-.app-right {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-}
-
-/* ── Converter actions ──────────────────────────────────── */
-
-.converter-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 /* ── YAML preview ───────────────────────────────────────── */
 
 .yaml-preview {
@@ -169,29 +134,10 @@
 
 /* ── Responsive ─────────────────────────────────────────── */
 
-@media (max-width: 1180px) {
-  .app-main {
-    grid-template-columns: 1fr;
-  }
-
-  .app-right {
-    min-height: 380px;
-  }
-}
-
 @media (max-width: 760px) {
   .topbar {
     align-items: stretch;
     flex-direction: column;
     padding: 12px;
-  }
-
-  .app-main {
-    grid-template-columns: 1fr;
-    padding: 12px;
-  }
-
-  .app-center {
-    min-height: 360px;
   }
 }

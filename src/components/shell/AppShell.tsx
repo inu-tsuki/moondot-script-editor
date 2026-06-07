@@ -3,17 +3,21 @@ import type { ModelProviderType } from '../../core/model';
 import { Topbar } from './Topbar';
 
 type AppShellProps = {
-  center: ReactNode;
-  right: ReactNode;
+  children: ReactNode;
   providerType: ModelProviderType;
   isProxyAvailable: boolean;
   isProbing: boolean;
   onProviderChange: (p: ModelProviderType) => void;
 };
 
+/**
+ * Application chrome: topbar + main content area.
+ *
+ * Layout composition (dock, workspace wrappers) is the responsibility of the
+ * children passed in — AppShell only provides the outer frame.
+ */
 export function AppShell({
-  center,
-  right,
+  children,
   providerType,
   isProxyAvailable,
   isProbing,
@@ -27,10 +31,7 @@ export function AppShell({
         isProbing={isProbing}
         onProviderChange={onProviderChange}
       />
-      <main className="app-main">
-        <section className="app-center">{center}</section>
-        <section className="app-right">{right}</section>
-      </main>
+      {children}
     </div>
   );
 }

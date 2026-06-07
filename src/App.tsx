@@ -1,12 +1,10 @@
-import { Copy, Download } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
-import { Badge, Button } from './components/ui';
-import { AppShell } from './components/shell';
-import { SceneNavigator, ScriptEditorPanel } from './features/editor';
+import { AppShell, DockLayout } from './components/shell';
+import { EditorWorkspace, ExportBar, SceneNavigator, ScriptEditorPanel } from './features/editor';
 import {
   AdaptationPreferencesPanel,
-  ConverterPanel,
+  ConverterWorkspace,
   DiagnosticsBand,
   SceneOutlinePanel,
   SourcePanel,
@@ -602,89 +600,87 @@ function App() {
     setExportFeedback('YAML 已下载。');
   };
 
+  const editorWorkspace = (
+    <EditorWorkspace
+      sceneNavigator={
+        <SceneNavigator
+          scenes={workingDocument.script.scenes}
+          activeIndex={activeSceneIndex}
+          onSelect={setActiveSceneIndex}
+        />
+      }
+      scriptEditor={
+        <ScriptEditorPanel
+          charactersById={charactersById}
+          scene={activeScene}
+          selectedBlockId={selectedBlockId}
+          onEdit={handleEdit}
+          onUpdateBlockText={handleUpdateBlockText}
+        />
+      }
+      exportBar={
+        <ExportBar
+          isReady={exportStatus.isReady}
+          errorCount={exportStatus.errorCount}
+          warningCount={exportStatus.warningCount}
+          feedback={exportFeedback}
+          onCopy={copyYaml}
+          onDownload={downloadYaml}
+        />
+      }
+    />
+  );
+
+  const converterWorkspace = (
+    <ConverterWorkspace>
+      <SourcePanel
+        chapterCount={chapterCount}
+        sourceText={sourceText}
+        sourceType={workingDocument.source.type}
+        onSourceTextChange={updateSourceText}
+      />
+      <DiagnosticsBand diagnostics={sourceDiagnostics} />
+
+      <AdaptationPreferencesPanel
+        preferences={adaptationPreferences}
+        onPreferenceChange={updateAdaptationPreference}
+        onGenerateOutline={generateSceneOutline}
+      />
+
+      <SceneOutlinePanel
+        plan={adaptationPlan}
+        trace={adaptationTrace}
+        isGeneratingWriter={isGeneratingWriter}
+        hasDraft={hasWriterDraft}
+        isDraftApplied={isDraftApplied}
+        onGenerateDraft={generateWriterDraft}
+        generationProvider={planProvider!}
+      />
+      <DiagnosticsBand diagnostics={planDiagnostics} />
+
+      <WriterDraftPanel
+        writerDraft={writerDraft}
+        isDraftApplied={isDraftApplied}
+        onApplyDraft={applyWriterDraft}
+        generationProvider={draftProvider!}
+      />
+      <DiagnosticsBand diagnostics={documentExportDiagnostics} />
+    </ConverterWorkspace>
+  );
+
   return (
     <AppShell
       providerType={providerType}
       isProxyAvailable={isProxyAvailable}
       isProbing={isProbing}
       onProviderChange={handleProviderChange}
-      center={
-        <>
-          <SceneNavigator
-            scenes={workingDocument.script.scenes}
-            activeIndex={activeSceneIndex}
-            onSelect={setActiveSceneIndex}
-          />
-          <ScriptEditorPanel
-            charactersById={charactersById}
-            scene={activeScene}
-            selectedBlockId={selectedBlockId}
-            onEdit={handleEdit}
-            onUpdateBlockText={handleUpdateBlockText}
-          />
-
-          {/* Export bar — compact, no YAML preview */}
-          <div className="flex items-center gap-3 border-t border-[#e4ded3] px-4 py-2">
-            <Badge variant={exportStatus.isReady ? 'success' : 'error'}>
-              {exportStatus.isReady ? 'export ready' : `${exportStatus.errorCount} errors`}
-            </Badge>
-            {exportStatus.warningCount > 0 && <Badge>{exportStatus.warningCount} warnings</Badge>}
-            {exportFeedback && <Badge>{exportFeedback}</Badge>}
-            <div className="ml-auto flex gap-2">
-              <Button title="复制 YAML" onClick={copyYaml} disabled={!exportStatus.isReady}>
-                <Copy size={16} />
-                复制
-              </Button>
-              <Button
-                title="下载 YAML"
-                variant="primary"
-                onClick={downloadYaml}
-                disabled={!exportStatus.isReady}
-              >
-                <Download size={16} />
-                下载
-              </Button>
-            </div>
-          </div>
-        </>
-      }
-      right={
-        <ConverterPanel>
-          <SourcePanel
-            chapterCount={chapterCount}
-            sourceText={sourceText}
-            sourceType={workingDocument.source.type}
-            onSourceTextChange={updateSourceText}
-          />
-          <DiagnosticsBand diagnostics={sourceDiagnostics} />
-
-          <AdaptationPreferencesPanel
-            preferences={adaptationPreferences}
-            onPreferenceChange={updateAdaptationPreference}
-            onGenerateOutline={generateSceneOutline}
-          />
-
-          <SceneOutlinePanel
-            plan={adaptationPlan}
-            trace={adaptationTrace}
-            isGeneratingWriter={isGeneratingWriter}
-            hasDraft={hasWriterDraft}
-            isDraftApplied={isDraftApplied}
-            onGenerateDraft={generateWriterDraft}
-            generationProvider={planProvider!}
-          />
-          <DiagnosticsBand diagnostics={planDiagnostics} />
-
-          <WriterDraftPanel
-            writerDraft={writerDraft}
-            isDraftApplied={isDraftApplied}
-            onApplyDraft={applyWriterDraft}
-            generationProvider={draftProvider!}
-          />
-          <DiagnosticsBand diagnostics={documentExportDiagnostics} />
-        </ConverterPanel>
-      }
-    />
+    >
+      <DockLayout
+        preset="editor-with-converter"
+        left={editorWorkspace}
+        right={converterWorkspace}
+      />
+    </AppShell>
   );
 }
 
