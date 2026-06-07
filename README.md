@@ -2,7 +2,7 @@
 
 月点是一款 AI 剧本创作工作台。它面向故事创作者、短剧创作者和互动叙事创作者；当前 MVP 从小说改编切入，把多章节小说文本转换为可编辑的结构化剧本，并导出符合说明文档的 YAML 剧本数据。
 
-本仓库从七牛云 XEngineer 第三批次第三题“AI 小说转剧本工具”出发。当前已完成 Phase 2 的改编工作流基础切片和 Phase 2.5 的工作台 UI 地基：核心 document、scene outline 确认、YAML 导出、中央手稿编辑区、基础语义块操作和前端测试护栏已经建立。Phase 3 已正式启动规划，下一步将进入模型调用 contract、structured output、mock fallback、trace 和 demo 收口。
+本仓库从七牛云 XEngineer 第三批次第三题“AI 小说转剧本工具”出发。当前已完成 Phase 2 的改编工作流基础切片、Phase 2.5 的工作台 UI 地基，以及 Phase 3 的真实模型调用基础：核心 document、scene outline 确认、YAML 导出、中央手稿编辑区、基础语义块操作、OpenAI Responses 结构化输出 proxy 和前端测试护栏已经建立。最后收口重点是 demo、README、YAML Schema 文档和真实模型 smoke。
 
 ## 产品定位
 
@@ -61,7 +61,7 @@ MVP 要完成一条可演示链路：
 - Phase 2：Adaptation Plan / Scene Outline / 确认写入 / YAML 复制下载链路已完成基础切片。
 - Phase 2.5：Workbench UI Foundation 已完成基础切片，包括 Tailwind、UI primitives、panel extraction、WorkbenchLayout、output tabs、document-backed reading surface、基础语义编辑控件和工业化手稿视觉收口。
 - Engineering：Vitest / Testing Library / Playwright 前端测试护栏已接入，作为横向质量轨道维护。
-- Phase 3：正式规划已启动，重点是真实模型调用层、structured prompt contract、mock fallback、trace / diagnostics、repair 和 demo 强化。
+- Phase 3：真实模型调用层、structured prompt contract、mock fallback、Editor / Converter workspace 和 dock UI 地基已建立；当前进入 demo、README、YAML Schema 和真实模型 smoke 收口。
 - Demo：待录制和补充链接。
 
 ## 文档
@@ -104,7 +104,7 @@ MVP 要完成一条可演示链路：
 5. `feat/workbench-*`：接入 Tailwind、抽出 UI primitives / panels、建立 WorkbenchLayout、output tabs、中央手稿阅读面和基础语义编辑控件。
 6. `chore/frontend-test-harness`：接入 Vitest / Testing Library / Playwright，建立核心操作、组件和浏览器布局回归测试。
 
-接下来优先进入 Phase 3：接入轻量模型调用层，强化 Architect / Writer 的 prompt contract、错误恢复和 mock fallback，并把 demo 路径收紧到可提交状态。
+接下来优先收口 demo：验证真实模型路径、补 README / YAML Schema 文档，并录制从 3+ 章节小说到 YAML 导出的完整视频。
 
 完整流程见 [docs/planning/development-workflow.md](docs/planning/development-workflow.md)。
 
@@ -127,6 +127,34 @@ pnpm install
 ```sh
 pnpm dev
 ```
+
+默认可以在 Mock 模式下完整走通 demo。若要启用真实模型调用，需要复制 `.env.example` 为
+`.env.local`，填写 server-side 环境变量，然后运行 `pnpm dev`：
+
+```sh
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_BASE_URL=
+OPENAI_USER_AGENT=
+```
+
+`OPENAI_BASE_URL` 可用于 OpenAI-compatible 中转站。以 micuapi 的 Codex / Responses 兼容模式为例：
+
+```sh
+OPENAI_API_KEY=你的_micuapi_key
+OPENAI_MODEL=gpt-5.4
+OPENAI_BASE_URL=https://www.micuapi.ai/v1
+OPENAI_USER_AGENT=按 https://docs.micuapi.ai/external-compat 文档填写的 Codex User-Agent
+```
+
+注意：`vip_2` 是 micuapi 文档中的推荐分组，不是 `OPENAI_MODEL` 字段值；这里应填写模型名。micuapi 的 Codex / Responses 示例使用 `gpt-5.4`。
+
+当前实现不是 Agents SDK，也不是多 agent runtime；它是两次普通模型调用：
+
+- Architect：`adaptation_planning`，生成结构化 Scene Outline。
+- Writer：`scene_draft`，在用户确认后生成结构化 Writer Draft。
+
+浏览器端只调用本地 `/api/model/call` proxy；API key 不会进入前端 bundle。没有 `.env.local` 或真实模型失败时，可以切回 Mock 模式继续演示。
 
 检查代码和构建。普通改动按 `AGENTS.md` 的约定优先运行：
 
