@@ -9,12 +9,12 @@ test('loads the workbench with editor and converter panels', async ({ page }) =>
   // Converter right panel — source card
   await expect(page.getByLabel('小说来源文本')).toBeVisible();
 
-  // Scene outline card is hidden when no plan (returns null internally)
-  // ConverterActions buttons are visible
+  // "大纲" button is in Preferences card
   await expect(page.getByRole('button', { name: '大纲' })).toBeVisible();
 
-  // YAML preview is visible in the converter flow
-  await expect(page.locator('.yaml-preview')).toContainText('schemaVersion');
+  // Export bar at bottom of editor (compact, no YAML preview)
+  await expect(page.getByRole('button', { name: '复制' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '下载' })).toBeVisible();
 });
 
 test('selected block toolbar does not drive manuscript block height', async ({ page }) => {
@@ -27,6 +27,30 @@ test('selected block toolbar does not drive manuscript block height', async ({ p
 
   const blockBox = await block.boundingBox();
   expect(blockBox?.height).toBeLessThan(72);
+});
+
+test('full converter workflow: outline generation and draft application', async ({ page }) => {
+  await page.goto('/');
+
+  // 1. Click 「大纲」 in Preferences card
+  await page.getByRole('button', { name: '大纲' }).click();
+
+  // 2. Scene Outline card appears with scene cards
+  await expect(page.getByText('Scene Outline', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '确认生成' })).toBeVisible();
+
+  // 3. Click 「确认生成」 to trigger Writer draft
+  await page.getByRole('button', { name: '确认生成' }).click();
+
+  // 4. Writer Draft card appears with apply button
+  await expect(page.getByText('Writer Draft', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '应用到剧本' })).toBeVisible();
+
+  // 5. Click 「应用到剧本」 to write to document
+  await page.getByRole('button', { name: '应用到剧本' }).click();
+
+  // 6. Writer Draft panel disappears after draft is applied
+  await expect(page.getByText('Writer Draft', { exact: true })).not.toBeVisible();
 });
 
 test('mobile toolbar falls below content instead of squeezing the block row', async ({ page }) => {

@@ -28,6 +28,8 @@
 - [pr-020-phase-3-4-pre-golden-fox.md](pr-020-phase-3-4-pre-golden-fox.md)：Review #20 / GitHub #34 `feat/phase3.4-pre-golden-fox` 的 review，关注 provider-facing schema、OpenAI SDK server boundary、Responses `text.format` envelope 和 normalizer failure mapping。
 - [pr-021-phase-3-4-server-wire-up.md](pr-021-phase-3-4-server-wire-up.md)：Review #21 / GitHub #36 `feat/phase3.4-server-wire-up` 的 review，关注 `/api/model/call` handler、stage/schema runtime contract、Responses refusal mapping 和 Vite local proxy 部署边界。
 - [pr-022-phase-3-4b-proxy-adapter.md](pr-022-phase-3-4b-proxy-adapter.md)：Review #22 / GitHub #38 `feat/phase3.4b-proxy-adapter` 的 review，关注前端 `ProxyModelAdapter`、provider auto-detect、mock fallback 默认路径和 provider 切换竞态。
+- [pr-023-phase-3-5a-workspace-shell.md](pr-023-phase-3-5a-workspace-shell.md)：Review #23 / GitHub #40 `feat/phase3.5a-shell-and-dock` 的 review，关注 Editor / Converter 边界、默认双栏 dock preset 和 source diagnostics 分流。
+- [pr-024-phase-3-5b-card-controls.md](pr-024-phase-3-5b-card-controls.md)：Review #24 / GitHub #41 `feat/phase3.5b-card-controls` 的 review，关注 per-card workflow controls、WriterDraftPanel 拆分、Editor export 归属和 artifact provider badge。
 
 ## 维护规则
 

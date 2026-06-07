@@ -1,4 +1,5 @@
-import { Field, fieldControlClassName } from '../../components/ui';
+import { WandSparkles } from 'lucide-react';
+import { Button, Field, fieldControlClassName } from '../../components/ui';
 import type {
   AdaptationFidelity,
   AdaptationPacing,
@@ -13,6 +14,7 @@ type AdaptationPreferencesPanelProps = {
     key: K,
     value: AdaptationPreferences[K],
   ) => void;
+  onGenerateOutline: () => void;
 };
 
 const targetMediumOptions: Array<{
@@ -54,6 +56,7 @@ const styleOptions: Array<{ value: AdaptationStyle; label: string }> = [
 export function AdaptationPreferencesPanel({
   preferences,
   onPreferenceChange,
+  onGenerateOutline,
 }: AdaptationPreferencesPanelProps) {
   return (
     <div
@@ -168,6 +171,12 @@ export function AdaptationPreferencesPanel({
           />
           <span className="text-[11px] font-extrabold text-[#5f6b64]">合并角色</span>
         </label>
+      </div>
+      <div className="flex justify-end">
+        <Button variant="primary" onClick={onGenerateOutline}>
+          <WandSparkles size={16} />
+          大纲
+        </Button>
       </div>
     </div>
   );
