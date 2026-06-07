@@ -17,15 +17,7 @@ export type { WriterScenePatchParsed } from './writer-scene-patch-schema';
 export { defaultAdaptationPreferences, resolveAdaptationPreferences } from './preferences';
 export { validateAdaptationPlan } from './validate-adaptation-plan';
 export { validateWriterScenePatch } from './validate-writer-scene-patch';
-export {
-  adaptationPlanProviderSchema,
-  normalizeArchitectOutput,
-  normalizeWriterOutput,
-  PROVIDER_SCHEMA_REGISTRY,
-  resolveProviderSchema,
-  writerScenePatchProviderSchema,
-} from './provider-schemas';
-export type { ProviderSchemaEntry, WriterScenePatchProviderOutput } from './provider-schemas';
+
 export type {
   ValidateWriterScenePatchOptions,
   ValidateWriterScenePatchResult,
@@ -60,3 +52,7 @@ export type {
   ValidateAdaptationPlanOptions,
   ValidateAdaptationPlanResult,
 } from './validate-adaptation-plan';
+// NOTE: provider-schemas are NOT re-exported from this barrel.
+// Server code and tests should direct-import from
+//   '.../provider-schemas/...'
+// to keep provider-facing APIs out of the browser compile graph.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { zodResponseFormat } from 'openai/helpers/zod';
+import { zodTextFormat } from 'openai/helpers/zod';
 import { adaptationPlanProviderSchema } from '../../../src/core/adaptation/provider-schemas/adaptation-plan-provider';
 import { writerScenePatchProviderSchema } from '../../../src/core/adaptation/provider-schemas/writer-scene-patch-provider';
 
@@ -8,19 +8,19 @@ import { writerScenePatchProviderSchema } from '../../../src/core/adaptation/pro
 // ---------------------------------------------------------------------------
 
 /**
- * Extract the generated JSON Schema from zodResponseFormat output.
+ * Extract the generated JSON Schema from zodTextFormat output.
  *
- * `zodResponseFormat` returns `AutoParseableResponseFormat` which extends
- * `ResponseFormatJSONSchema`.  The actual JSON Schema lives under
- * `json_schema.schema`.
+ * `zodTextFormat` returns `AutoParseableTextFormat` which extends
+ * `ResponseFormatTextJSONSchemaConfig`.  The actual JSON Schema lives
+ * at the top-level `.schema` field (Responses API `text.format` envelope).
  */
 const getProviderJsonSchema = (zodSchema: unknown, name: string): Record<string, unknown> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fmt = zodResponseFormat(zodSchema as any, name);
+  const fmt = zodTextFormat(zodSchema as any, name);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const schema = (fmt as any).json_schema?.schema;
+  const schema = (fmt as any).schema;
   if (!schema) {
-    throw new Error(`zodResponseFormat returned no json_schema.schema for ${name}`);
+    throw new Error(`zodTextFormat returned no schema for ${name}`);
   }
   return schema as Record<string, unknown>;
 };
@@ -53,7 +53,7 @@ const collectValues = (schema: Record<string, unknown>, key: string): Set<unknow
 
 /**
  * List of JSON Schema keywords NOT supported by OpenAI strict structured output.
- * @see https://platform.openai.com/docs/guides/structured-outputs
+ * @see https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses
  */
 const UNSUPPORTED_KEYWORDS = [
   'oneOf',

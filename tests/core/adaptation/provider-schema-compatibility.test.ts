@@ -1,15 +1,23 @@
 import {
+  ADAPTATION_PLAN_SCHEMA_ID,
+  WRITER_SCENE_PATCH_SCHEMA_ID,
   adaptationPlanSchema,
   createMockAdaptationPlan,
   createMockWriterScenePatch,
-  normalizeArchitectOutput,
-  normalizeWriterOutput,
   validateAdaptationPlan,
   validateWriterScenePatch,
   writerScenePatchSchema,
 } from '../../../src/core/adaptation';
+import {
+  parseAndNormalizeProviderOutput,
+  resolveProviderSchema,
+} from '../../../src/core/adaptation/provider-schemas';
+import {
+  normalizeArchitectOutput,
+  normalizeWriterOutput,
+} from '../../../src/core/adaptation/provider-schemas/normalizers';
+import type { WriterScenePatchProviderOutput } from '../../../src/core/adaptation/provider-schemas/writer-scene-patch-provider';
 import { demoScreenplayDocument } from '../../../src/core/screenplay';
-import type { WriterScenePatchProviderOutput } from '../../../src/core/adaptation/provider-schemas';
 import type {
   AdaptationPlan,
   ScreenplayDocument,
@@ -453,5 +461,81 @@ describe('full pipeline', () => {
     });
     expect(result.patch).not.toBeNull();
     expect(result.error).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Malformed provider output — parse + normalize guard
+// ---------------------------------------------------------------------------
+
+describe('malformed provider output', () => {
+  it('parseAndNormalizeProviderOutput returns schema failure for null input', () => {
+    const entry = resolveProviderSchema(ADAPTATION_PLAN_SCHEMA_ID)!;
+    expect(entry).toBeDefined();
+
+    const result = parseAndNormalizeProviderOutput(entry, null);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.reason).toBe('schema');
+      expect(result.message).toContain('Provider schema parse failed');
+    }
+  });
+
+  it('parseAndNormalizeProviderOutput returns schema failure for completely wrong shape', () => {
+    const entry = resolveProviderSchema(ADAPTATION_PLAN_SCHEMA_ID)!;
+    const result = parseAndNormalizeProviderOutput(entry, { notAField: 42 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.reason).toBe('schema');
+    }
+  });
+
+  it('parseAndNormalizeProviderOutput returns schema failure for Writer with missing required fields', () => {
+    const entry = resolveProviderSchema(WRITER_SCENE_PATCH_SCHEMA_ID)!;
+    const result = parseAndNormalizeProviderOutput(entry, {
+      planId: 'some-plan',
+      // scenes is required and missing
+      characterUpdates: null,
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.reason).toBe('schema');
+    }
+  });
+
+  it('parseAndNormalizeProviderOutput does NOT throw on deeply malformed input', () => {
+    // The key property: normalizeWriterOutput casts and accesses .scenes.map()
+    // on whatever is given.  parseAndNormalizeProviderOutput must guard this.
+    const entry = resolveProviderSchema(WRITER_SCENE_PATCH_SCHEMA_ID)!;
+
+    // This would throw TypeError if passed directly to the bare normalizer
+    const malicious = {
+      planId: 'x',
+      scenes: null, // not an array — bare normalizer would crash on .map()
+    };
+
+    const result = parseAndNormalizeProviderOutput(entry, malicious);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.reason).toBe('schema');
+    }
+  });
+
+  it('parseAndNormalizeProviderOutput succeeds with valid Architect data', () => {
+    const plan = makeValidPlan();
+    const entry = resolveProviderSchema(ADAPTATION_PLAN_SCHEMA_ID)!;
+
+    const result = parseAndNormalizeProviderOutput(entry, plan);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      // Normalized output should pass app-side validation
+      const validated = validateAdaptationPlan(result.normalized, {
+        knownChapterIds: new Set(
+          (doc.source as { chapters: Array<{ id: string }> }).chapters.map((c) => c.id),
+        ),
+      });
+      expect(validated.plan).not.toBeNull();
+      expect(validated.error).toBeUndefined();
+    }
   });
 });

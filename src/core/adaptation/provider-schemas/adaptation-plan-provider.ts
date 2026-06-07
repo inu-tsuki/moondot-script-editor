@@ -14,7 +14,7 @@ import { z } from 'zod';
 // handled by `validateAdaptationPlan()` in the app-side layer.
 //
 // This schema exists because we cannot pass the app-side schema directly
-// to `zodResponseFormat()` — the unsupported keywords would be generated.
+// to `zodTextFormat()` — the unsupported keywords would be generated.
 // ---------------------------------------------------------------------------
 
 const sourceRefSchema = z.object({
