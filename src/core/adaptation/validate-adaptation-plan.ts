@@ -65,6 +65,27 @@ const runSemanticChecks = (
   options: ValidateAdaptationPlanOptions,
   diagnostics: Diagnostic[],
 ): ValidateAdaptationPlanResult | null => {
+  // -- sceneOutline[].id must be unique --
+  const seenSceneCardIds = new Set<string>();
+  for (let i = 0; i < plan.sceneOutline.length; i++) {
+    const cardId = plan.sceneOutline[i].id;
+    if (seenSceneCardIds.has(cardId)) {
+      return fail(
+        'semantic',
+        [
+          diag(
+            'error',
+            'duplicate_scene_card_id',
+            `sceneOutline[${i}].id "${cardId}" is not unique. Writer coverage validation depends on stable sceneCardId keys.`,
+            `adaptationPlan.sceneOutline[${i}].id`,
+          ),
+        ],
+        `Duplicate sceneOutline id: "${cardId}".`,
+      );
+    }
+    seenSceneCardIds.add(cardId);
+  }
+
   // -- sourceRefs must reference known chapters --
   for (let i = 0; i < plan.sceneOutline.length; i++) {
     const card = plan.sceneOutline[i];

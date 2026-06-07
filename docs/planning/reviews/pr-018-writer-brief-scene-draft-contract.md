@@ -8,11 +8,15 @@
 
 方向正确：3.3 已经把 Writer stage 从直接返回完整 `ScreenplayDocument` 收窄为 `WriterScenePatch`，新增 Zod schema、`WRITER_SCENE_PATCH_SCHEMA_ID`、app-side validator 和 `applySceneDrafts()` 写回 operation。`ModelStagePayloadMap.scene_draft` 也已经改为 `WriterScenePatch`，符合前一轮规划里“模型产物不能直接污染 document”的主线。
 
-当前剩余问题集中在 Writer patch validation 的语义完整性：若 `validateWriterScenePatch()` 返回 patch，`App.tsx` 会立即调用 `applySceneDrafts()` 并替换整个 `script.scenes`。因此 validator 必须保证“通过的 patch 写回后仍是可信 document”。目前有三处缝隙会让坏 patch 通过，或者让已确认的 outline 静默丢场。
+第一轮审查发现的三处 Active Medium 都集中在 Writer patch validation 的语义完整性：若 `validateWriterScenePatch()` 返回 patch，`App.tsx` 会立即调用 `applySceneDrafts()` 并替换整个 `script.scenes`。因此 validator 必须保证“通过的 patch 写回后仍是可信 document”。
+
+第一次修复（`f7fed4a`）已解决这三处问题：Writer patch 现在要求 sceneCardId 完整覆盖当前 plan，重复 / 缺失 scene draft 会被 semantic failure 拦截；未知 dialogue character 从 warning 升级为 fatal semantic failure；block-level sourceRefs 也会校验 known chapter。prompt 引号 typo 也已修复。
+
+结论：Phase 3.3 的阻塞问题已清掉，可以进入 Phase 3.4 local proxy / server boundary。保留一个非阻塞 follow-up：Architect plan validator 尚未显式校验 `sceneOutline[].id` 唯一性，而 Writer coverage 校验依赖 sceneCardId 作为稳定键；建议在 3.4 前或 3.4 同轮补上。
 
 ## Findings
 
-### Active Medium：Writer patch 可漏写或重复 sceneCard，仍会整表替换剧本场景
+### Resolved：Writer patch 可漏写或重复 sceneCard，仍会整表替换剧本场景
 
 位置：`src/core/adaptation/validate-writer-scene-patch.ts:89`、`src/core/adaptation/apply-scene-drafts.ts:22`
 
@@ -32,7 +36,9 @@
 - 补 validator 测试：少一场、重复一场、多余未知场三类都应失败。
 - 如果未来想支持 partial patch，应改 `applySceneDrafts()` 为按 `sceneCardId` merge，而不是整表替换；当前实现语义更像 full patch。
 
-### Active Medium：未知 dialogue character 只是 warning，但会写入无效 document
+复核状态（`f7fed4a`）：已解决。`validateWriterScenePatch()` 现在构建 patch sceneCardId set，拒绝 unknown、duplicate 和 missing sceneCardId，并补了 duplicate / missing 测试。
+
+### Resolved：未知 dialogue character 只是 warning，但会写入无效 document
 
 位置：`src/core/adaptation/validate-writer-scene-patch.ts:131`、`src/App.tsx:430`
 
@@ -48,7 +54,9 @@
 - 或者扩展 `characterUpdates` 为结构化角色 patch，并在 `applySceneDrafts()` 同步写入角色表；但这会扩大 3.3 scope。
 - 补测试：unknown dialogue character 时 `result.patch === null`，`error.reason === 'semantic'`。
 
-### Active Medium：block-level `sourceRefs` 没有做 known chapter 语义校验
+复核状态（`f7fed4a`）：已解决。unknown dialogue character 现在返回 semantic failure，不再返回可写回 patch；测试已从 warning 改为 fatal failure。
+
+### Resolved：block-level `sourceRefs` 没有做 known chapter 语义校验
 
 位置：`src/core/adaptation/validate-writer-scene-patch.ts:112`、`src/core/adaptation/apply-scene-drafts.ts:28`
 
@@ -62,13 +70,29 @@ validator 只检查 scene-level `draft.sourceRefs` 是否引用已知章节。`S
 - 对 block-level unknown chapter 返回 semantic failure，path 指到 `writerScenePatch.scenes[i].blocks[k].sourceRefs[j].sourceId`。
 - 补测试：block sourceRef unknown chapter 应失败。
 
-### Low：Writer prompt 有中文引号 typo
+复核状态（`f7fed4a`）：已解决。scene-level 和 block-level sourceRefs 都会调用 known chapter 校验，block-level unknown sourceRef 已有 semantic failure 测试。
+
+### Resolved Low：Writer prompt 有中文引号 typo
 
 位置：`src/core/adaptation/buildNovelAdaptationPrompt.ts:140`
 
 当前 system prompt 第一行是 `你是”月点”的 Lead Screenwriter...`，左引号误写成右引号。它不影响 runtime contract，但会让 prompt 文案显得不够干净。
 
 建议：改成 `你是“月点”的 Lead Screenwriter...`。
+
+复核状态（`f7fed4a`）：已解决。
+
+## 第一次修复复核（2026-06-07，`f7fed4a`）
+
+本轮修复覆盖了第一轮 review 的全部 active findings：
+
+- `duplicate_scene_card_id`：拒绝重复 sceneCardId。
+- `missing_scene_card_draft`：拒绝未覆盖 plan scene card 的 patch。
+- `unknown_character_ref`：从 warning 升级为 semantic failure。
+- block-level `unknown_source_ref`：拒绝 block sourceRefs 中的未知章节。
+- `applySceneDrafts()` 补了最小回归测试：scene 数量、block id 分配、project/source/characters 不被改写。
+
+未发现新的 3.3 阻塞项。可以进入 Phase 3.4。建议保留一个小 follow-up：在 Architect `validateAdaptationPlan()` 中补 `sceneOutline[].id` 唯一性校验，使 Writer coverage 的稳定键在上游就成立。
 
 ## Verification
 
@@ -88,19 +112,33 @@ git diff --check main...HEAD
 - `pnpm build` passed。
 - `git diff --check main...HEAD` clean。
 
+第一次修复复核运行：
+
+```sh
+pnpm lint
+pnpm test
+pnpm build
+git diff --check 30a8f10..HEAD
+```
+
+结果：
+
+- `pnpm lint` passed。
+- `pnpm test` passed：8 files / 87 tests。
+- `pnpm build` passed。
+- `git diff --check 30a8f10..HEAD` clean。
+
 ## Test Gap
 
-现有 Writer patch 测试已经覆盖 Zod schema、planId mismatch、unknown sceneCardId、scene-level unknown sourceRef、unknown character warning 和 schema failure。
+现有 Writer patch 测试已经覆盖 Zod schema、planId mismatch、unknown sceneCardId、duplicate sceneCardId、missing scene card draft、scene-level unknown sourceRef、block-level unknown sourceRef、unknown character semantic failure 和 schema failure。
 
-建议补充：
+仍建议补充：
 
-- `validateWriterScenePatch()` 拒绝缺失 scene card draft。
-- `validateWriterScenePatch()` 拒绝重复 sceneCardId。
-- `validateWriterScenePatch()` 拒绝 block-level unknown sourceRef。
-- unknown dialogue character 改为 fatal 后的 semantic failure 测试。
-- `applySceneDrafts()` 的最小测试：validated full patch 写回后 scene 数量与 patch / plan 一致，且 block ids 由本地 operation 分配。
+- Architect plan validator 的 `sceneOutline[].id` 唯一性测试。
+- 若后续支持 Writer 新增角色，再补 `CharacterPatch` / role roster update 测试。
 
 ## 后续动作
 
-- 先修复三处 Active Medium，再继续 Phase 3.4 local proxy。
+- 可以继续 Phase 3.4 local proxy / server boundary。
+- 在进入真实 SDK 前，补 Architect plan 的 `sceneOutline[].id` 唯一性校验，或将其作为 3.4 前置小修。
 - 不建议在本轮扩大到角色创建 patch；若需要支持 Writer 新增角色，应单独规划 `CharacterPatch` contract。
