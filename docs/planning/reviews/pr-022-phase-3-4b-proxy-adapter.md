@@ -1,6 +1,6 @@
 # PR: Phase 3.4b Frontend Proxy Adapter
 
-> 最近更新：2026-06-07
+> 最近更新：2026-06-07 (Fifth Review)
 > 对应分支：`feat/phase3.4b-proxy-adapter`
 > 对应 PR：GitHub #38
 > 对应阶段：Phase 3.4b `Frontend ProxyModelAdapter + provider switching`
@@ -13,7 +13,7 @@
 
 第一轮发现的 auto-detect、provider switching 和 response envelope guard 已在后续提交中修复。第二轮发现的“确认 scene outline 后立即 apply Writer patch”也已在 `2e7b235` 中拆成生成草稿和应用草稿两个阶段。
 
-`900b4a4` 已解决第三轮的两个核心 workflow 问题：pending `writerDraft` 会随 source、document、provider 和新 outline 失效；Writer 草稿预览也扩展到 heading、synopsis、source refs 和 block 摘要。最新复核仍建议在本 PR 内补一个 Medium：Topbar 的“剧本”按钮没有接入 `isGeneratingWriter`，Writer 请求进行中仍可重复触发生成。
+`900b4a4` 已解决第三轮的两个核心 workflow 问题：pending `writerDraft` 会随 source、document、provider 和新 outline 失效；Writer 草稿预览也扩展到 heading、synopsis、source refs 和 block 摘要。`6c38228` 修了 Topbar「剧本」按钮在 Writer 生成中的重复触发和 mock Writer 把 scene outline 元数据套壳成 draft 的问题。最新复核聚焦于 `25e29f3` 修复的多 scene 无法在中央 editor 查看/编辑的 workflow 问题。
 
 ## Findings
 
@@ -409,3 +409,40 @@ rg -n "openai|OpenAI|handleModelCall|OPENAI_API_KEY|sk-|responses\\.create|zodTe
 - `pnpm test` passed：13 files / 165 tests。
 - `pnpm e2e` passed：3 tests。
 - `dist/` 未发现 OpenAI SDK、handler、API key 变量名或疑似 secret。
+
+## Fifth Review Follow-Up (2026-06-07)
+
+### Focus Issue：中央 editor 只渲染第一场 scene，多 scene 不可查看/编辑
+
+位置：`src/App.tsx:241`（旧）、`src/App.tsx:669`（旧）
+
+`25e29f3` 已修复。
+
+问题根因不是数据丢失——`applySceneDrafts()` 把 `WriterScenePatch.scenes` 全部写入 `document.script.scenes`，YAML 导出也是 `.map(scenes)`。但 App 层只取了第一场：
+
+```ts
+const activeScene = workingDocument.script.scenes[0];
+```
+
+然后只把这一个 scene 传给 `ScriptEditorPanel`。`ScriptEditorPanel` 本身也只接收单个 `scene` prop，不含 scene 列表或选择器。
+
+对 3.4b 来说这是实际的 workflow 问题：Writer 生成多个 scene 后，用户只能在主编辑区看到第一场，会误以为后面的 scene 没写进去。
+
+#### 修复
+
+- 新增 `activeSceneIndex` state，替代硬编码 `scenes[0]`。
+- `useEffect` 在 scenes 数组缩小时（document 重置、重新生成 outline）clamp 当前选中索引到有效范围。
+- `activeScene` 取 `scenes[activeSceneIndex]`，fallback 到 `scenes[0]` 兜底空数组。
+- 当 `scenes.length > 1` 时，在编辑器上方渲染 scene tab 导航条，复用 Tabs 组件的视觉词表（`bg-[#f2ece2]` 背景、active tab 白底阴影）。
+- 单 scene 时 tab 条不渲染，与原有行为完全一致。
+- tab 点击时 `setActiveSceneIndex(index)` 切换编辑目标。
+
+#### 已验证
+
+```sh
+pnpm format:check   # ✅
+pnpm lint           # ✅
+pnpm build          # ✅
+pnpm test           # ✅ 13 files / 165 tests
+pnpm e2e            # ✅ 3 tests
+```
