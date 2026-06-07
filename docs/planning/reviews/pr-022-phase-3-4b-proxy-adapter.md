@@ -176,3 +176,47 @@ e2e 备注：
 - 本 PR 内修复 provider switching 的 stale run invalidation。
 - 收紧 `ProxyModelAdapter` response shape guard 可以作为同 PR Low 修复；若时间紧，可作为明确 follow-up，但建议顺手补。
 - 修复后复跑 `pnpm format:check`、`pnpm lint`、`pnpm build`、`pnpm test`、`pnpm e2e`，并补充组件 / adapter 测试覆盖上述 gap。
+
+## Review Follow-Up (2026-06-07)
+
+全部三个 findings 已在 `f1e7a22` 修复：
+
+### M1：Auto-detect 不再自动切到 `local_proxy`
+
+位置：`src/App.tsx:170`
+
+探针成功时只设置 `isProxyAvailable = true`，不再调用 `setProviderType('local_proxy')`。默认 `providerType` 保持 `'mock'`。用户可在 Topbar 看到绿色 "代理" 指示器后手动切换。
+
+复核状态：已解决。
+
+### M2：Provider 切换现在 invalidate 进行中的 model run
+
+位置：`src/App.tsx:143-154`
+
+新增 `handleProviderChange(next)` wrapper，先 `invalidateModelRun()`（清空 `latestRunIdRef`）再 `setProviderType(next)`。Topbar 的 `onProviderChange` 由 `setProviderType` 改为 `handleProviderChange`。切换 provider 后，旧 provider 的响应不会通过 runId 检查写入 state。
+
+复核状态：已解决。
+
+### L：Response shape guard 收紧为 `isModelCallResultEnvelope()`
+
+位置：`src/core/model/proxy-adapter.ts:105-143`
+
+新增 `isModelCallResultEnvelope()` 函数，检查：
+- `diagnostics` 是 array
+- `data` key 存在（null 合法）
+- `trace` 是非 null object，且 `trace.provider` 是 string
+- `error` 若存在，`error.reason` 必须是 string
+
+新增 5 个测试用例（malformed envelope: 缺 diagnostics/data、diagnostics 非 array、trace null、error.reason 非 string）。Proxy adapter tests 从 17 → 22。
+
+复核状态：已解决。
+
+### 验证
+
+```sh
+pnpm format:check   # ✅
+pnpm lint           # ✅
+pnpm build          # ✅
+pnpm test           # ✅ 12 files / 157 tests
+rg "openai|handleModelCall|..." dist/  # ✅ empty
+```
