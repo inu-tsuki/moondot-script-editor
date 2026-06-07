@@ -25,7 +25,7 @@
 - Phase 3.4-pre (Golden Fox)：provider-facing schema 兼容性验证已完成。安装了 `openai` SDK（v6.42.0），建立了 `src/core/adaptation/provider-schemas/` 目录包含 Architect / Writer 的 provider-facing Zod schemas、normalizer 和 registry。`src/server/` 目录已建立 middleware 骨架。两个 schema id 的 provider-facing JSON Schema snapshot 和 roundtrip 测试已通过。
 - Phase 3.4 Vite local proxy handler：`/api/model/call` dev-server endpoint 已实现，挂在 Vite `configureServer()` middleware 上。Pipeline：`ModelCallRequest → OpenAI Responses API → structured output → parseAndNormalizeProviderOutput → app-side Zod structural validation → ModelCallResult`。Structural error 映射覆盖 config_missing / network / refusal / empty_output / parse / schema（semantic 由 client 端 `validateAdaptationPlan` / `validateWriterScenePatch` 负责）。Handler 和 19 个测试已在 `src/server/handler.ts` 和 `tests/server/handler.test.ts`。注意：`pnpm build` 产物不包含 `/api/model/call`；部署需要额外 API host 或继续走 `pnpm dev` local proxy。
 
-Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.4b：前端 ProxyModelAdapter 实现。
+Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.4b：前端 ProxyModelAdapter 实现。3.4b 只负责打通真实调用闭环，不做完整 IDE 化；完成后进入升级后的 Phase 3.5 Agent tool surfaces / IDE-ready UI。
 
 ## 近期原则
 
@@ -121,6 +121,8 @@ typed workflow
 
 目标：建立真实模型调用的安全入口，用 OpenAI JS SDK 证明 `schemaId -> structured output -> app-side validation` 的真实路径。
 
+状态：3.4-pre provider schema compatibility 和 3.4 Vite local proxy handler 已完成；剩余 3.4b 负责前端 `ProxyModelAdapter` 与最小 provider switching UI。
+
 建议内容：
 
 - 增加最小 local proxy 或 dev server endpoint。
@@ -145,6 +147,34 @@ typed workflow
 - `openai` SDK 只在 proxy / server import path 中出现。
 - 两个 schema id 都有 OpenAI structured output compatibility 检查或等价测试。
 - Writer optional 字段有 required nullable / required empty-array / normalizer 策略。
+
+3.4b 收口边界：
+
+- 实现 `ProxyModelAdapter`，通过 `fetch('/api/model/call')` 发送可序列化 `ModelCallRequest`。
+- UI 可在 `mock` / `local_proxy` 间切换，并清楚展示当前 provider 与配置状态。
+- `local_proxy` success 仍必须进入现有 app-side semantic validation path：`validateAdaptationPlan` / `validateWriterScenePatch`。
+- `local_proxy` failure 进入现有 diagnostics / trace，不直接写入 `ScreenplayDocument`。
+- 不做三栏可变 IDE shell、不做 agent conversation page、不迁移 output tabs；这些放入 3.5。
+- 测试覆盖 proxy adapter success/failure、provider switching、semantic validation 不被绕过，以及未配置 key 的 fallback / diagnostic 行为。
+
+### PR E：Agent tool surfaces / IDE-ready UI
+
+目标：把真实调用闭环上的状态、artifact 和 validation 结果整理成一组可独立审查的工具 UI，而不是一次性重做完整 IDE。
+
+建议顺序：
+
+- Phase 3.5a：Workbench shell and activity rail。建立 Source、Outline、Agent、Validation、Export 等 tool entry，但先不引入完整 agent runtime。
+- Phase 3.5b：Model run monitor tool。展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类。
+- Phase 3.5c：Architect tool surface。集中展示 source summary、preferences、prompt 摘要、`AdaptationPlan`、questions、scene outline 和 plan validation。
+- Phase 3.5d：Writer tool surface。以 confirmed `SceneCard` 为单位展示 Writer queue、patch preview、semantic validation 和 apply 前状态。
+- Phase 3.5e：Validation and export tool surface。整合 diagnostics、YAML projection、schema 链接和 demo readiness。
+
+完成标准：
+
+- 每个 tool surface 都能单独 review 和合并，不要求一次性完成整套 IDE shell。
+- 中央手稿编辑区仍是主工作区；新三栏 / activity rail 不能破坏已有编辑、outline、YAML 和 diagnostics 流程。
+- Agent 对话式页面只作为后续可选切片，必须调用 typed workflow，不直接开放任意工具执行。
+- UI、editor、toolbar、output panel 或 responsive layout 改动运行 `pnpm e2e`，或在 PR 中明确说明环境缺口。
 
 ## 暂缓事项
 

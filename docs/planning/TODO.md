@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-Phase 3 已完成 model adapter contract、Structured Architect contract 和 Writer scene patch contract。当前重点是启动 Phase 3.4 local proxy / server boundary，并在接 OpenAI SDK 前完成现有 Zod schemas 的 structured output compatibility audit。
+Phase 3 已完成 model adapter contract、Structured Architect contract、Writer scene patch contract、OpenAI structured output compatibility audit 和 Vite local proxy handler。当前重点是 Phase 3.4b frontend proxy adapter，先打通 UI -> `/api/model/call` -> OpenAI -> validated artifact 的真实调用闭环；随后进入升级后的 Phase 3.5 Agent tool surfaces / IDE-ready UI。
 
 ## 已完成
 
@@ -76,7 +76,11 @@ Phase 3 已完成 model adapter contract、Structured Architect contract 和 Wri
 ## 下一步
 
 - [ ] Phase 3.4b：前端 `ProxyModelAdapter` 实现，对接 `/api/model/call` endpoint，让 UI 可在 mock / local_proxy 之间切换。必须复用现有 app-side semantic validation path（`validateAdaptationPlan` / `validateWriterScenePatch`），不能把 server structural success 直接写入 state。
-- [ ] 设计 Phase 3.5 model trace / diagnostics 在 output tabs 中的展示方式，避免和 YAML、outline 互相挤压。
+- [ ] Phase 3.5a：Workbench shell and activity rail，建立 IDE-ready 的工具外壳，承载 Source、Outline、Agent、Validation、Export 等 tool surfaces；不在这一段引入完整 agent runtime。
+- [ ] Phase 3.5b：Model run monitor tool，展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类；不显示 secret。
+- [ ] Phase 3.5c：Architect tool surface，集中展示 source summary、preferences、prompt 摘要、`AdaptationPlan`、questions、scene outline 和 plan validation。
+- [ ] Phase 3.5d：Writer tool surface，以 confirmed `SceneCard` 为单位展示 Writer queue、patch preview、semantic validation 和 apply 前状态。
+- [ ] Phase 3.5e：Validation and export tool surface，整合 diagnostics、YAML projection、schema 链接和 demo readiness。
 - [ ] 做 Phase 3.6 repair and fallback hardening，覆盖 parse、schema、semantic validation、network 和 config failures。
 - [ ] 准备正式 demo 路径：3+ 章节输入、改编方案确认、语义块编辑、YAML 导出、Schema 文档链接。
 

@@ -1,7 +1,7 @@
 # Phase 3: Model Workflow
 
 > 最近更新：2026-06-07  
-> 状态：Phase 3.3 已合并；当前准备 Phase 3.4 local proxy / OpenAI structured output。
+> 状态：Phase 3.4 Vite local proxy handler 已完成；当前准备 Phase 3.4b frontend proxy adapter，并将 Phase 3.5 升级为分段 Agent tool UI。
 
 Phase 3 是月点 MVP 中风险最高的一段。它不是简单地把 mock 替换成一次 LLM 调用；它要把真实模型接入已经建立的 typed workflow：
 
@@ -290,22 +290,113 @@ Phase 3 暂不做：
 - refusal、empty output、parse、schema、semantic 和 config missing 至少有 adapter 层测试或手动验证记录。
 - PR 明确验证方式和未配置 key 时的行为。
 
-### Phase 3.5：Trace / diagnostics UI
+### Phase 3.5：Agent tool surfaces / IDE-ready UI
 
-目标：让模型调用过程在 output tabs 中可见。
+目标：在真实调用闭环稳定后，把模型工作流从“按钮 + output tabs”升级为可观察、可切换、可审查的工具型 UI。3.5 不引入完整 agent graph runtime，也不一次性重做整座工作台；它把 IDE 化拆成多个可独立 review 的 tool surfaces。
+
+总体原则：
+
+- 中央 `ScriptEditorPanel` 仍是主工作区，三栏或 activity rail 不能挤压手稿版心。
+- 每个 tool surface 只消费 typed artifacts、`GenerationRun`、diagnostics 和 `ModelCallResult`，不直接读写 provider 私有结构。
+- `mock` 与 `local_proxy` 共用同一 UI 状态模型；provider 差异只体现在 config、trace 和 failure reason。
+- Agent 对话页先作为“typed workflow transcript / command surface”，不承诺自由形态多工具 agent runtime。
+- 任何 UI 改动都保留窄屏回退，并运行 `pnpm e2e` 或在 PR 中说明缺口。
+
+建议分段：
+
+#### Phase 3.5a：Workbench shell and activity rail
+
+目标：建立 IDE-ready 的外壳，而不是立刻塞满功能。
 
 建议内容：
 
-- 增加 model trace tab 或 diagnostics 区块。
-- 展示 Architect / human review / Writer / validation / fallback 的阶段状态。
-- 展示模型配置状态，但不显示 secret。
-- 将 trace 与现有 `GenerationRun` / diagnostics 合并或并列呈现。
+- 把现有 source / outline / YAML / diagnostics output tabs 梳理成可被 activity rail 或右侧 tool dock 承载的结构。
+- 引入稳定的 tool navigation：Source、Outline、Agent、Validation、Export 等入口可以先是轻量切换，不要求全部实现新功能。
+- 保持三栏工作台可变但克制：左侧来源与配置、中央手稿、右侧工具区；窄屏下工具区进入 tab / drawer 回退。
+- 不在这一段引入真实 agent 对话逻辑，只搭载后续 tool surfaces 的布局容器和状态边界。
 
 完成标准：
 
-- 用户能理解当前是 mock、真实模型、fallback 还是 validation failure。
-- trace 不挤压中央手稿编辑区。
-- UI、output panel 或 responsive layout 改动跑 `pnpm e2e`。
+- 中央手稿编辑区不被新工具栏或右侧 dock 挤压到不可用。
+- 现有 source ingestion、outline preview、YAML export、diagnostics 和编辑器 e2e smoke 不退化。
+- activity rail / tool dock 的选中状态只属于 UI state，不写入 `ScreenplayDocument`。
+
+#### Phase 3.5b：Model run monitor tool
+
+目标：把 3.4b 的真实调用状态变成可见的 run monitor。
+
+建议内容：
+
+- 展示当前 provider：`mock` / `local_proxy`、模型配置状态、当前 stage、runId、loading / success / failure。
+- 展示 Architect / human review / Writer / validation / fallback 的阶段状态和 trace event。
+- failure 按 `ModelCallError.reason` 分组展示：config、network、refusal、empty output、parse、schema、semantic。
+- 不显示 API key、raw secret、完整私密请求头；需要 raw payload 时只显示可序列化 prompt messages / schema id / artifact summary。
+
+完成标准：
+
+- 用户能判断当前结果来自 mock、真实模型、fallback 还是 validation failure。
+- run monitor 不取代 diagnostics；它解释调用过程，diagnostics 解释 artifact/document 问题。
+- 有组件测试或 e2e 覆盖 provider 状态、loading、failure 和 success summary。
+
+#### Phase 3.5c：Architect tool surface
+
+目标：把改编方案生成从单个按钮升级成可审查的 Architect 工具页。
+
+建议内容：
+
+- 集中展示 source summary、adaptation preferences、prompt messages 摘要、`AdaptationPlan`、questions 和 scene outline。
+- 支持按 scene card 查看 source refs、writer brief、风险提示和 validation diagnostics。
+- 保留 human review pause：用户确认 outline 后才允许进入 Writer。
+- 不让 Architect 直接写 `ScreenplayDocument.script`。
+
+完成标准：
+
+- Architect 工具能同时展示 mock 与 local proxy 的 plan 结果。
+- invalid plan 不会被确认，不会进入 Writer。
+- 现有 outline preview 行为不退化，必要时迁移到 Architect tool 中。
+
+#### Phase 3.5d：Writer tool surface
+
+目标：把 Writer 从“确认后写入”升级为可观察的 scene patch 工具。
+
+建议内容：
+
+- 以 confirmed `SceneCard` 为单位展示 Writer queue / run status / patch preview。
+- 展示 `WriterScenePatch` 的结构化摘要：scene metadata、blocks、source refs、characters、warnings。
+- Apply 前展示 semantic validation 结果；失败时保留当前 document，不写入坏 patch。
+- 为 retry / fallback / repair 预留入口，但自动 repair 仍放到 Phase 3.6。
+
+完成标准：
+
+- Writer 工具只处理 `WriterScenePatch`，不接受完整 `ScreenplayDocument` 模型输出。
+- scene patch 写回仍通过 document operation。
+- Writer failure 不破坏当前手稿。
+
+#### Phase 3.5e：Validation and export tool surface
+
+目标：把 diagnostics、YAML 和提交前质量检查从“输出 tab”升级成发布工具。
+
+建议内容：
+
+- 合并 document diagnostics、model diagnostics、schema validation、YAML projection 状态。
+- 保留 YAML copy / download，显示导出版本、schema 链接和当前 document health。
+- 为 demo path 显示关键 readiness：3+ 章节来源、outline confirmed、writer draft generated、YAML valid。
+
+完成标准：
+
+- YAML projection 与 `ScreenplayDocument` validation 保持一致。
+- 用户能在一个工具页内看到“能否导出 / 不能导出的原因”。
+- 不把 YAML 变成模型输入或主事实来源。
+
+可选后续切片：
+
+- Agent conversation surface：在 3.5a-3.5d 稳定后，把 Architect / Writer / Validation 的 typed events 渲染成对话式 transcript，并允许用户发起受控 command。它仍应调用现有 typed workflow，不直接开放任意工具执行。
+
+完成标准：
+
+- 3.5 每个 PR 都能独立合并，不要求一次性完成全部 IDE shell。
+- 用户能在工具区理解：当前在做什么、由哪个 provider 做、产出了哪个 artifact、是否通过 validation、下一步能做什么。
+- 新 UI 不破坏 3.4b 的真实调用闭环，也不绕过 3.2 / 3.3 的 schema 与 semantic validation。
 
 ### Phase 3.6：Repair and fallback hardening
 
