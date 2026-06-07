@@ -119,7 +119,7 @@ Phase 0: 文档和范围锁定
 - 强化 structured prompt contract、输出解析和修复策略。
 - 将 Architect 解析 / 提问 / writer brief 与 Writer 初稿生成的 contract 固化到代码。
 - 建立安全 server-side / local proxy 边界，避免 API key 暴露在浏览器端。
-- 将 UI 信息架构收敛为 Editor / Converter 双 workspace，再把模型 trace、失败恢复、diagnostics 和导出状态整理进 dock / tool surfaces。
+- 将 UI 信息架构收敛为 Editor / Converter 双栏工作台，再把模型 trace、失败恢复和 artifact diagnostics 整理进 dock / tool surfaces；YAML 导出始终从当前 Editor document 发起。
 - 完成导出交互和提交演示路径。
 - README 链接到 Schema 文档、运行方式和 demo 视频。
 - 检查 README、Schema 文档和 demo 没有把长期 IDE 能力写成当前 MVP 承诺。

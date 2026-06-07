@@ -77,11 +77,11 @@ Phase 3 已完成 model adapter contract、Structured Architect contract、Write
 ## 下一步
 
 - [ ] Phase 3.4b follow-up：Topbar 中 import 按钮当前无功能，可考虑连接文件导入。
-- [ ] Phase 3.5a：Workspace shell and dock foundation，建立 `Editor` / `Converter` 双 workspace、统一 dock、Topbar app-level 行为边界，并把组件组织从 `components/panels` 平铺迁移到 shell / editor / converter 边界；不在这一段引入完整 agent runtime。
-- [ ] Phase 3.5b：Converter workspace consolidation，将 source、preferences、outline、Writer draft preview、diagnostics、YAML 组织为 Input / Plan / Draft / Validate / Export 的单一 converter workflow。
+- [ ] Phase 3.5a：Workspace shell and dock foundation，建立 `Editor` / `Converter` 双栏 workspace、统一 dock preset、Topbar app-level 行为边界，并把组件组织从 `components/panels` 平铺迁移到 shell / editor / converter 边界；不在这一段引入完整 agent runtime。
+- [ ] Phase 3.5b：Converter workspace consolidation，将 source、preferences、outline、Writer draft preview、diagnostics 组织为 Input / Plan / Draft / Validate / Apply 的单一 converter workflow；YAML export 保留在 Editor，因为它导出当前已写入 document。
 - [ ] Phase 3.5c：Editor workspace stabilization，把 scene navigation 收进 Editor 自身 header / rail / document flow，保留多 scene 可发现、可切换、可编辑。
 - [ ] Phase 3.5d：Run monitor and artifact trace，展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类；不显示 secret。
-- [ ] Phase 3.5e：Dedicated Architect / Writer / Validation surfaces，在 workspace / dock 稳定后强化 Architect、Writer、Validation / Export 专用工具视图。
+- [ ] Phase 3.5e：Dedicated Architect / Writer / Validation surfaces，在 workspace / dock 稳定后强化 Architect、Writer、Validation / demo readiness 专用工具视图。
 - [ ] 做 Phase 3.6 repair and fallback hardening，覆盖 parse、schema、semantic validation、network 和 config failures。
 - [ ] 准备正式 demo 路径：3+ 章节输入、改编方案确认、语义块编辑、YAML 导出、Schema 文档链接。
 
