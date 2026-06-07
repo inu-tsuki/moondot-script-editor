@@ -122,6 +122,8 @@ function App() {
   // Synchronous gate to prevent duplicate Writer calls within the same event
   // batch (useState closures are stale until next render).
   const generatingRef = useRef(false);
+  // Which scene is currently shown in the central editor.
+  const [activeSceneIndex, setActiveSceneIndex] = useState(0);
 
   // ---------------------------------------------------------------------------
   // Model adapter — stable reference, reads latest state via refs
@@ -238,7 +240,17 @@ function App() {
   );
   // Keep docRef in sync with the derived working document used by all call sites.
   docRef.current = workingDocument;
-  const activeScene = workingDocument.script.scenes[0];
+  // Clamp activeSceneIndex when scenes array shrinks below current index
+  // (e.g. document reset, outline regeneration).  Using useEffect keeps
+  // the setState out of the render path.
+  useEffect(() => {
+    const maxIndex = Math.max(0, workingDocument.script.scenes.length - 1);
+    if (activeSceneIndex > maxIndex) {
+      setActiveSceneIndex(maxIndex);
+    }
+  }, [workingDocument.script.scenes.length, activeSceneIndex]);
+  const activeScene =
+    workingDocument.script.scenes[activeSceneIndex] ?? workingDocument.script.scenes[0];
   const chapterCount =
     workingDocument.source.type === 'novel'
       ? workingDocument.source.chapters.length
@@ -666,13 +678,36 @@ function App() {
           </PanelShell>
         }
         center={
-          <ScriptEditorPanel
-            charactersById={charactersById}
-            scene={activeScene}
-            selectedBlockId={selectedBlockId}
-            onEdit={handleEdit}
-            onUpdateBlockText={handleUpdateBlockText}
-          />
+          <>
+            {workingDocument.script.scenes.length > 1 && (
+              <nav
+                aria-label="场景导航"
+                className="flex flex-wrap gap-1 rounded-md bg-[#f2ece2] p-1"
+              >
+                {workingDocument.script.scenes.map((scene, index) => (
+                  <button
+                    key={scene.id}
+                    className={
+                      index === activeSceneIndex
+                        ? 'min-h-8 rounded bg-white px-2.5 text-xs font-extrabold text-[#17211d] shadow-sm'
+                        : 'min-h-8 rounded bg-transparent px-2.5 text-xs font-extrabold text-[#66716b] hover:bg-[#fffaf2]'
+                    }
+                    type="button"
+                    onClick={() => setActiveSceneIndex(index)}
+                  >
+                    Scene {index + 1} · {scene.title}
+                  </button>
+                ))}
+              </nav>
+            )}
+            <ScriptEditorPanel
+              charactersById={charactersById}
+              scene={activeScene}
+              selectedBlockId={selectedBlockId}
+              onEdit={handleEdit}
+              onUpdateBlockText={handleUpdateBlockText}
+            />
+          </>
         }
         right={
           <PanelShell className="panel-output">
