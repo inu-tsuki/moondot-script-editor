@@ -215,6 +215,21 @@ describe('validateAdaptationPlan', () => {
       expect(result.plan).not.toBeNull();
       expect(result.error).toBeUndefined();
     });
+
+    it('rejects duplicate sceneOutline[].id', () => {
+      const plan = makeValidPlan();
+      // Clone the first card to create a duplicate id.
+      const cards = [
+        plan.sceneOutline[0],
+        { ...plan.sceneOutline[0] },
+        ...plan.sceneOutline.slice(1),
+      ];
+      const result = validateAdaptationPlan({ ...plan, sceneOutline: cards }, { knownChapterIds });
+
+      expect(result.plan).toBeNull();
+      expect(result.error?.reason).toBe('semantic');
+      expect(result.diagnostics[0].code).toBe('duplicate_scene_card_id');
+    });
   });
 
   describe('adaptationQuestions', () => {

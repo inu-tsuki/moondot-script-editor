@@ -110,6 +110,43 @@ export type AdaptationPlan = {
   risks: string[];
 };
 
+// ---------------------------------------------------------------------------
+// Writer scene patch types
+// ---------------------------------------------------------------------------
+
+export type SceneBlockDraft =
+  | { type: 'action'; text: string; sourceRefs?: SourceRef[] }
+  | {
+      type: 'dialogue';
+      characterId: string;
+      parenthetical?: string;
+      text: string;
+      sourceRefs?: SourceRef[];
+    }
+  | {
+      type: 'narration';
+      voice?: 'voice_over' | 'off_screen' | 'narrator';
+      text: string;
+      sourceRefs?: SourceRef[];
+    }
+  | { type: 'transition'; text: string; sourceRefs?: SourceRef[] }
+  | { type: 'note'; text: string; sourceRefs?: SourceRef[] };
+
+export type SceneDraft = {
+  sceneCardId: string;
+  title: string;
+  synopsis?: string;
+  heading: SceneHeading;
+  sourceRefs: SourceRef[];
+  blocks: SceneBlockDraft[];
+};
+
+export type WriterScenePatch = {
+  planId: string;
+  scenes: SceneDraft[];
+  characterUpdates?: string[];
+};
+
 export type GenerationTraceStep = {
   label: string;
   detail: string;

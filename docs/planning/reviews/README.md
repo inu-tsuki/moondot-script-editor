@@ -1,6 +1,6 @@
 # PR Reviews
 
-> 最近更新：2026-06-06
+> 最近更新：2026-06-07
 
 这里记录已合并或正在审查的 PR 的工程回顾、review 意见和后续动作。它回答“这次审查里我们学到了什么，以及下一步应该怎么修正”。
 
@@ -22,6 +22,8 @@
 - [pr-014-industrial-manuscript-ui-polish.md](pr-014-industrial-manuscript-ui-polish.md)：PR #14 `feat/industrial-manuscript-ui-polish`（GitHub #26）的 review，关注工业化手稿 UI、toolbar gutter、视觉节奏和窄屏回退。
 - [pr-015-frontend-test-harness.md](pr-015-frontend-test-harness.md)：PR #15 `chore/frontend-test-harness`（GitHub #27）的 review，关注 Vitest / Testing Library / Playwright 测试护栏、e2e 环境边界和后续质量节奏。
 - [pr-016-model-adapter-contract.md](pr-016-model-adapter-contract.md)：PR #16 `feat/model-adapter-contract`（Phase 3.1）的 review，关注模型适配层 contract、typed artifact、失败分类、异步边界和测试缺口。
+- [pr-017-structured-architect-contract.md](pr-017-structured-architect-contract.md)：PR #17 `phase-3.2-structured-architect-contract` 的 review，关注 Architect Zod schema、structured output envelope、semantic validation 和 prompt 失败语义。
+- [pr-018-writer-brief-scene-draft-contract.md](pr-018-writer-brief-scene-draft-contract.md)：PR #18 `feat/phase3.3-writer-contract-planning` 的 review，关注 WriterScenePatch validation、document write-back 边界和 sceneCard/sourceRef/character 引用完整性。
 
 ## 维护规则
 

@@ -103,7 +103,7 @@ describe('mock model adapter', () => {
   });
 
   describe('scene_draft stage', () => {
-    it('returns a document with success trace when a plan is available', async () => {
+    it('returns a patch with success trace when a plan is available', async () => {
       // First generate a plan so we have one to pass.
       const planAdapter = createMockModelAdapter(createContext(novelDocument));
       const planResult = await planAdapter.call({
@@ -121,7 +121,7 @@ describe('mock model adapter', () => {
       });
 
       expect(result.data).not.toBeNull();
-      expect(result.data?.script.scenes.length).toBeGreaterThan(0);
+      expect(result.data?.scenes.length).toBeGreaterThan(0);
       expect(result.trace.outcome).toBe('success');
       expect(result.trace.fallbackReason).toBeUndefined();
     });
@@ -174,7 +174,7 @@ describe('mock model adapter', () => {
       expect(Array.isArray(plan!.sceneOutline)).toBe(true);
     });
 
-    it('returns ScreenplayDocument for scene_draft stage (runtime check)', async () => {
+    it('returns WriterScenePatch for scene_draft stage (runtime check)', async () => {
       const planAdapter = createMockModelAdapter(createContext(novelDocument));
       const planResult = await planAdapter.call({
         messages: [],
@@ -189,15 +189,18 @@ describe('mock model adapter', () => {
         stage: 'scene_draft',
       });
 
-      // Verify the shape matches ScreenplayDocument at runtime.
-      const doc = result.data;
-      expect(doc).toBeTruthy();
-      expect(doc).toHaveProperty('documentVersion');
-      expect(doc).toHaveProperty('project');
-      expect(doc).toHaveProperty('source');
-      expect(doc).toHaveProperty('characters');
-      expect(doc).toHaveProperty('script');
-      expect(Array.isArray(doc!.script.scenes)).toBe(true);
+      // Verify the shape matches WriterScenePatch at runtime.
+      const patch = result.data;
+      expect(patch).toBeTruthy();
+      expect(patch).toHaveProperty('planId');
+      expect(patch).toHaveProperty('scenes');
+      expect(Array.isArray(patch!.scenes)).toBe(true);
+      expect(patch!.scenes.length).toBeGreaterThan(0);
+      expect(patch!.scenes[0]).toHaveProperty('sceneCardId');
+      expect(patch!.scenes[0]).toHaveProperty('title');
+      expect(patch!.scenes[0]).toHaveProperty('heading');
+      expect(patch!.scenes[0]).toHaveProperty('sourceRefs');
+      expect(Array.isArray(patch!.scenes[0].blocks)).toBe(true);
     });
   });
 });

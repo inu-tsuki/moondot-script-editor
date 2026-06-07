@@ -1,5 +1,5 @@
 import type { AdaptationPlan, AdaptationPreferences, NovelAdaptationResult } from '../adaptation';
-import { draftNovelAdaptationFromPlanMock, planNovelAdaptationMock } from '../adaptation';
+import { createMockWriterScenePatch, planNovelAdaptationMock } from '../adaptation';
 import type { ScreenplayDocument } from '../screenplay';
 import type {
   ModelAdapter,
@@ -153,17 +153,17 @@ export const createMockModelAdapter = (ctx: MockAdapterContext): ModelAdapter =>
         } as ModelCallResult<ModelStagePayloadMap[S]>;
       }
 
-      const result = draftNovelAdaptationFromPlanMock({
-        document: ctx.getDocument(),
-        plan,
-      });
-      return mapResult(
-        result,
-        MOCK_PROVIDER_CONFIG.provider,
-        stage,
-        result.document,
+      const { patch, diagnostics } = createMockWriterScenePatch(plan, ctx.getDocument());
+      return {
+        data: patch as ModelStagePayloadMap[S],
+        diagnostics: [...diagnostics],
+        trace: {
+          provider: MOCK_PROVIDER_CONFIG.provider,
+          stage,
+          outcome: 'success',
+        },
         runId,
-      ) as ModelCallResult<ModelStagePayloadMap[S]>;
+      } as ModelCallResult<ModelStagePayloadMap[S]>;
     }
 
     // -- fallback for unrecognised stages --

@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-Phase 3 正式规划已启动。当前重点是把 Phase 2 的 mock adaptation workflow 推进为 mock fallback 和真实模型共用的 typed model workflow：先落 model adapter contract，再落 Architect / Writer structured output schema、server-side 调用边界、trace、repair 和 demo hardening。
+Phase 3 已完成 model adapter contract 和 Structured Architect contract。当前重点是把 Writer 阶段从 mock document 生成收窄为可验证 scene patch，并为后续 local proxy / real SDK 建立 schema id 到 structured output schema 的映射路径。
 
 ## 已完成
 
@@ -66,13 +66,13 @@ Phase 3 正式规划已启动。当前重点是把 Phase 2 的 mock adaptation w
 - [x] 更新 README、roadmap、next direction、review 索引和测试说明，让文档与 #24-#27 合并后的代码状态一致。
 - [x] 复核 `pnpm e2e` 的本地运行路径，明确代理环境下使用 `NO_PROXY=127.0.0.1,localhost`。
 - [x] 启动 Phase 3 正式规划，定义模型调用层、structured output、mock fallback、server-side secret 边界、trace 和 demo hardening 的 PR 顺序。
+- [x] 实现 Phase 3.1 model adapter contract，让 mock fallback 和未来真实模型共用 `ModelCallRequest` / `ModelCallResult` / `ModelCallError`。
+- [x] 实现 Phase 3.2 Structured Architect contract，为 Architect plan 建立 Zod schema / runtime validation，并预留可序列化 `structuredOutput: { schemaId }` envelope。
 
 ## 下一步
 
-- [ ] 实现 Phase 3.1 model adapter contract，让 mock fallback 和未来真实模型共用 `ModelCallRequest` / `ModelCallResult` / `ModelCallError`。
-- [ ] 实现 Phase 3.2 Structured Architect contract，为 `SourceAnalysis`、`AdaptationQuestion[]`、`questionAnswers`、`SceneCard[]` 和 `recommendedPlan` 建立 Zod schema / runtime validation，并预留 model structured output envelope。
-- [ ] 实现 Phase 3.3 WriterBrief and scene draft contract，让 Writer 只根据确认后的 scene-level brief 生成可验证 scene patch。
-- [ ] 建立 Phase 3.4 local model proxy / server boundary，避免 API key 暴露在浏览器端。
+- [ ] 实现 Phase 3.3 WriterBrief and scene draft contract，让 Writer 只根据确认后的 scene-level brief 生成可验证 scene patch，并通过 `structuredOutput: { schemaId }` 复用 Phase 3.2 的模型 envelope。
+- [ ] 建立 Phase 3.4 local model proxy / server boundary，避免 API key 暴露在浏览器端，并用 server-side schema registry 将 Architect / Writer `schemaId` 映射到真实 SDK structured output 参数。
 - [ ] 设计 Phase 3.5 model trace / diagnostics 在 output tabs 中的展示方式，避免和 YAML、outline 互相挤压。
 - [ ] 做 Phase 3.6 repair and fallback hardening，覆盖 parse、schema、semantic validation、network 和 config failures。
 - [ ] 准备正式 demo 路径：3+ 章节输入、改编方案确认、语义块编辑、YAML 导出、Schema 文档链接。

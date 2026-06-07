@@ -1,5 +1,4 @@
-import type { AdaptationPlan, PromptMessage } from '../adaptation';
-import type { ScreenplayDocument } from '../screenplay';
+import type { AdaptationPlan, PromptMessage, WriterScenePatch } from '../adaptation';
 import type { Diagnostic } from '../validation';
 
 // ---------------------------------------------------------------------------
@@ -65,7 +64,7 @@ export type ModelStage = 'adaptation_planning' | 'scene_draft';
  */
 export type ModelStagePayloadMap = {
   adaptation_planning: AdaptationPlan;
-  scene_draft: ScreenplayDocument;
+  scene_draft: WriterScenePatch;
 };
 
 // ---------------------------------------------------------------------------
