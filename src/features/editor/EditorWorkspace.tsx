@@ -1,3 +1,4 @@
+import { buildDefaultBlockDraft } from '../../core/screenplay';
 import type {
   BlockId,
   CharacterId,
@@ -5,8 +6,8 @@ import type {
   EditAction,
   SceneNode,
 } from '../../core/screenplay';
+import { EditorHeader } from './EditorHeader';
 import { ExportBar } from './ExportBar';
-import { SceneNavigator } from './SceneNavigator';
 import { ScriptEditorPanel } from './ScriptEditorPanel';
 
 type EditorWorkspaceProps = {
@@ -50,9 +51,23 @@ export function EditorWorkspace({
   onCopyYaml,
   onDownloadYaml,
 }: EditorWorkspaceProps) {
+  const handleAppendBlock = (type: string) => {
+    if (!activeScene) return;
+    const draft = buildDefaultBlockDraft(type, [...charactersById.values()]);
+    if (!draft) return;
+    onEdit({ type: 'append-block', sceneId: activeScene.id, draft });
+  };
+
   return (
     <section className="flex flex-1 flex-col min-h-0 gap-3" aria-label="Editor workspace">
-      <SceneNavigator scenes={scenes} activeIndex={activeSceneIndex} onSelect={onSelectScene} />
+      <EditorHeader
+        scenes={scenes}
+        activeSceneIndex={activeSceneIndex}
+        onSelectScene={onSelectScene}
+        allCharacters={[...charactersById.values()]}
+        hasActiveScene={activeScene !== undefined}
+        onAppendBlock={handleAppendBlock}
+      />
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         <ScriptEditorPanel
