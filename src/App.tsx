@@ -14,10 +14,13 @@ import {
 } from './components/panels';
 import {
   ADAPTATION_PLAN_SCHEMA_ID,
+  WRITER_SCENE_PATCH_SCHEMA_ID,
+  applySceneDrafts,
   buildNovelAdaptationPrompt,
   buildNovelSceneWriterPrompt,
   defaultAdaptationPreferences,
   validateAdaptationPlan,
+  validateWriterScenePatch,
 } from './core/adaptation';
 import { createMockModelAdapter } from './core/model';
 import { serializeDocumentToYaml } from './core/serialization';
@@ -392,6 +395,7 @@ function App() {
         messages,
         stage: 'scene_draft',
         runId,
+        structuredOutput: { schemaId: WRITER_SCENE_PATCH_SCHEMA_ID },
       });
 
       // Discard stale results.
@@ -404,17 +408,36 @@ function App() {
         return;
       }
 
-      setScreenplayDocument(result.data);
+      // Validate the Writer output before applying it.
+      const knownChapterIds = new Set(
+        workingDocument.source.type === 'novel'
+          ? workingDocument.source.chapters.map((c) => c.id)
+          : [],
+      );
+      const knownCharacterIds = new Set(workingDocument.characters.map((c) => c.id));
+      const validated = validateWriterScenePatch(result.data, {
+        plan: adaptationPlan,
+        knownChapterIds,
+        knownCharacterIds,
+      });
+
+      if (!validated.patch) {
+        setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
+        return;
+      }
+
+      // Apply via document operation — only script.scenes is replaced.
+      setScreenplayDocument((prev) => applySceneDrafts(prev, validated.patch!));
       setAdaptationTrace((currentTrace) => [
         ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
         {
           label: 'model-writing',
-          detail: `通过 ${result.trace.provider} provider 写入 ScreenplayAst 草稿。`,
+          detail: `通过 ${result.trace.provider} provider 写入 ${validated.patch!.scenes.length} 个 scene draft。`,
           stage: 'scene_draft',
           artifactType: 'writer_draft',
         },
       ]);
-      setAdaptationDiagnostics(result.diagnostics);
+      setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
       setExportFeedback('');
       clearSelection();
     } catch (err) {

@@ -1,8 +1,10 @@
+export { applySceneDrafts } from './apply-scene-drafts';
 export {
   buildNovelAdaptationPrompt,
   buildNovelSceneWriterPrompt,
 } from './buildNovelAdaptationPrompt';
 export { createMockAdaptationPlan } from './createMockAdaptationPlan';
+export { createMockWriterScenePatch } from './createMockWriterScenePatch';
 export {
   adaptNovelToScreenplayMock,
   draftNovelAdaptationFromPlanMock,
@@ -10,8 +12,15 @@ export {
 } from './mockNovelAdaptation';
 export { adaptationPlanSchema, ADAPTATION_PLAN_SCHEMA_ID } from './adaptation-plan-schema';
 export type { AdaptationPlanParsed } from './adaptation-plan-schema';
+export { writerScenePatchSchema, WRITER_SCENE_PATCH_SCHEMA_ID } from './writer-scene-patch-schema';
+export type { WriterScenePatchParsed } from './writer-scene-patch-schema';
 export { defaultAdaptationPreferences, resolveAdaptationPreferences } from './preferences';
 export { validateAdaptationPlan } from './validate-adaptation-plan';
+export { validateWriterScenePatch } from './validate-writer-scene-patch';
+export type {
+  ValidateWriterScenePatchOptions,
+  ValidateWriterScenePatchResult,
+} from './validate-writer-scene-patch';
 export type {
   AdaptationFidelity,
   AdaptationOption,
@@ -32,8 +41,11 @@ export type {
   NovelAdaptationResult,
   NovelAdaptationTraceStep,
   PromptMessage,
+  SceneBlockDraft,
   SceneCard,
+  SceneDraft,
   SourceAnalysis,
+  WriterScenePatch,
 } from './types';
 export type {
   ValidateAdaptationPlanOptions,
