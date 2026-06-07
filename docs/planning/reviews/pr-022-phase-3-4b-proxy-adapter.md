@@ -13,7 +13,7 @@
 
 第一轮发现的 auto-detect、provider switching 和 response envelope guard 已在后续提交中修复。第二轮发现的“确认 scene outline 后立即 apply Writer patch”也已在 `2e7b235` 中拆成生成草稿和应用草稿两个阶段。
 
-最新复核仍不建议直接合并：pending `writerDraft` 没有随 source、document、provider 或新 outline 失效，旧 Writer patch 仍可能被应用到新上下文。另一个中等风险是 Writer 草稿预览目前只显示标题和 block 数，尚不足以支撑“审阅后写入”。
+`900b4a4` 已解决第三轮的两个核心 workflow 问题：pending `writerDraft` 会随 source、document、provider 和新 outline 失效；Writer 草稿预览也扩展到 heading、synopsis、source refs 和 block 摘要。最新复核仍建议在本 PR 内补一个 Medium：Topbar 的“剧本”按钮没有接入 `isGeneratingWriter`，Writer 请求进行中仍可重复触发生成。
 
 ## Findings
 
@@ -346,3 +346,66 @@ pnpm e2e
 
 - 当前没有 App / SceneOutlinePanel 层面的测试覆盖“生成 Writer draft 不改稿，应用后才改稿”。
 - 当前没有测试覆盖 pending writer draft 在 source / preferences / document / provider / new outline 变化后失效。
+
+## Fourth Review Follow-Up (2026-06-07)
+
+`900b4a4` 已经正面解决第三轮两个 Active 问题：
+
+- pending `writerDraft` 失效：新增 `invalidateWriterDraft()`，并在 provider change、document edit、manual block edit、source text change、clear adaptation run、new outline generation 和 new writer generation start 时清掉 pending draft。
+- Writer 草稿预览：`SceneOutlinePanel` 现在展示 scene heading、synopsis、source refs，以及前 3 个 blocks 的类型和文本摘要；dialogue block 会显示 character id。
+
+新增 `tests/components/SceneOutlinePanel.test.tsx`，覆盖 outline 渲染、Writer 草稿预览内容、apply button 显示 / 隐藏 / click，以及生成中禁用右侧面板按钮。
+
+复核状态：上一轮 High / Medium 已解决；仍有一个新的 Medium 建议本 PR 内修复。
+
+### Active Medium：Topbar 的“剧本”按钮在 Writer 生成中仍可重复触发
+
+位置：`src/App.tsx:619`、`src/components/panels/Topbar.tsx:101`
+
+右侧 `SceneOutlinePanel` 已经用 `isGeneratingWriter` 禁用“确认生成”：
+
+```ts
+disabled={isGeneratingWriter || isDraftApplied}
+```
+
+但 Topbar 的 `canGenerate` 仍只看：
+
+```ts
+canGenerate={!!adaptationPlan && !hasWriterDraft && !isDraftApplied}
+```
+
+第一次 Writer call 开始后，`writerDraft` 会被清成 `null`，`isDraftApplied` 仍是 false，因此顶部“剧本”按钮仍可继续点击。重复点击会发起多个 Writer 请求。旧请求的 result 会被 runId 丢弃，但旧请求的 `finally` 仍会执行 `setIsGeneratingWriter(false)`，可能提前结束 loading 状态，并继续放大重复请求窗口。切到 `local_proxy` 时，这也会浪费真实 provider 调用。
+
+建议：
+
+- 把 `isGeneratingWriter` 纳入 Topbar generate 禁用条件，例如：
+
+```tsx
+canGenerate={!!adaptationPlan && !hasWriterDraft && !isDraftApplied && !isGeneratingWriter}
+```
+
+- 或给 `Topbar` 增加明确 prop，例如 `isGeneratingDraft`，让按钮显示 `生成中...` 并禁用。
+- 在 `generateWriterDraft()` 入口也加 guard：如果 `isGeneratingWriter` 为 true，直接 return，避免从任何入口重复触发。
+- 补 Topbar / App 组件测试：Writer generation in-flight 时，顶部“剧本”按钮不可点击。
+
+### 已验证
+
+本次复核运行：
+
+```sh
+pnpm format:check
+pnpm lint
+pnpm build
+pnpm test
+pnpm e2e
+rg -n "openai|OpenAI|handleModelCall|OPENAI_API_KEY|sk-|responses\\.create|zodTextFormat" dist
+```
+
+结果：
+
+- `pnpm format:check` passed。
+- `pnpm lint` passed。
+- `pnpm build` passed。
+- `pnpm test` passed：13 files / 165 tests。
+- `pnpm e2e` passed：3 tests。
+- `dist/` 未发现 OpenAI SDK、handler、API key 变量名或疑似 secret。
