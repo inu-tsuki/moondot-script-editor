@@ -1,4 +1,4 @@
-import { Field, fieldControlClassName } from '../ui';
+import { Field, fieldControlClassName } from '../../components/ui';
 import type {
   AdaptationFidelity,
   AdaptationPacing,

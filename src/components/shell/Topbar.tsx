@@ -1,17 +1,6 @@
-import { CheckCircle2, Download, FileText, WandSparkles } from 'lucide-react';
 import type { ModelProviderType } from '../../core/model';
-import { Button, Toolbar } from '../ui';
 
 type TopbarProps = {
-  /** Plan exists and Writer draft is neither pending nor applied. */
-  canGenerate: boolean;
-  /** Writer draft is available and not yet applied to document. */
-  canApply: boolean;
-  isExportReady: boolean;
-  onGenerateOutline: () => void;
-  onGenerateDraft: () => void;
-  onApplyDraft: () => void;
-  onDownloadYaml: () => void;
   /** Current model provider type. */
   providerType: ModelProviderType;
   /** Whether /api/model/call is reachable. */
@@ -23,13 +12,6 @@ type TopbarProps = {
 };
 
 export function Topbar({
-  canGenerate,
-  canApply,
-  isExportReady,
-  onGenerateOutline,
-  onGenerateDraft,
-  onApplyDraft,
-  onDownloadYaml,
   providerType,
   isProxyAvailable,
   isProbing,
@@ -39,9 +21,7 @@ export function Topbar({
 
   const handleToggle = () => {
     if (isProbing) return;
-    // If proxy is unavailable, only mock is possible — no toggle.
     if (!isProxyAvailable && !isProxy) return;
-    // If on mock and proxy is available, switch to proxy; if on proxy, switch to mock.
     if (isProxy) {
       onProviderChange('mock');
     } else if (isProxyAvailable) {
@@ -88,35 +68,6 @@ export function Topbar({
           {isProbing ? '检测中...' : isProxy ? '代理' : 'Mock'}
         </span>
       </button>
-
-      <Toolbar className="topbar-actions">
-        <Button title="导入小说">
-          <FileText size={16} />
-          导入
-        </Button>
-        <Button title="生成改编大纲" variant="primary" onClick={onGenerateOutline}>
-          <WandSparkles size={16} />
-          大纲
-        </Button>
-        <Button title="确认大纲并生成剧本" onClick={onGenerateDraft} disabled={!canGenerate}>
-          <WandSparkles size={16} />
-          剧本
-        </Button>
-        {canApply && (
-          <Button
-            title="将生成的 Writer 草稿应用到当前剧本"
-            variant="primary"
-            onClick={onApplyDraft}
-          >
-            <CheckCircle2 size={16} />
-            应用
-          </Button>
-        )}
-        <Button title="下载 YAML" onClick={onDownloadYaml} disabled={!isExportReady}>
-          <Download size={16} />
-          YAML
-        </Button>
-      </Toolbar>
     </header>
   );
 }

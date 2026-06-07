@@ -3,6 +3,8 @@
   background: #f6f3ee;
 }
 
+/* ── Topbar ─────────────────────────────────────────────── */
+
 .topbar {
   align-items: center;
   background: #faf9f6;
@@ -49,13 +51,6 @@
   color: #66716b;
   font-size: 12px;
   line-height: 1.2;
-}
-
-.topbar-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
 }
 
 /* Provider toggle indicator in Topbar */
@@ -119,13 +114,39 @@
   white-space: nowrap;
 }
 
-.workbench {
+/* ── Main layout ────────────────────────────────────────── */
+
+.app-main {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(220px, 0.6fr) minmax(420px, 1.8fr) minmax(280px, 0.8fr);
+  grid-template-columns: 1fr minmax(280px, 380px);
   min-height: calc(100vh - 64px);
   padding: 16px;
 }
+
+.app-center {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.app-right {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Converter actions ──────────────────────────────────── */
+
+.converter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── YAML preview ───────────────────────────────────────── */
 
 .yaml-preview {
   background: #18201d;
@@ -140,13 +161,14 @@
   padding: 12px;
 }
 
+/* ── Responsive ─────────────────────────────────────────── */
+
 @media (max-width: 1180px) {
-  .workbench {
-    grid-template-columns: 1fr 1fr;
+  .app-main {
+    grid-template-columns: 1fr;
   }
 
-  .panel-output {
-    grid-column: 1 / -1;
+  .app-right {
     min-height: 380px;
   }
 }
@@ -158,16 +180,12 @@
     padding: 12px;
   }
 
-  .topbar-actions {
-    justify-content: stretch;
-  }
-
-  .topbar-actions button {
-    flex: 1;
-  }
-
-  .workbench {
+  .app-main {
     grid-template-columns: 1fr;
     padding: 12px;
+  }
+
+  .app-center {
+    min-height: 360px;
   }
 }

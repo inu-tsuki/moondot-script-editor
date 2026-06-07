@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { SceneOutlinePanel } from '../../src/components/panels/SceneOutlinePanel';
+import { SceneOutlinePanel } from '../../src/features/converter/SceneOutlinePanel';
 import type { AdaptationPlan, WriterScenePatch } from '../../src/core/adaptation';
 
 const mockPlan: AdaptationPlan = {

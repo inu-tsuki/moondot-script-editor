@@ -1,5 +1,5 @@
 import { Copy, Download } from 'lucide-react';
-import { Badge, Button } from '../ui';
+import { Badge, Button } from '../../components/ui';
 
 type ExportStatus = {
   errorCount: number;

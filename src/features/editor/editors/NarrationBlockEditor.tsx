@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Badge } from '../../ui';
+import { Badge } from '../../../components/ui';
 import type { NarrationBlock } from '../../../core/screenplay';
 
 type NarrationBlockEditorProps = {

@@ -1,5 +1,5 @@
 import { CheckCircle2, ListChecks, PenLine } from 'lucide-react';
-import { Badge, Button, PanelMeta, PanelTitle } from '../ui';
+import { Badge, Button, PanelMeta, PanelTitle } from '../../components/ui';
 import type {
   AdaptationPlan,
   NovelAdaptationTraceStep,
