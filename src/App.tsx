@@ -153,12 +153,27 @@ function App() {
   };
 
   /**
+   * Invalidate the pending Writer draft so an outdated patch
+   * cannot be applied after the user has changed source text,
+   * preferences, document content, provider, or outline.
+   *
+   * This must be called at every context-change site that could
+   * make a previously generated draft stale.  Skipping it would
+   * allow the "应用到剧本" button to write old source refs /
+   * old provider output into the current document.
+   */
+  const invalidateWriterDraft = () => {
+    setWriterDraft(null);
+  };
+
+  /**
    * Switch model provider and invalidate any in-flight model run so a
    * stale response from the old provider cannot write state after the
    * user has already switched back.
    */
   const handleProviderChange = (next: ModelProviderType) => {
     invalidateModelRun();
+    invalidateWriterDraft();
     setProviderType(next);
   };
 
@@ -283,10 +298,12 @@ function App() {
   // ---------------------------------------------------------------------------
 
   const handleEdit = (action: EditAction) => {
-    // Any document mutation invalidates in-flight model runs — a stale
-    // plan or draft must not overwrite the user's manual edits.
+    // Any document mutation invalidates in-flight model runs and
+    // pending Writer drafts — a stale plan or patch must not
+    // overwrite the user's manual edits.
     if (action.type !== 'select-block') {
       invalidateModelRun();
+      invalidateWriterDraft();
     }
 
     switch (action.type) {
@@ -339,6 +356,7 @@ function App() {
 
   const handleUpdateBlockText = (id: BlockId, text: string) => {
     invalidateModelRun();
+    invalidateWriterDraft();
     setScreenplayDocument((currentDocument) => updateDocumentBlockText(currentDocument, id, text));
     setExportFeedback('');
   };
@@ -351,6 +369,7 @@ function App() {
     setAdaptationDiagnostics([]);
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
+    setWriterDraft(null);
     setExportFeedback('');
     clearSelection();
   };
@@ -381,9 +400,11 @@ function App() {
   const generateSceneOutline = async () => {
     const runId = crypto.randomUUID();
     latestRunIdRef.current = runId;
-    // Clear previous plan immediately so stale outline is not displayed or confirmed.
+    // Clear previous plan and draft immediately so stale outline
+    // or Writer patch is not displayed or confirmed.
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
+    setWriterDraft(null);
 
     try {
       const messages = buildNovelAdaptationPrompt(workingDocument, adaptationPreferences);
@@ -460,6 +481,10 @@ function App() {
     if (!adaptationPlan) {
       return;
     }
+
+    // Clear any previous draft before starting a new generation so the
+    // "应用到剧本" button cannot apply a stale patch while generating.
+    setWriterDraft(null);
 
     const runId = crypto.randomUUID();
     latestRunIdRef.current = runId;
