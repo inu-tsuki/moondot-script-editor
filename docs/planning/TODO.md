@@ -72,10 +72,11 @@ Phase 3 已完成 model adapter contract、Structured Architect contract、Write
 - [x] 审计 `adaptation_plan_v1` / `writer_scene_patch_v1` 的 OpenAI strict structured output 兼容性，明确 optional 字段、provider-facing strict schema 和 failure mapping 风险。
 - [x] 完成 Phase 3.4-pre (Golden Fox)：安装 `openai` SDK v6.42.0，建立 provider-facing Zod schemas（`adaptation-plan-provider.ts`、`writer-scene-patch-provider.ts`）、normalizer、schema registry、compatibility snapshot 测试和 roundtrip 测试。Writer optional → nullable + discriminatedUnion → flat object 已完成。Vite dev server `/api/model/call` skeleton 已建立。`.env.example` 模板已创建。
 - [x] 完成 Phase 3.4 Vite local proxy handler：`/api/model/call` dev-server endpoint 实现，挂在 Vite `configureServer()` middleware 上。Pipeline：body parse → env check → stage/schemaId validation → OpenAI Responses API call → output extraction → parseAndNormalizeProviderOutput → app-side Zod structural safeParse → ModelCallResult。Structural error 映射（config_missing / network / refusal / empty_output / parse / schema）已测试覆盖；semantic 由 client 端负责。19 handler tests，build boundary 验证通过（dist/ 不含 openai SDK 或 handler 代码）。注意：此 endpoint 仅在 `pnpm dev` 期间存在；可部署 server adapter 待后续规划。
+- [x] 完成 Phase 3.4b：前端 `ProxyModelAdapter` 实现（`createProxyModelAdapter()`），对接 `/api/model/call` endpoint。支持挂载时自动探测代理可用性（production build 自动禁止），Topbar 显示 provider 状态指示器（Mock / 代理），可手动切换。复用现有 `validateAdaptationPlan` / `validateWriterScenePatch` semantic validation path，server structural success 不直接写入 state。17 proxy adapter tests，总计 153 tests，build boundary 验证通过。
 
 ## 下一步
 
-- [ ] Phase 3.4b：前端 `ProxyModelAdapter` 实现，对接 `/api/model/call` endpoint，让 UI 可在 mock / local_proxy 之间切换。必须复用现有 app-side semantic validation path（`validateAdaptationPlan` / `validateWriterScenePatch`），不能把 server structural success 直接写入 state。
+- [ ] Phase 3.4b follow-up：Topbar 中 import 按钮当前无功能，可考虑连接文件导入。
 - [ ] Phase 3.5a：Workbench shell and activity rail，建立 IDE-ready 的工具外壳，承载 Source、Outline、Agent、Validation、Export 等 tool surfaces；不在这一段引入完整 agent runtime。
 - [ ] Phase 3.5b：Model run monitor tool，展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类；不显示 secret。
 - [ ] Phase 3.5c：Architect tool surface，集中展示 source summary、preferences、prompt 摘要、`AdaptationPlan`、questions、scene outline 和 plan validation。

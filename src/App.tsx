@@ -1,5 +1,5 @@
 import { FileText, Layout } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import { PanelBody, PanelHeader, PanelMeta, PanelShell, PanelTitle, Tabs } from './components/ui';
 import {
@@ -22,7 +22,8 @@ import {
   validateAdaptationPlan,
   validateWriterScenePatch,
 } from './core/adaptation';
-import { createMockModelAdapter } from './core/model';
+import { createMockModelAdapter, createProxyModelAdapter } from './core/model';
+import type { ModelProviderType } from './core/model';
 import { serializeDocumentToYaml } from './core/serialization';
 import {
   appendBlockToScene,
@@ -104,6 +105,9 @@ function App() {
   const [exportFeedback, setExportFeedback] = useState('');
   const [outputTab, setOutputTab] = useState('outline');
   const [selectedBlockId, setSelectedBlockId] = useState<BlockId | null>(null);
+  const [providerType, setProviderType] = useState<ModelProviderType>('mock');
+  const [isProxyAvailable, setIsProxyAvailable] = useState(false);
+  const [isProbing, setIsProbing] = useState(true);
   const isCurrentPlanDrafted = adaptationTrace.some(
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
@@ -117,15 +121,16 @@ function App() {
   const planRef = useRef(adaptationPlan);
   planRef.current = adaptationPlan;
 
-  const modelAdapter = useMemo(
-    () =>
-      createMockModelAdapter({
-        getDocument: () => docRef.current,
-        getPreferences: () => prefsRef.current,
-        getPlan: () => planRef.current,
-      }),
-    [],
-  );
+  const modelAdapter = useMemo(() => {
+    if (providerType === 'local_proxy' && isProxyAvailable) {
+      return createProxyModelAdapter();
+    }
+    return createMockModelAdapter({
+      getDocument: () => docRef.current,
+      getPreferences: () => prefsRef.current,
+      getPlan: () => planRef.current,
+    });
+  }, [providerType, isProxyAvailable]);
 
   // Track the latest call to ignore stale async results.
   const latestRunIdRef = useRef<string | null>(null);
@@ -138,6 +143,56 @@ function App() {
   const invalidateModelRun = () => {
     latestRunIdRef.current = null;
   };
+
+  // ---------------------------------------------------------------------------
+  // Auto-detect /api/model/call availability on mount
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    let cancelled = false;
+
+    const probe = async () => {
+      try {
+        const res = await fetch('/api/model/call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'probe' }],
+            stage: '_probe',
+            structuredOutput: { schemaId: '_probe' },
+          }),
+        });
+
+        if (!cancelled) {
+          const ct = res.headers.get('Content-Type') ?? '';
+          if (ct.includes('application/json')) {
+            try {
+              const body = await res.json();
+              if (body?.trace?.provider === 'local_proxy') {
+                setIsProxyAvailable(true);
+                setProviderType('local_proxy');
+              }
+            } catch {
+              // JSON parse failed — not our endpoint
+            }
+          }
+        }
+      } catch {
+        // fetch failed — proxy not available
+      } finally {
+        if (!cancelled) setIsProbing(false);
+      }
+    };
+
+    if (import.meta.env.DEV) {
+      probe();
+    } else {
+      setIsProbing(false);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const parsedNovel = useMemo(() => parseNovelChapters(sourceText), [sourceText]);
   const workingDocument = useMemo<ScreenplayDocument>(
@@ -497,6 +552,10 @@ function App() {
         onGenerateOutline={generateSceneOutline}
         onConfirmOutline={confirmSceneOutline}
         onDownloadYaml={downloadYaml}
+        providerType={providerType}
+        isProxyAvailable={isProxyAvailable}
+        isProbing={isProbing}
+        onProviderChange={setProviderType}
       />
 
       <WorkbenchLayout

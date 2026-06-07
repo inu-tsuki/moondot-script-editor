@@ -1,7 +1,7 @@
 # Next Direction
 
 > 最近更新：2026-06-07
-> 状态：Phase 3.4 Vite local proxy handler 已完成；当前准备 Phase 3.4b frontend proxy adapter。
+> 状态：Phase 3.4b frontend proxy adapter 已完成；当前准备 Phase 3.5 workbench tool surfaces。
 
 本文用于回答“下一两个 PR 先做什么”。阶段级边界见 `roadmap/README.md` 和 `roadmap/phase-3-model-workflow.md`；长期产品愿景仍以 `../knowledge/product/vision.md` 为准。
 
@@ -24,8 +24,9 @@
 
 - Phase 3.4-pre (Golden Fox)：provider-facing schema 兼容性验证已完成。安装了 `openai` SDK（v6.42.0），建立了 `src/core/adaptation/provider-schemas/` 目录包含 Architect / Writer 的 provider-facing Zod schemas、normalizer 和 registry。`src/server/` 目录已建立 middleware 骨架。两个 schema id 的 provider-facing JSON Schema snapshot 和 roundtrip 测试已通过。
 - Phase 3.4 Vite local proxy handler：`/api/model/call` dev-server endpoint 已实现，挂在 Vite `configureServer()` middleware 上。Pipeline：`ModelCallRequest → OpenAI Responses API → structured output → parseAndNormalizeProviderOutput → app-side Zod structural validation → ModelCallResult`。Structural error 映射覆盖 config_missing / network / refusal / empty_output / parse / schema（semantic 由 client 端 `validateAdaptationPlan` / `validateWriterScenePatch` 负责）。Handler 和 19 个测试已在 `src/server/handler.ts` 和 `tests/server/handler.test.ts`。注意：`pnpm build` 产物不包含 `/api/model/call`；部署需要额外 API host 或继续走 `pnpm dev` local proxy。
+- Phase 3.4b frontend proxy adapter：`createProxyModelAdapter()` 实现 `ModelAdapter` 接口，通过 `fetch()` 调用 `/api/model/call`。支持挂载时自动探测代理可用性（`stage: '_probe'` 触达 handler step 5 快速返回，不发起 OpenAI 调用）。Topbar 显示 provider 状态指示器（Mock / 代理），可手动切换。App.tsx 继续走 `validateAdaptationPlan` / `validateWriterScenePatch` semantic validation。17 proxy adapter tests in `tests/core/model/proxy-adapter.test.ts`。Production build 通过 `import.meta.env.PROD` 自动禁止代理探测。总计 153 tests 全部通过。
 
-Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.4b：前端 ProxyModelAdapter 实现。3.4b 只负责打通真实调用闭环，不做完整 IDE 化；完成后进入升级后的 Phase 3.5 Agent tool surfaces / IDE-ready UI。
+Phase 3 的正式路线见 `roadmap/phase-3-model-workflow.md`。下一步进入 Phase 3.5 Agent tool surfaces / IDE-ready UI。
 
 ## 近期原则
 
