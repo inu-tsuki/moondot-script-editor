@@ -7,16 +7,13 @@
 
 ## 结论
 
-方向正确，但当前不建议直接合并。PR #38 已经把前端真实调用闭环接到 `/api/model/call`：新增 `createProxyModelAdapter()`，通过 `fetch()` 实现 `ModelAdapter` contract；`App.tsx` 可以在 `mock` 与 `local_proxy` 之间切换；Topbar 增加 provider 状态指示；production build 禁止自动探测。
+方向正确，但当前仍不建议直接合并。PR #38 已经把前端真实调用闭环接到 `/api/model/call`：新增 `createProxyModelAdapter()`，通过 `fetch()` 实现 `ModelAdapter` contract；`App.tsx` 可以在 `mock` 与 `local_proxy` 之间切换；Topbar 增加 provider 状态指示；production build 禁止自动探测。
 
 主路径上，server structural success 没有直接写入 state。Architect 结果仍先走 `validateAdaptationPlan()`，Writer 结果仍先走 `validateWriterScenePatch()`，再通过 `applySceneDrafts()` 写回 document。这是 3.4b 最关键的边界，当前实现守住了。
 
-但审查发现两个 Active Medium：
+第一轮发现的 auto-detect、provider switching 和 response envelope guard 已在后续提交中修复。最新复核发现一个更核心的 UI workflow 边界问题：确认 scene outline 之后，当前实现会立刻调用 Writer、validation，并把 `WriterScenePatch` apply 到 `ScreenplayDocument.script`。这让“确认大纲”承担了“生成候选剧本”和“写入剧本”两个动作，缺少 Writer 结果预览 / 剧本概览 / 最终应用确认。
 
-- 自动探测只证明 Vite endpoint 可达，不能证明真实 provider 已配置；未配置 `OPENAI_API_KEY` 时会默认切到 `local_proxy`，让本应可复现的 mock demo 变成 config error。
-- provider 切换不会失效进行中的 model run；用户切换 provider 后，旧请求仍可能通过 runId 检查并写入 plan / patch。
-
-建议本 PR 内修复这两项，再合并 3.4b。
+这个问题建议在本 PR 内修复。3.4b 已经把真实 / 代理 Writer 接进前端，outline confirmation 的下一步不应直接突变用户稿件；至少需要把 Writer 产物先作为候选 patch 展示，再由显式“写入 / 应用到剧本”动作调用 document operation。
 
 ## Findings
 
@@ -224,39 +221,43 @@ rg "openai|handleModelCall|..." dist/  # ✅ empty
 
 ## Second Review Follow-Up (2026-06-07)
 
-`f1e7a22` 已解决第一轮的 auto-detect、provider switching 和 response envelope guard 问题。第二轮复核发现一个新的流程语义问题：当前 UI 把“确认 scene outline 后委托 Writer 生成剧本初稿”说成了“确认写入剧本”。
+`f1e7a22` 已解决第一轮的 auto-detect、provider switching 和 response envelope guard 问题。`588b52b` 已把可见按钮文案从“确认写入”修成“确认生成”。但复核完整 UI 流程后，发现问题并没有完全解决：当前代码只是修正了 label，实际动作仍然把 outline confirmation、Writer 生成和 document apply 合并成一个不可审阅的按钮。
 
-### Active Medium：确认 outline 后的主动作应是“生成剧本”，不是“写入剧本”
+### Active High：确认 outline 后会立即 apply Writer patch，缺少 Writer 草稿预览和最终写入确认
 
-位置：`src/components/panels/Topbar.tsx:95`、`src/components/panels/SceneOutlinePanel.tsx:28`、`src/components/panels/SceneOutlinePanel.tsx:34`
+位置：`src/App.tsx:450`、`src/App.tsx:459`、`src/App.tsx:484`、`src/App.tsx:496`、`src/components/panels/SceneOutlinePanel.tsx:27`、`src/components/panels/Topbar.tsx:95`
 
-当前 Topbar 和 Scene Outline 面板的按钮文案是：
+当前链路是：
 
-- `确认大纲并写入剧本`
-- `写入`
-- `确认写入`
-- `已写入`
+1. `SceneOutlinePanel` / Topbar 的“确认生成”按钮触发 `confirmSceneOutline()`。
+2. `confirmSceneOutline()` 立即用 `buildNovelSceneWriterPrompt(workingDocument, adaptationPlan)` 调用 `stage: 'scene_draft'`。
+3. Writer 返回后立即执行 `validateWriterScenePatch()`。
+4. validation 通过后，立刻调用 `setScreenplayDocument((prev) => applySceneDrafts(prev, validated.patch!))`。
 
-这会把用户动作理解成“把已有内容写入 document”。但实际 workflow 是：
+这意味着用户在 Scene outline 上做出的动作不只是“确认大纲并请求 Writer 生成候选剧本”，而是直接替换了 `ScreenplayDocument.script.scenes`。对于 3.4b 来说，这已经不是旧 mock demo 的文案瑕疵：PR 正在接入 `local_proxy` 和真实 Writer 输出，因此任何 provider 返回的合法 patch 都会在用户尚未看到剧本草稿 / 剧本概览前写入当前稿件。
 
-1. Architect 生成 `AdaptationPlan` / scene outline。
-2. 用户确认 scene outline。
-3. Writer 根据 confirmed scene cards 生成 `WriterScenePatch` / scene draft。
-4. app-side semantic validation 通过后，才通过 document operation apply 到 `ScreenplayDocument.script`。
+`applySceneDrafts()` 本身仍是正确的 document operation 边界；问题在于调用时机。它应该只发生在用户看过 Writer 结果并明确选择“写入剧本 / 应用到剧本”之后，而不是发生在 outline confirmation 之后。
 
-因此对用户可见的主动作应该是“确认生成剧本”或“生成剧本”，而不是“确认写入”。“写入”是 validated patch apply 的内部实现结果，不应成为 human review pause 上的主动词。这个语义会直接影响 3.5 Architect / Writer tool surface 的拆分：Architect 工具负责确认 plan，Writer 工具负责生成 draft，Validation / Apply 才负责写入。
+建议本 PR 内修复为两阶段 UI：
 
-建议本 PR 内修正用户可见文案：
+- `confirmSceneOutline()` 只负责确认当前 `AdaptationPlan`，触发 Writer 生成，并把 validated `WriterScenePatch` 存成 pending artifact，例如 `writerScenePatch` / `writerDraftPreview`。
+- UI 展示 Writer 生成结果：至少提供 scene draft 数量、scene title / synopsis、blocks 摘要、source refs、validation diagnostics 和将要覆盖 / 写入的范围。
+- 新增显式 apply 动作，例如 `applyWriterDraft()` 或 `writeGeneratedDraft()`；只有这个动作可以调用 `applySceneDrafts()`。
+- `isCurrentPlanDrafted` / button disabled 状态需要拆分为更明确的状态：`outlineReady`、`writerGenerating`、`writerDraftReady`、`draftApplied`。不要用“已生成”暗示已经写入，也不要让 outline 面板承担最终写入。
+- 生成新 outline、切换 provider、修改 source / preferences / document 时，应 invalidate pending writer draft，避免旧 patch 被应用到新上下文。
 
-- Topbar button title：`确认大纲并生成剧本`。
-- Topbar button label：`剧本` 或 `生成剧本`。
-- SceneOutlinePanel button title：`确认大纲并生成剧本`。
-- SceneOutlinePanel button label：`确认生成`。
-- drafted state label：`已生成` 或 `剧本已生成`。
+最小可接受修复：
 
-同时建议调整 trace 文案：
+- 点击“确认生成”后，不能立即改变 `screenplayDocument.script.scenes`。
+- Writer patch 必须先在 UI 中可见，且 validation 结果可见。
+- 必须存在一个独立的“写入剧本 / 应用到剧本”按钮，点击后才调用 `applySceneDrafts()`。
+- mock Writer diagnostic 应使用“生成 scene draft”，不要继续说“写入 scene draft”，否则 diagnostics panel 仍会误导用户。
 
-- 当前：`通过 ${provider} provider 写入 N 个 scene draft。`
-- 建议：`通过 ${provider} Writer 生成 N 个 scene draft，并通过 validation 写入剧本初稿。`
+建议补充测试：
 
-函数名 `confirmSceneOutline` 可以暂时保留，因为它描述的是用户确认 outline 这一事件；需要修正的是 UI 和 trace 不应把“确认生成”简化成“确认写入”。
+- 组件或 e2e：点击 Scene outline 的“确认生成”后，编辑区剧本内容不应变化，Writer draft preview 应出现。
+- 组件或 e2e：点击独立“写入 / 应用”按钮后，`ScreenplayDocument.script.scenes` 才更新。
+- 回归测试：生成新 outline 或修改 source/preferences/document 后，旧 pending writer draft 不可再应用。
+- 文案回归：outline confirmation 控件不出现 `确认写入` / `已写入`；mock writer diagnostic 不出现 `Writer 写入 scene draft`。
+
+函数名 `confirmSceneOutline` 可以继续描述“用户确认 outline”这一事件，但它不应再包含最终 document apply。这个拆分会让 3.5 Writer tool surface 的规划自然落位：Architect 工具负责 plan / outline，Writer 工具负责候选 draft，Validation / Apply 才负责写入当前剧本。
