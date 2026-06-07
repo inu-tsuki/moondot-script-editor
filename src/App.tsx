@@ -38,7 +38,7 @@ import {
   updateSceneMetadata,
 } from './core/screenplay';
 import { parseNovelChapters, withParsedNovelChapters } from './core/source-ingestion';
-import { validateScreenplayDocument } from './core/validation';
+import { getDiagnosticStage, validateScreenplayDocument } from './core/validation';
 import type {
   AdaptationPlan,
   AdaptationPreferences,
@@ -276,23 +276,16 @@ function App() {
 
   // Stage-filtered diagnostics for inline display between converter cards.
   const sourceDiagnostics = useMemo(
-    () => displayedDiagnostics.filter((d) => d.path === 'sourceText' || d.path?.startsWith('ch_')),
+    () => displayedDiagnostics.filter((d) => getDiagnosticStage(d) === 'source'),
     [displayedDiagnostics],
   );
   const planDiagnostics = useMemo(
-    () =>
-      displayedDiagnostics.filter(
-        (d) =>
-          d.path === 'model' || d.code?.startsWith('model_') || d.code?.startsWith('adaptation_'),
-      ),
+    () => displayedDiagnostics.filter((d) => getDiagnosticStage(d) === 'plan'),
     [displayedDiagnostics],
   );
   const documentExportDiagnostics = useMemo(
-    () =>
-      displayedDiagnostics.filter(
-        (d) => !sourceDiagnostics.includes(d) && !planDiagnostics.includes(d),
-      ),
-    [displayedDiagnostics, sourceDiagnostics, planDiagnostics],
+    () => displayedDiagnostics.filter((d) => getDiagnosticStage(d) === 'document'),
+    [displayedDiagnostics],
   );
 
   const yamlPreview = useMemo(
