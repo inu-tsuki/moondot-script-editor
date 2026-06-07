@@ -108,6 +108,15 @@ const validArchitectPlan = {
     compressibleParts: ['c1'],
     exteriorizationNotes: ['x1'],
   },
+  characters: [
+    {
+      id: 'char_test',
+      name: 'Test Character',
+      aliases: [],
+      description: 'A test character.',
+      tags: ['protagonist'],
+    },
+  ],
   adaptationQuestions: [
     {
       id: 'q1',

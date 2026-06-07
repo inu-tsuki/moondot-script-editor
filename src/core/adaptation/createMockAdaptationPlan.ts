@@ -122,6 +122,7 @@ export const createMockAdaptationPlan = (
         : ['用户偏好不允许主动压缩支线，scene outline 应尽量保持章节展开。'],
       exteriorizationNotes: ['心理描写优先改成动作、视线、停顿、物件互动或角色之间的对抗。'],
     },
+    characters: document.characters,
     adaptationQuestions:
       source.chapters.length >= 3
         ? [

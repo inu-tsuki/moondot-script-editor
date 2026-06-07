@@ -106,6 +106,57 @@ exports[`provider-facing JSON Schema snapshots > generates the Architect provide
       },
       "type": "array",
     },
+    "characters": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "aliases": {
+            "items": {
+              "type": "string",
+            },
+            "type": "array",
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+          "id": {
+            "type": "string",
+          },
+          "name": {
+            "type": "string",
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+        },
+        "required": [
+          "id",
+          "name",
+          "aliases",
+          "description",
+          "tags",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
     "id": {
       "type": "string",
     },
@@ -363,6 +414,7 @@ exports[`provider-facing JSON Schema snapshots > generates the Architect provide
     "id",
     "preferences",
     "sourceAnalysis",
+    "characters",
     "adaptationQuestions",
     "questionAnswers",
     "adaptationOptions",

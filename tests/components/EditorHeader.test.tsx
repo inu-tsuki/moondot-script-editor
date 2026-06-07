@@ -56,6 +56,32 @@ describe('EditorHeader', () => {
     expect(screen.getByRole('button', { name: /冲突/ })).toBeInTheDocument();
   });
 
+  it('keeps scene navigation in a horizontal scroll container for many scenes', () => {
+    const manyScenes = Array.from({ length: 16 }, (_, index) => ({
+      id: `scene_${index + 1}`,
+      title: `场景 ${index + 1}`,
+      heading: { locationType: 'INT' as const, location: '房间', timeOfDay: '日' },
+      blocks: [],
+      synopsis: '',
+      sourceRefs: [],
+    }));
+
+    render(
+      <EditorHeader
+        scenes={manyScenes}
+        activeSceneIndex={0}
+        onSelectScene={vi.fn()}
+        allCharacters={characters}
+        hasActiveScene
+        onAppendBlock={vi.fn()}
+      />,
+    );
+
+    const nav = screen.getByRole('navigation', { name: '场景导航' });
+    expect(nav.className).toContain('overflow-x-auto');
+    expect(screen.getByRole('button', { name: /Scene 16/ })).toBeInTheDocument();
+  });
+
   it('hides scene tabs when there is only one scene', () => {
     render(
       <EditorHeader

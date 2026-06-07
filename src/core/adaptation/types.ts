@@ -1,4 +1,10 @@
-import type { SceneHeading, ScreenplayDocument, SourceRef, TargetMedium } from '../screenplay';
+import type {
+  CharacterProfile,
+  SceneHeading,
+  ScreenplayDocument,
+  SourceRef,
+  TargetMedium,
+} from '../screenplay';
 import type { Diagnostic } from '../validation';
 
 export type AdaptationWorkflowStage =
@@ -101,6 +107,7 @@ export type AdaptationPlan = {
   id: string;
   preferences: AdaptationPreferences;
   sourceAnalysis: SourceAnalysis;
+  characters: CharacterProfile[];
   adaptationQuestions: AdaptationQuestion[];
   questionAnswers: AdaptationQuestionAnswer[];
   adaptationOptions: AdaptationOption[];

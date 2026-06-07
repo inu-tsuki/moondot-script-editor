@@ -15,6 +15,8 @@ export type ServerEnv = {
   openaiModel: string;
   /** Base URL override for OpenAI-compatible proxies. */
   openaiBaseUrl: string | undefined;
+  /** Optional User-Agent override for OpenAI-compatible proxies that require it. */
+  openaiUserAgent: string | undefined;
 };
 
 /**
@@ -24,11 +26,13 @@ export type ServerEnv = {
  *   `OPENAI_API_KEY`  — API key (keep secret, never commit)
  *   `OPENAI_MODEL`    — model name, defaults to 'gpt-4.1-mini'
  *   `OPENAI_BASE_URL` — optional base URL for proxies
+ *   `OPENAI_USER_AGENT` — optional User-Agent override for compatible proxies
  */
 export const readServerEnv = (): ServerEnv => ({
   openaiApiKey: process.env.OPENAI_API_KEY,
   openaiModel: process.env.OPENAI_MODEL ?? 'gpt-4.1-mini',
   openaiBaseUrl: process.env.OPENAI_BASE_URL,
+  openaiUserAgent: process.env.OPENAI_USER_AGENT,
 });
 
 /**

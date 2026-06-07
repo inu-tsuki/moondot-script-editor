@@ -50,7 +50,6 @@ describe('Architect roundtrip', () => {
   it('mock plan passes through normalizer and app-side validation', () => {
     const plan = makeValidPlan();
 
-    // Normalizer is identity for Architect
     const normalized = normalizeArchitectOutput(plan);
     const result = validateAdaptationPlan(normalized, {
       knownChapterIds: new Set(
@@ -67,6 +66,53 @@ describe('Architect roundtrip', () => {
     const plan = makeValidPlan();
     const parsed = adaptationPlanSchema.safeParse(plan);
     expect(parsed.success).toBe(true);
+  });
+
+  it('rounds provider estimatedBlocks back to app-side integer contract', () => {
+    const plan = makeValidPlan();
+    const providerOutput = {
+      ...plan,
+      sceneOutline: plan.sceneOutline.map((scene, index) => ({
+        ...scene,
+        estimatedBlocks: index === 0 ? 1.2 : 1.5,
+      })),
+    };
+
+    const normalized = normalizeArchitectOutput(providerOutput);
+    const parsed = adaptationPlanSchema.safeParse(normalized);
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.sceneOutline.map((scene) => scene.estimatedBlocks)).toEqual([1, 2]);
+    }
+  });
+
+  it('normalizes provider nullable character fields to app-side optional fields', () => {
+    const plan = makeValidPlan();
+    const providerOutput = {
+      ...plan,
+      characters: [
+        {
+          id: 'char_rick',
+          name: '里克',
+          aliases: ['德卡德'],
+          description: null,
+          tags: null,
+        },
+      ],
+    };
+
+    const normalized = normalizeArchitectOutput(providerOutput);
+    const parsed = adaptationPlanSchema.safeParse(normalized);
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.characters[0]).toEqual({
+        id: 'char_rick',
+        name: '里克',
+        aliases: ['德卡德'],
+      });
+    }
   });
 });
 

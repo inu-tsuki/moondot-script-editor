@@ -1,6 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import type { Plugin } from 'vite';
+import { loadEnv, type Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { handleModelCall } from './src/server/handler';
 
@@ -19,6 +19,13 @@ import { handleModelCall } from './src/server/handler';
 const modelProxyPlugin = (): Plugin => ({
   name: 'moondot-model-proxy',
   configureServer(server) {
+    const serverEnv = loadEnv(server.config.mode, process.cwd(), '');
+    for (const key of ['OPENAI_API_KEY', 'OPENAI_MODEL', 'OPENAI_BASE_URL', 'OPENAI_USER_AGENT']) {
+      if (serverEnv[key] && !process.env[key]) {
+        process.env[key] = serverEnv[key];
+      }
+    }
+
     server.middlewares.use('/api/model/call', async (req, res) => {
       await handleModelCall(req, res);
     });

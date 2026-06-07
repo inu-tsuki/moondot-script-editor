@@ -21,4 +21,5 @@ export const createOpenAIClient = (env: ServerEnv): OpenAI =>
   new OpenAI({
     apiKey: env.openaiApiKey,
     baseURL: env.openaiBaseUrl,
+    defaultHeaders: env.openaiUserAgent ? { 'User-Agent': env.openaiUserAgent } : undefined,
   });

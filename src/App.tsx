@@ -6,6 +6,7 @@ import { ConverterWorkspace } from './features/converter';
 import {
   ADAPTATION_PLAN_SCHEMA_ID,
   WRITER_SCENE_PATCH_SCHEMA_ID,
+  applyPlanCharacters,
   applySceneDrafts,
   buildNovelAdaptationPrompt,
   buildNovelSceneWriterPrompt,
@@ -428,29 +429,27 @@ function App() {
         return;
       }
 
-      setAdaptationPlan(validated.plan);
+      const plan = validated.plan;
+      setAdaptationPlan(plan);
+      setScreenplayDocument((prev) => applyPlanCharacters(prev, plan));
       setPlanProvider(result.trace.provider);
-      setAdaptationTrace(
-        validated.plan
-          ? [
-              {
-                label: 'source-ingestion',
-                detail: `读取 ${chapterCount} 个小说章节作为模型输入。`,
-                stage: 'source_analysis',
-                artifactType: 'source_analysis',
-                sourceIds: validated.plan.sceneOutline.flatMap((sceneCard) =>
-                  sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
-                ),
-              },
-              {
-                label: 'model-planning',
-                detail: `通过 ${result.trace.provider} provider 生成 ${validated.plan.sceneOutline.length} 张 scene cards；scene 可以引用多个章节。`,
-                stage: 'adaptation_planning',
-                artifactType: 'adaptation_plan',
-              },
-            ]
-          : [],
-      );
+      setAdaptationTrace([
+        {
+          label: 'source-ingestion',
+          detail: `读取 ${chapterCount} 个小说章节作为模型输入。`,
+          stage: 'source_analysis',
+          artifactType: 'source_analysis',
+          sourceIds: plan.sceneOutline.flatMap((sceneCard) =>
+            sceneCard.sourceRefs.map((sourceRef) => String(sourceRef.sourceId)),
+          ),
+        },
+        {
+          label: 'model-planning',
+          detail: `通过 ${result.trace.provider} provider 生成 ${plan.sceneOutline.length} 张 scene cards；scene 可以引用多个章节。`,
+          stage: 'adaptation_planning',
+          artifactType: 'adaptation_plan',
+        },
+      ]);
       setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
       setExportFeedback('');
       clearSelection();
