@@ -151,7 +151,7 @@ Phase 2 暂不做：
 
 - 在工作台显示 `sceneOutline`。
 - 展示 `sourceRefs`、`dramaticPurpose`、`pacing`。
-- 增加确认动作，确认后再写入 script。
+- 增加确认动作，用户确认 scene outline 后再委托 Writer 生成剧本初稿。
 - 保留一键 mock fallback，避免 demo 卡死在未确认状态。
 
 完成标准：

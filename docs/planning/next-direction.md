@@ -13,7 +13,7 @@
 - `ScreenplayDocument` / `ScreenplayAst` 类型、runtime validation diagnostics 和 YAML projection。
 - 小说 source ingestion 和章节解析；章节只作为来源结构，不直接承担剧本转换。
 - `AdaptationPreferences`、`AdaptationPlan`、`SceneCard` 和两阶段 `GenerationTrace`。
-- scene outline 预览、确认写入和 YAML 复制 / 下载。
+- scene outline 预览、确认生成剧本和 YAML 复制 / 下载。
 - Tailwind、UI primitives、panel extraction、`WorkbenchLayout` 和 output tabs。
 - document-backed screenplay reading surface。
 - 基础语义编辑控件和工业化手稿 UI polish。
@@ -149,7 +149,7 @@ typed workflow
 - 两个 schema id 都有 OpenAI structured output compatibility 检查或等价测试。
 - Writer optional 字段有 required nullable / required empty-array / normalizer 策略。
 
-3.4b 收口边界：
+Phase 3.4b 收口边界：
 
 - 实现 `ProxyModelAdapter`，通过 `fetch('/api/model/call')` 发送可序列化 `ModelCallRequest`。
 - UI 可在 `mock` / `local_proxy` 间切换，并清楚展示当前 provider 与配置状态。

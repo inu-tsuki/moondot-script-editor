@@ -357,10 +357,11 @@ Phase 3 暂不做：
 
 #### Phase 3.5d：Writer tool surface
 
-目标：把 Writer 从“确认后写入”升级为可观察的 scene patch 工具。
+目标：把 Writer 从“确认后直接生成并写入”升级为可观察的 scene patch 工具。
 
 建议内容：
 
+- 用户可见主动作命名为“确认生成剧本”或“生成剧本”；“写入”只用于 validation 通过后的内部 apply / write-back 步骤。
 - 以 confirmed `SceneCard` 为单位展示 Writer queue / run status / patch preview。
 - 展示 `WriterScenePatch` 的结构化摘要：scene metadata、blocks、source refs、characters、warnings。
 - Apply 前展示 semantic validation 结果；失败时保留当前 document，不写入坏 patch。

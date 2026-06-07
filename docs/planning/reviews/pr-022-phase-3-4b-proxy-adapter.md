@@ -202,6 +202,7 @@ e2e 备注：
 位置：`src/core/model/proxy-adapter.ts:105-143`
 
 新增 `isModelCallResultEnvelope()` 函数，检查：
+
 - `diagnostics` 是 array
 - `data` key 存在（null 合法）
 - `trace` 是非 null object，且 `trace.provider` 是 string
@@ -220,3 +221,42 @@ pnpm build          # ✅
 pnpm test           # ✅ 12 files / 157 tests
 rg "openai|handleModelCall|..." dist/  # ✅ empty
 ```
+
+## Second Review Follow-Up (2026-06-07)
+
+`f1e7a22` 已解决第一轮的 auto-detect、provider switching 和 response envelope guard 问题。第二轮复核发现一个新的流程语义问题：当前 UI 把“确认 scene outline 后委托 Writer 生成剧本初稿”说成了“确认写入剧本”。
+
+### Active Medium：确认 outline 后的主动作应是“生成剧本”，不是“写入剧本”
+
+位置：`src/components/panels/Topbar.tsx:95`、`src/components/panels/SceneOutlinePanel.tsx:28`、`src/components/panels/SceneOutlinePanel.tsx:34`
+
+当前 Topbar 和 Scene Outline 面板的按钮文案是：
+
+- `确认大纲并写入剧本`
+- `写入`
+- `确认写入`
+- `已写入`
+
+这会把用户动作理解成“把已有内容写入 document”。但实际 workflow 是：
+
+1. Architect 生成 `AdaptationPlan` / scene outline。
+2. 用户确认 scene outline。
+3. Writer 根据 confirmed scene cards 生成 `WriterScenePatch` / scene draft。
+4. app-side semantic validation 通过后，才通过 document operation apply 到 `ScreenplayDocument.script`。
+
+因此对用户可见的主动作应该是“确认生成剧本”或“生成剧本”，而不是“确认写入”。“写入”是 validated patch apply 的内部实现结果，不应成为 human review pause 上的主动词。这个语义会直接影响 3.5 Architect / Writer tool surface 的拆分：Architect 工具负责确认 plan，Writer 工具负责生成 draft，Validation / Apply 才负责写入。
+
+建议本 PR 内修正用户可见文案：
+
+- Topbar button title：`确认大纲并生成剧本`。
+- Topbar button label：`剧本` 或 `生成剧本`。
+- SceneOutlinePanel button title：`确认大纲并生成剧本`。
+- SceneOutlinePanel button label：`确认生成`。
+- drafted state label：`已生成` 或 `剧本已生成`。
+
+同时建议调整 trace 文案：
+
+- 当前：`通过 ${provider} provider 写入 N 个 scene draft。`
+- 建议：`通过 ${provider} Writer 生成 N 个 scene draft，并通过 validation 写入剧本初稿。`
+
+函数名 `confirmSceneOutline` 可以暂时保留，因为它描述的是用户确认 outline 这一事件；需要修正的是 UI 和 trace 不应把“确认生成”简化成“确认写入”。

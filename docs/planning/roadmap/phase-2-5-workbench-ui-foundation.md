@@ -20,7 +20,7 @@ Phase 2 已经让 MVP 主链路成立：
 - 用户输入小说来源。
 - 用户设置基础改编偏好。
 - Architect 生成 scene outline。
-- 用户确认后 Writer 写入 `ScreenplayDocument.script`。
+- 用户确认 scene outline 后，Writer 生成剧本初稿；验证通过后再通过 document operation 写入 `ScreenplayDocument.script`。
 - YAML projection 可以复制或下载。
 
 当时如果直接进入真实模型层，会让 UI 压力变得更大：
