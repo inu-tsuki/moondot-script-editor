@@ -168,3 +168,32 @@ pnpm exec tsc -p tsconfig.node.json --listFilesOnly
 - 更新 planning 文档，把 “server-side wire-up 已完成” 降准为 “Vite local proxy handler 已完成”。
 - Phase 3.4b 实现前端 `ProxyModelAdapter` 时必须复用现有 app-side semantic validation path，不要把 server structural success 直接写入 state。
 - 后续单独规划可部署后端 adapter，不把 Vite dev middleware 当作最终部署方案。
+
+## Review Follow-Up (2026-06-07)
+
+全部 4 个 findings 已修复：
+
+### M1：stage/schemaId pairing validation ✅
+
+- 新增 `STAGE_SCHEMA_ALLOWLIST` mapping：`adaptation_planning → adaptation_plan_v1`，`scene_draft → writer_scene_patch_v1`
+- 新增 `isValidStageSchemaPair()` 检查函数
+- Handler step 5：先校验 `stage` 是否已知，再校验 stage/schemaId 配对
+- 测试：unknown stage → `config_missing` + `fakeCreate` 未被调用；stage/schema mismatch → `config_missing` + `fakeCreate` 未被调用
+
+### M2：refusal content part detection ✅
+
+- `isRefusal()` 扩展：检查 `response.output[]` 中 message content 的 `{ type: 'refusal' }` part
+- 新增 `extractRefusalText()` helper，提取 refusal 文本放入 error message
+- 测试：`output: [{ type: 'message', content: [{ type: 'refusal', refusal: '...' }] }]` → `reason: 'refusal'`
+
+### M3：文档措辞降准 ✅
+
+- `next-direction.md` / `TODO.md`：`server-side wire-up 已完成` → `Vite local proxy handler 已完成`
+- 明确 `pnpm build` 产物不包含 `/api/model/call`；部署需要额外 API host
+- Phase 3.4b 描述标注：必须复用 app-side semantic validation
+
+### Active Low：error mapping 描述区分 ✅
+
+- 文档区分 structural error（server 负责）和 semantic error（client 负责）
+- 不再声称 "8 种 error 全部测试覆盖" 隐含 semantic 也覆盖
+- 后续单独规划可部署后端 adapter，不把 Vite dev middleware 当作最终部署方案。

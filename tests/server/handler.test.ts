@@ -271,11 +271,11 @@ describe('handleModelCall — config_missing', () => {
     expect((result.trace as Record<string, unknown>).outcome).toBe('error');
   });
 
-  it('unknown schemaId', async () => {
+  it('unknown stage', async () => {
     const req = createFakeReq('POST', {
       messages: [{ role: 'user', content: 'test' }],
-      stage: 'unknown',
-      structuredOutput: { schemaId: 'nonexistent_v99' },
+      stage: 'nonexistent_stage',
+      structuredOutput: { schemaId: 'adaptation_plan_v1' },
     });
     const res = createFakeRes();
 
@@ -283,6 +283,46 @@ describe('handleModelCall — config_missing', () => {
 
     const result = res.jsonBody as Record<string, unknown>;
     const error = result.error as Record<string, unknown>;
+    expect(error.reason).toBe('config_missing');
+    expect((error.message as string).toLowerCase()).toContain('unknown');
+
+    // Must NOT call OpenAI for unknown stage
+    expect(fakeCreate).not.toHaveBeenCalled();
+  });
+
+  it('stage / schemaId mismatch', async () => {
+    const req = createFakeReq('POST', {
+      messages: [{ role: 'user', content: 'Write a scene draft.' }],
+      stage: 'scene_draft',
+      structuredOutput: { schemaId: 'adaptation_plan_v1' }, // wrong schema for this stage
+    });
+    const res = createFakeRes();
+
+    await handleModelCall(req, res);
+
+    const result = res.jsonBody as Record<string, unknown>;
+    const error = result.error as Record<string, unknown>;
+    expect(error.reason).toBe('config_missing');
+    expect((error.message as string).toLowerCase()).toContain('expects');
+
+    // Must NOT call OpenAI on stage/schema mismatch
+    expect(fakeCreate).not.toHaveBeenCalled();
+  });
+
+  it('schemaId not in provider registry (safety net)', async () => {
+    // Valid stage but schemaId isn't registered in PROVIDER_SCHEMA_REGISTRY
+    const req = createFakeReq('POST', {
+      messages: [{ role: 'user', content: 'test' }],
+      stage: 'adaptation_planning',
+      structuredOutput: { schemaId: 'unregistered_schema_v99' },
+    });
+    const res = createFakeRes();
+
+    await handleModelCall(req, res);
+
+    const result = res.jsonBody as Record<string, unknown>;
+    const error = result.error as Record<string, unknown>;
+    // Stage passes step 5, but fails step 7 (provider registry lookup)
     expect(error.reason).toBe('config_missing');
   });
 
@@ -435,6 +475,31 @@ describe('handleModelCall — refusal / empty', () => {
     const error = result.error as Record<string, unknown>;
     expect(error.reason).toBe('refusal');
     expect((error.message as string).toLowerCase()).toContain('content_filter');
+  });
+
+  it('refusal via output content part', async () => {
+    // Responses API can express refusal as a content part in output messages
+    fakeCreate.mockResolvedValueOnce({
+      output_text: '',
+      error: null,
+      incomplete_details: null,
+      output: [
+        {
+          type: 'message',
+          content: [{ type: 'refusal', refusal: 'I cannot generate that content.' }],
+        },
+      ],
+    });
+
+    const req = createFakeReq('POST', architectRequest);
+    const res = createFakeRes();
+
+    await handleModelCall(req, res);
+
+    const result = res.jsonBody as Record<string, unknown>;
+    const error = result.error as Record<string, unknown>;
+    expect(error.reason).toBe('refusal');
+    expect((error.message as string).toLowerCase()).toContain('cannot generate');
   });
 
   it('empty output', async () => {

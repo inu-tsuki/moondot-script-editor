@@ -108,14 +108,30 @@ const mapPromptMessages = (
  *
  * In OpenAI's Responses API, a refusal manifests as:
  * - `incomplete_details.reason === 'content_filter'`, or
- * - `error.code` indicating a policy rejection.
+ * - `error.code` indicating a policy rejection, or
+ * - an output message content part with `type: 'refusal'`.
  */
 const isRefusal = (response: {
   error?: { code?: string } | null;
   incomplete_details?: { reason?: string } | null;
+  output?: Array<{
+    type?: string;
+    content?: Array<{ type: string; refusal?: string; text?: string }>;
+  }>;
 }): boolean => {
   if (response.incomplete_details?.reason === 'content_filter') return true;
   if (response.error?.code === 'invalid_prompt') return true;
+
+  // Check output message content for refusal parts
+  const output = response.output ?? [];
+  for (const item of output) {
+    if (item.type === 'message' && Array.isArray(item.content)) {
+      for (const part of item.content) {
+        if (part.type === 'refusal') return true;
+      }
+    }
+  }
+
   return false;
 };
 
@@ -126,6 +142,31 @@ const isRefusal = (response: {
  */
 const extractOutputText = (response: { output_text?: string }): string | null =>
   response.output_text?.trim() || null;
+
+/**
+ * Extract refusal text from a Responses API response.
+ *
+ * Checks output message content parts for `{ type: 'refusal', refusal: '...' }`.
+ * Returns the first refusal text found, or null.
+ */
+const extractRefusalText = (response: {
+  output?: Array<{
+    type?: string;
+    content?: Array<{ type: string; refusal?: string }>;
+  }>;
+}): string | null => {
+  const output = response.output ?? [];
+  for (const item of output) {
+    if (item.type === 'message' && Array.isArray(item.content)) {
+      for (const part of item.content) {
+        if (part.type === 'refusal' && part.refusal) {
+          return part.refusal;
+        }
+      }
+    }
+  }
+  return null;
+};
 
 /**
  * Classify an error thrown by the OpenAI SDK into a ModelCallError.
@@ -245,6 +286,24 @@ const resolveAppSchema = (schemaId: string): ZodObject<z.ZodRawShape> | null => 
 };
 
 // ---------------------------------------------------------------------------
+// Stage / schemaId pairing
+// ---------------------------------------------------------------------------
+
+/**
+ * Allowlist of valid stage → schemaId pairs.
+ *
+ * The HTTP boundary must enforce this pairing; client-side TypeScript
+ * `ModelStagePayloadMap` cannot protect raw JSON POST bodies.
+ */
+const STAGE_SCHEMA_ALLOWLIST: Record<string, string> = {
+  adaptation_planning: ADAPTATION_PLAN_SCHEMA_ID,
+  scene_draft: WRITER_SCENE_PATCH_SCHEMA_ID,
+};
+
+const isValidStageSchemaPair = (stage: string, schemaId: string): boolean =>
+  STAGE_SCHEMA_ALLOWLIST[stage] === schemaId;
+
+// ---------------------------------------------------------------------------
 // Main handler
 // ---------------------------------------------------------------------------
 
@@ -310,7 +369,38 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
   const { messages, stage, runId, structuredOutput } = rawRequest;
   const { schemaId } = structuredOutput;
 
-  // -- 5. Read env --
+  // -- 5. Validate stage / schemaId pairing --
+  if (!STAGE_SCHEMA_ALLOWLIST[stage]) {
+    sendJson(
+      200,
+      buildErrorResult(
+        makeError(
+          'config_missing',
+          `Unknown model stage: "${stage}". Expected "adaptation_planning" or "scene_draft".`,
+        ),
+        runId,
+        stage,
+      ),
+    );
+    return;
+  }
+
+  if (!isValidStageSchemaPair(stage, schemaId)) {
+    sendJson(
+      200,
+      buildErrorResult(
+        makeError(
+          'config_missing',
+          `Stage "${stage}" expects schemaId "${STAGE_SCHEMA_ALLOWLIST[stage]}", but received "${schemaId}".`,
+        ),
+        runId,
+        stage,
+      ),
+    );
+    return;
+  }
+
+  // -- 6. Read env --
   const env: ServerEnv = readServerEnv();
   if (!canMakeRealCall(env)) {
     sendJson(
@@ -327,7 +417,7 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
     return;
   }
 
-  // -- 6. Resolve schemaId --
+  // -- 7. Resolve schemaId --
   const entry: ProviderSchemaEntry | undefined = resolveProviderSchema(schemaId);
   if (!entry) {
     sendJson(
@@ -344,18 +434,22 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
     return;
   }
 
-  // -- 7. Map messages --
+  // -- 8. Map messages --
   const { input, instructions } = mapPromptMessages(messages);
 
-  // -- 8. Build SDK call config --
+  // -- 9. Build SDK call config --
   const client = createOpenAIClient(env);
   const textFormat = zodTextFormat(entry.providerSchema, entry.formatName);
 
-  // -- 9. Call OpenAI --
+  // -- 10. Call OpenAI --
   let response: {
     output_text?: string;
     error?: { code?: string } | null;
     incomplete_details?: { reason?: string } | null;
+    output?: Array<{
+      type?: string;
+      content?: Array<{ type: string; refusal?: string; text?: string }>;
+    }>;
   };
   try {
     response = (await client.responses.create({
@@ -363,35 +457,30 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
       input,
       instructions: instructions || undefined,
       text: { format: textFormat },
-    })) as unknown as {
-      output_text?: string;
-      error?: { code?: string } | null;
-      incomplete_details?: { reason?: string } | null;
-    };
+    })) as unknown as typeof response;
   } catch (err) {
     const sdkError = classifySDKError(err);
     sendJson(200, buildErrorResult(sdkError, runId, stage));
     return;
   }
 
-  // -- 10. Refusal check --
+  // -- 11. Refusal check --
   if (isRefusal(response)) {
+    const refusalText = extractRefusalText(response);
     const reason =
       response.incomplete_details?.reason === 'content_filter'
         ? 'content_filter'
-        : (response.error?.code ?? 'policy');
-    sendJson(
-      200,
-      buildErrorResult(
-        makeError('refusal', `Model refused to generate output. Reason: ${reason}.`),
-        runId,
-        stage,
-      ),
-    );
+        : response.error?.code === 'invalid_prompt'
+          ? 'invalid_prompt'
+          : 'refusal';
+    const message = refusalText
+      ? `Model refused to generate output. Reason: ${reason}. Refusal: "${refusalText.slice(0, 200)}"`
+      : `Model refused to generate output. Reason: ${reason}.`;
+    sendJson(200, buildErrorResult(makeError('refusal', message), runId, stage));
     return;
   }
 
-  // -- 11. Extract output text --
+  // -- 12. Extract output text --
   const outputText = extractOutputText(response);
   if (!outputText) {
     sendJson(
@@ -401,7 +490,7 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
     return;
   }
 
-  // -- 12. Parse output as JSON --
+  // -- 13. Parse output as JSON --
   let outputJson: unknown;
   try {
     outputJson = JSON.parse(outputText);
@@ -413,14 +502,14 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
     return;
   }
 
-  // -- 13. Provider schema parse + normalize --
+  // -- 14. Provider schema parse + normalize --
   const normalizedResult = parseAndNormalizeProviderOutput(entry, outputJson);
   if (!normalizedResult.success) {
     sendJson(200, buildErrorResult(makeError('schema', normalizedResult.message), runId, stage));
     return;
   }
 
-  // -- 14. App-side Zod structural validation --
+  // -- 15. App-side Zod structural validation --
   const appSchema = resolveAppSchema(schemaId);
   if (!appSchema) {
     // Should not happen — entry exists but no app schema mapped
@@ -445,7 +534,7 @@ export const handleModelCall = async (req: IncomingMessage, res: ServerResponse)
     return;
   }
 
-  // -- 15. Success --
+  // -- 16. Success --
   const durationMs = Date.now() - startedAt;
   sendJson(
     200,

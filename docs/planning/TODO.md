@@ -71,11 +71,11 @@ Phase 3 已完成 model adapter contract、Structured Architect contract 和 Wri
 - [x] 实现 Phase 3.3 WriterBrief and scene draft contract，让 Writer 输出收窄为可验证 `WriterScenePatch` 并通过 document operation 写回。
 - [x] 审计 `adaptation_plan_v1` / `writer_scene_patch_v1` 的 OpenAI strict structured output 兼容性，明确 optional 字段、provider-facing strict schema 和 failure mapping 风险。
 - [x] 完成 Phase 3.4-pre (Golden Fox)：安装 `openai` SDK v6.42.0，建立 provider-facing Zod schemas（`adaptation-plan-provider.ts`、`writer-scene-patch-provider.ts`）、normalizer、schema registry、compatibility snapshot 测试和 roundtrip 测试。Writer optional → nullable + discriminatedUnion → flat object 已完成。Vite dev server `/api/model/call` skeleton 已建立。`.env.example` 模板已创建。
-- [x] 完成 Phase 3.4 正式阶段 (server-side wire-up)：`/api/model/call` endpoint 完整实现。Handler pipeline：body parse → env check → schemaId resolve → OpenAI Responses API call → output extraction → parseAndNormalizeProviderOutput → app-side Zod safeParse → ModelCallResult。8 种 `ModelCallError` 映射全部测试覆盖。16 个 handler tests，build boundary 验证通过（dist/ 中无 openai SDK/handler 代码）。
+- [x] 完成 Phase 3.4 Vite local proxy handler：`/api/model/call` dev-server endpoint 实现，挂在 Vite `configureServer()` middleware 上。Pipeline：body parse → env check → stage/schemaId validation → OpenAI Responses API call → output extraction → parseAndNormalizeProviderOutput → app-side Zod structural safeParse → ModelCallResult。Structural error 映射（config_missing / network / refusal / empty_output / parse / schema）已测试覆盖；semantic 由 client 端负责。19 handler tests，build boundary 验证通过（dist/ 不含 openai SDK 或 handler 代码）。注意：此 endpoint 仅在 `pnpm dev` 期间存在；可部署 server adapter 待后续规划。
 
 ## 下一步
 
-- [ ] Phase 3.4b：前端 `ProxyModelAdapter` 实现，对接 `/api/model/call` endpoint，让 UI 可在 mock / local_proxy 之间切换。
+- [ ] Phase 3.4b：前端 `ProxyModelAdapter` 实现，对接 `/api/model/call` endpoint，让 UI 可在 mock / local_proxy 之间切换。必须复用现有 app-side semantic validation path（`validateAdaptationPlan` / `validateWriterScenePatch`），不能把 server structural success 直接写入 state。
 - [ ] 设计 Phase 3.5 model trace / diagnostics 在 output tabs 中的展示方式，避免和 YAML、outline 互相挤压。
 - [ ] 做 Phase 3.6 repair and fallback hardening，覆盖 parse、schema、semantic validation、network 和 config failures。
 - [ ] 准备正式 demo 路径：3+ 章节输入、改编方案确认、语义块编辑、YAML 导出、Schema 文档链接。
