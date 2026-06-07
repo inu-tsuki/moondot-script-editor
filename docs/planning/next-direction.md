@@ -162,9 +162,16 @@ Phase 3.4b 收口边界：
 
 目标：先修正 UI 信息架构，再继续拆工具能力。当前应用实际只有两个一级功能：`Editor` 负责已写入的剧本文档，`Converter` 负责 source input、preferences、Architect outline、Writer draft、validation、YAML projection 和 export。3.5 不应继续把 source、outline、YAML、diagnostics 拆成互不相关的首级 panels / tabs。
 
+代码组织目标：
+
+- 新增 `src/components/shell/` 承载 `AppShell`、`WorkspaceSwitcher`、`DockLayout`。
+- 新增 `src/features/editor/` 承载 `EditorWorkspace`、scene navigation、script editor 和 block editors。
+- 新增 `src/features/converter/` 承载 `ConverterWorkspace`、source / preferences、plan、writer draft、validation / export。
+- `App.tsx` 短期可保留 workflow state 和 handlers，但 render 层应只组合 shell / workspace 级组件，不再直接拼装所有 leaf panels。
+
 建议顺序：
 
-- Phase 3.5a：Workspace shell and dock foundation。建立 `AppShell`、`WorkspaceSwitcher`、`DockLayout`、`EditorWorkspace`、`ConverterWorkspace`；Topbar 只保留 app-level 行为，agent / export commands 移入 Converter。
+- Phase 3.5a：Workspace shell and dock foundation。建立 `AppShell`、`WorkspaceSwitcher`、`DockLayout`、`EditorWorkspace`、`ConverterWorkspace`；Topbar 只保留 app-level 行为，agent / export commands 移入 Converter；开始迁移 `components/panels` 平铺结构到 shell / editor / converter 边界。
 - Phase 3.5b：Converter workspace consolidation。把 source、preferences、outline、Writer draft preview、diagnostics、YAML 收进一个 converter workflow，组织成 Input / Plan / Draft / Validate / Export，而不是旧 `Output` tabs。
 - Phase 3.5c：Editor workspace stabilization。把 scene navigation 收进 Editor 自身的 header / rail / document flow，保留多 scene 可发现、可切换、可编辑。
 - Phase 3.5d：Run monitor and artifact trace。展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类，作为 Converter / dock 内部工具。
@@ -176,6 +183,7 @@ Phase 3.4b 收口边界：
 - 用户能清楚知道当前在 `Editor` 还是 `Converter`，以及 Converter 正处在 input / plan / draft / validate / export 的哪一步。
 - `Source` / preferences / outline / Writer draft / diagnostics / YAML 不再分裂在左右栏和旧 Output tabs。
 - 中央手稿编辑区仍是主工作区；dock / workspace switch 不能破坏已有编辑、outline、YAML 和 diagnostics 流程。
+- shell 不知道 Converter workflow internals，Editor 不消费 pending `WriterScenePatch`，Converter 不直接编辑 `ScreenplayDocument.script.scenes`，只通过 explicit apply handler 写回。
 - Agent 对话式页面只作为后续可选切片，必须调用 typed workflow，不直接开放任意工具执行。
 - UI、editor、toolbar、output panel 或 responsive layout 改动运行 `pnpm e2e`，或在 PR 中明确说明环境缺口。
 

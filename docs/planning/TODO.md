@@ -77,7 +77,7 @@ Phase 3 已完成 model adapter contract、Structured Architect contract、Write
 ## 下一步
 
 - [ ] Phase 3.4b follow-up：Topbar 中 import 按钮当前无功能，可考虑连接文件导入。
-- [ ] Phase 3.5a：Workspace shell and dock foundation，建立 `Editor` / `Converter` 双 workspace、统一 dock、Topbar app-level 行为边界；不在这一段引入完整 agent runtime。
+- [ ] Phase 3.5a：Workspace shell and dock foundation，建立 `Editor` / `Converter` 双 workspace、统一 dock、Topbar app-level 行为边界，并把组件组织从 `components/panels` 平铺迁移到 shell / editor / converter 边界；不在这一段引入完整 agent runtime。
 - [ ] Phase 3.5b：Converter workspace consolidation，将 source、preferences、outline、Writer draft preview、diagnostics、YAML 组织为 Input / Plan / Draft / Validate / Export 的单一 converter workflow。
 - [ ] Phase 3.5c：Editor workspace stabilization，把 scene navigation 收进 Editor 自身 header / rail / document flow，保留多 scene 可发现、可切换、可编辑。
 - [ ] Phase 3.5d：Run monitor and artifact trace，展示 provider、stage、runId、loading / success / failure、trace event 和 `ModelCallError.reason` 分类；不显示 secret。
