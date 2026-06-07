@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-Phase 3 已完成 model adapter contract 和 Structured Architect contract。当前重点是把 Writer 阶段从 mock document 生成收窄为可验证 scene patch，并为后续 local proxy / real SDK 建立 schema id 到 structured output schema 的映射路径。
+Phase 3 已完成 model adapter contract、Structured Architect contract 和 Writer scene patch contract。当前重点是启动 Phase 3.4 local proxy / server boundary，并在接 OpenAI SDK 前完成现有 Zod schemas 的 structured output compatibility audit。
 
 ## 已完成
 
@@ -68,11 +68,14 @@ Phase 3 已完成 model adapter contract 和 Structured Architect contract。当
 - [x] 启动 Phase 3 正式规划，定义模型调用层、structured output、mock fallback、server-side secret 边界、trace 和 demo hardening 的 PR 顺序。
 - [x] 实现 Phase 3.1 model adapter contract，让 mock fallback 和未来真实模型共用 `ModelCallRequest` / `ModelCallResult` / `ModelCallError`。
 - [x] 实现 Phase 3.2 Structured Architect contract，为 Architect plan 建立 Zod schema / runtime validation，并预留可序列化 `structuredOutput: { schemaId }` envelope。
+- [x] 实现 Phase 3.3 WriterBrief and scene draft contract，让 Writer 输出收窄为可验证 `WriterScenePatch` 并通过 document operation 写回。
+- [x] 审计 `adaptation_plan_v1` / `writer_scene_patch_v1` 的 OpenAI strict structured output 兼容性，明确 optional 字段、provider-facing strict schema 和 failure mapping 风险。
 
 ## 下一步
 
-- [ ] 实现 Phase 3.3 WriterBrief and scene draft contract，让 Writer 只根据确认后的 scene-level brief 生成可验证 scene patch，并通过 `structuredOutput: { schemaId }` 复用 Phase 3.2 的模型 envelope。
-- [ ] 建立 Phase 3.4 local model proxy / server boundary，避免 API key 暴露在浏览器端，并用 server-side schema registry 将 Architect / Writer `schemaId` 映射到真实 SDK structured output 参数。
+- [ ] 建立 Phase 3.4 local model proxy / server boundary，避免 API key 暴露在浏览器端，并用 server-side schema registry 将 Architect / Writer `schemaId` 映射到 OpenAI Responses API structured output 参数。
+- [ ] 为 `adaptation_plan_v1` / `writer_scene_patch_v1` 增加 provider-facing schema snapshot / compatibility test，确认 root object、required 字段、`additionalProperties: false`、optional/nullability、nested union 和 selected model 支持的 JSON Schema keywords。
+- [ ] 在 proxy / server 侧引入 `openai` SDK，确认 SDK 不进入 React client import graph；无 key 时继续 mock fallback。
 - [ ] 设计 Phase 3.5 model trace / diagnostics 在 output tabs 中的展示方式，避免和 YAML、outline 互相挤压。
 - [ ] 做 Phase 3.6 repair and fallback hardening，覆盖 parse、schema、semantic validation、network 和 config failures。
 - [ ] 准备正式 demo 路径：3+ 章节输入、改编方案确认、语义块编辑、YAML 导出、Schema 文档链接。
