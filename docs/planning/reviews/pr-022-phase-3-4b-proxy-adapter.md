@@ -207,7 +207,7 @@ e2e 备注：
 - `trace` 是非 null object，且 `trace.provider` 是 string
 - `error` 若存在，`error.reason` 必须是 string
 
-新增 5 个测试用例（malformed envelope: 缺 diagnostics/data、diagnostics 非 array、trace null、error.reason 非 string）。Proxy adapter tests 从 17 → 22。
+新增 4 个测试用例（malformed envelope: 缺 diagnostics/data、diagnostics 非 array、trace null、error.reason 非 string）。Proxy adapter tests 从 17 → 21。
 
 复核状态：已解决。
 
