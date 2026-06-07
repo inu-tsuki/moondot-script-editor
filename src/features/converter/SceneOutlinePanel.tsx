@@ -14,7 +14,8 @@ type SceneOutlinePanelProps = {
   /** Draft has been applied to the screenplay document. */
   isDraftApplied: boolean;
   onGenerateDraft: () => void;
-  providerType: ModelProviderType;
+  /** Provider that actually generated this artifact (from trace), not the current selection. */
+  generationProvider: ModelProviderType;
 };
 
 export function SceneOutlinePanel({
@@ -24,7 +25,7 @@ export function SceneOutlinePanel({
   hasDraft,
   isDraftApplied,
   onGenerateDraft,
-  providerType,
+  generationProvider,
 }: SceneOutlinePanelProps) {
   if (!plan) {
     return null;
@@ -38,7 +39,7 @@ export function SceneOutlinePanel({
       <div className="flex items-center gap-2 justify-between">
         <PanelTitle icon={<ListChecks size={16} />}>Scene Outline</PanelTitle>
         <div className="flex items-center gap-2">
-          <RunBadge provider={providerType} />
+          <RunBadge provider={generationProvider} />
           <PanelMeta>{plan.sceneOutline.length} scenes</PanelMeta>
         </div>
       </div>

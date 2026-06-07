@@ -35,14 +35,15 @@ type WriterDraftPanelProps = {
   writerDraft: WriterScenePatch | null;
   isDraftApplied: boolean;
   onApplyDraft: () => void;
-  providerType: ModelProviderType;
+  /** Provider that actually generated this artifact (from trace), not the current selection. */
+  generationProvider: ModelProviderType;
 };
 
 export function WriterDraftPanel({
   writerDraft,
   isDraftApplied,
   onApplyDraft,
-  providerType,
+  generationProvider,
 }: WriterDraftPanelProps) {
   if (!writerDraft) return null;
 
@@ -56,7 +57,7 @@ export function WriterDraftPanel({
       <div className="flex items-center gap-2 justify-between">
         <PanelTitle icon={<CheckCircle2 size={16} />}>Writer Draft</PanelTitle>
         <div className="flex items-center gap-2">
-          <RunBadge provider={providerType} />
+          <RunBadge provider={generationProvider} />
           <PanelMeta>{sceneCount} drafts</PanelMeta>
         </div>
       </div>

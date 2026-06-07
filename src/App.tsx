@@ -113,6 +113,11 @@ function App() {
   // Phase 2 — click "应用到剧本" calls applySceneDrafts() and writes to document.
   const [writerDraft, setWriterDraft] = useState<WriterScenePatch | null>(null);
   const [isGeneratingWriter, setIsGeneratingWriter] = useState(false);
+  // Provider that actually generated each artifact — captured from
+  // `result.trace.provider` so the RunBadge reflects the generation source,
+  // not the currently-selected provider.
+  const [planProvider, setPlanProvider] = useState<ModelProviderType | null>(null);
+  const [draftProvider, setDraftProvider] = useState<ModelProviderType | null>(null);
   // Derived: draft has been applied to document (Writer trace step exists).
   const isDraftApplied = adaptationTrace.some(
     (traceStep) => traceStep.artifactType === 'writer_draft',
@@ -152,6 +157,7 @@ function App() {
 
   const invalidateWriterDraft = () => {
     setWriterDraft(null);
+    setDraftProvider(null);
   };
 
   const handleProviderChange = (next: ModelProviderType) => {
@@ -424,6 +430,7 @@ function App() {
 
       if (!validated.plan) {
         setAdaptationPlan(undefined);
+        setPlanProvider(null);
         setAdaptationTrace([]);
         setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
         setExportFeedback('');
@@ -431,6 +438,7 @@ function App() {
       }
 
       setAdaptationPlan(validated.plan);
+      setPlanProvider(result.trace.provider);
       setAdaptationTrace(
         validated.plan
           ? [
@@ -499,6 +507,7 @@ function App() {
       if (!result.data) {
         setAdaptationDiagnostics(result.diagnostics);
         setWriterDraft(null);
+        setDraftProvider(null);
         return;
       }
 
@@ -516,15 +525,18 @@ function App() {
 
       if (!validated.patch) {
         setWriterDraft(null);
+        setDraftProvider(null);
         setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
         return;
       }
 
       setWriterDraft(validated.patch);
+      setDraftProvider(result.trace.provider);
       setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
       setExportFeedback('');
     } catch (err) {
       setWriterDraft(null);
+      setDraftProvider(null);
       setAdaptationDiagnostics([
         {
           severity: 'error',
@@ -659,7 +671,7 @@ function App() {
             hasDraft={hasWriterDraft}
             isDraftApplied={isDraftApplied}
             onGenerateDraft={generateWriterDraft}
-            providerType={providerType}
+            generationProvider={planProvider!}
           />
           <DiagnosticsBand diagnostics={planDiagnostics} />
 
@@ -667,7 +679,7 @@ function App() {
             writerDraft={writerDraft}
             isDraftApplied={isDraftApplied}
             onApplyDraft={applyWriterDraft}
-            providerType={providerType}
+            generationProvider={draftProvider!}
           />
           <DiagnosticsBand diagnostics={documentExportDiagnostics} />
         </ConverterPanel>
