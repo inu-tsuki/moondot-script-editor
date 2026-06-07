@@ -498,7 +498,7 @@ function App() {
         ...currentTrace.filter((traceStep) => traceStep.artifactType !== 'writer_draft'),
         {
           label: 'model-writing',
-          detail: `通过 ${result.trace.provider} provider 写入 ${validated.patch!.scenes.length} 个 scene draft。`,
+          detail: `通过 ${result.trace.provider} Writer 生成 ${validated.patch!.scenes.length} 个 scene draft，并通过 validation 写入剧本初稿。`,
           stage: 'scene_draft',
           artifactType: 'writer_draft',
         },

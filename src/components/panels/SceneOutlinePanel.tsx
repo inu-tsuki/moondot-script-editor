@@ -25,13 +25,13 @@ export function SceneOutlinePanel({ isDrafted, plan, trace, onConfirm }: SceneOu
       </div>
       <div className="flex justify-end">
         <Button
-          title="确认大纲并写入剧本"
+          title="确认大纲并生成剧本"
           variant="primary"
           onClick={onConfirm}
           disabled={isDrafted}
         >
           <CheckCircle2 size={16} />
-          {isDrafted ? '已写入' : '确认写入'}
+          {isDrafted ? '已生成' : '确认生成'}
         </Button>
       </div>
       <div className="flex flex-wrap gap-1.5">

@@ -92,9 +92,9 @@ export function Topbar({
           <WandSparkles size={16} />
           大纲
         </Button>
-        <Button title="确认大纲并写入剧本" onClick={onConfirmOutline} disabled={!canConfirm}>
+        <Button title="确认大纲并生成剧本" onClick={onConfirmOutline} disabled={!canConfirm}>
           <CheckCircle2 size={16} />
-          写入
+          剧本
         </Button>
         <Button title="下载 YAML" onClick={onDownloadYaml} disabled={!isExportReady}>
           <Download size={16} />
