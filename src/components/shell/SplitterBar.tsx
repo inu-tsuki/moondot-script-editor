@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
+/** Pixels to nudge per keyboard arrow press. */
+const KB_STEP = 40;
+
 type SplitterBarProps = {
   /** Called with pixel delta from the drag start position. */
   onResize: (deltaX: number) => void;
@@ -9,63 +12,93 @@ type SplitterBarProps = {
 /**
  * Thin vertical resize handle between two horizontal panels.
  *
- * Drag starts a full-screen overlay (teleported to document.body) that tracks
- * mouse movement and draws a ghost guide line.  On release the delta is
- * reported back via `onResize` so the parent can update panel widths.
+ * Supports mouse, touch (via pointer events), and keyboard (ArrowLeft /
+ * ArrowRight) resizing.  Drag draws a ghost guide line teleported to
+ * `document.body` so layout is not affected while the handle is active.
  *
- * Pattern borrowed from KMD's SplitterBar but simplified: no percentage math
- * here — the parent owns the container measurements and ratio logic.
+ * Pattern borrowed from KMD's SplitterBar but simplified for a single
+ * two-panel split.
  */
 export function SplitterBar({ onResize }: SplitterBarProps) {
   const [dragging, setDragging] = useState(false);
   const [ghostX, setGhostX] = useState(0);
   const startXRef = useRef(0);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
+  // ── Pointer ──────────────────────────────────────────
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    // Only respond to primary pointer (mouse left / first touch).
+    if (e.pointerId !== 0 && e.pointerType !== 'mouse') return;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
     startXRef.current = e.clientX;
     setGhostX(e.clientX);
     setDragging(true);
   }, []);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    setGhostX(e.clientX);
-  }, []);
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragging) return;
+      setGhostX(e.clientX);
+    },
+    [dragging],
+  );
 
-  const handleMouseUp = useCallback(
-    (e: MouseEvent) => {
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragging) return;
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
       const deltaX = e.clientX - startXRef.current;
       onResize(deltaX);
       setDragging(false);
     },
-    [onResize],
+    [dragging, onResize],
   );
 
+  // Prevent text selection while dragging.
   useEffect(() => {
-    if (!dragging) return;
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    // Prevent text selection while dragging.
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-
+    if (dragging) {
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+    } else {
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    }
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     };
-  }, [dragging, handleMouseMove, handleMouseUp]);
+  }, [dragging]);
+
+  // ── Keyboard ─────────────────────────────────────────
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        onResize(KB_STEP);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        onResize(-KB_STEP);
+      }
+    },
+    [onResize],
+  );
 
   return (
     <>
       {/* Visible handle */}
       <div
-        className="group relative z-10 w-[8px] flex-shrink-0 cursor-col-resize"
-        onMouseDown={handleMouseDown}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="拖拽调整面板宽度"
+        tabIndex={0}
+        className="group relative z-10 w-[8px] flex-shrink-0 cursor-col-resize touch-none"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onKeyDown={handleKeyDown}
       >
-        <div className="mx-auto h-full w-[2px] bg-[#e4ded3] transition-colors group-hover:bg-[#8ba89a]" />
+        <div className="mx-auto h-full w-[2px] bg-[#e4ded3] transition-colors group-hover:bg-[#8ba89a] group-focus-visible:bg-[#3b8a6f]" />
       </div>
 
       {/* Ghost overlay — teleported to avoid layout shifts */}

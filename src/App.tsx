@@ -1,15 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import { AppShell, DockLayout } from './components/shell';
-import { EditorWorkspace, ExportBar, SceneNavigator, ScriptEditorPanel } from './features/editor';
-import {
-  AdaptationPreferencesPanel,
-  ConverterWorkspace,
-  DiagnosticsBand,
-  SceneOutlinePanel,
-  SourcePanel,
-  WriterDraftPanel,
-} from './features/converter';
+import { EditorWorkspace } from './features/editor';
+import { ConverterWorkspace } from './features/converter';
 import {
   ADAPTATION_PLAN_SCHEMA_ID,
   WRITER_SCENE_PATCH_SCHEMA_ID,
@@ -602,70 +595,46 @@ function App() {
 
   const editorWorkspace = (
     <EditorWorkspace
-      sceneNavigator={
-        <SceneNavigator
-          scenes={workingDocument.script.scenes}
-          activeIndex={activeSceneIndex}
-          onSelect={setActiveSceneIndex}
-        />
-      }
-      scriptEditor={
-        <ScriptEditorPanel
-          charactersById={charactersById}
-          scene={activeScene}
-          selectedBlockId={selectedBlockId}
-          onEdit={handleEdit}
-          onUpdateBlockText={handleUpdateBlockText}
-        />
-      }
-      exportBar={
-        <ExportBar
-          isReady={exportStatus.isReady}
-          errorCount={exportStatus.errorCount}
-          warningCount={exportStatus.warningCount}
-          feedback={exportFeedback}
-          onCopy={copyYaml}
-          onDownload={downloadYaml}
-        />
-      }
+      scenes={workingDocument.script.scenes}
+      activeSceneIndex={activeSceneIndex}
+      activeScene={activeScene}
+      charactersById={charactersById}
+      selectedBlockId={selectedBlockId}
+      onSelectScene={setActiveSceneIndex}
+      onEdit={handleEdit}
+      onUpdateBlockText={handleUpdateBlockText}
+      exportReady={exportStatus.isReady}
+      exportErrorCount={exportStatus.errorCount}
+      exportWarningCount={exportStatus.warningCount}
+      exportFeedback={exportFeedback}
+      onCopyYaml={copyYaml}
+      onDownloadYaml={downloadYaml}
     />
   );
 
   const converterWorkspace = (
-    <ConverterWorkspace>
-      <SourcePanel
-        chapterCount={chapterCount}
-        sourceText={sourceText}
-        sourceType={workingDocument.source.type}
-        onSourceTextChange={updateSourceText}
-      />
-      <DiagnosticsBand diagnostics={sourceDiagnostics} />
-
-      <AdaptationPreferencesPanel
-        preferences={adaptationPreferences}
-        onPreferenceChange={updateAdaptationPreference}
-        onGenerateOutline={generateSceneOutline}
-      />
-
-      <SceneOutlinePanel
-        plan={adaptationPlan}
-        trace={adaptationTrace}
-        isGeneratingWriter={isGeneratingWriter}
-        hasDraft={hasWriterDraft}
-        isDraftApplied={isDraftApplied}
-        onGenerateDraft={generateWriterDraft}
-        generationProvider={planProvider!}
-      />
-      <DiagnosticsBand diagnostics={planDiagnostics} />
-
-      <WriterDraftPanel
-        writerDraft={writerDraft}
-        isDraftApplied={isDraftApplied}
-        onApplyDraft={applyWriterDraft}
-        generationProvider={draftProvider!}
-      />
-      <DiagnosticsBand diagnostics={documentExportDiagnostics} />
-    </ConverterWorkspace>
+    <ConverterWorkspace
+      chapterCount={chapterCount}
+      sourceText={sourceText}
+      sourceType={workingDocument.source.type}
+      onSourceTextChange={updateSourceText}
+      sourceDiagnostics={sourceDiagnostics}
+      preferences={adaptationPreferences}
+      onPreferenceChange={updateAdaptationPreference}
+      onGenerateOutline={generateSceneOutline}
+      plan={adaptationPlan}
+      trace={adaptationTrace}
+      isGeneratingWriter={isGeneratingWriter}
+      hasDraft={hasWriterDraft}
+      isDraftApplied={isDraftApplied}
+      onGenerateDraft={generateWriterDraft}
+      planProvider={planProvider}
+      planDiagnostics={planDiagnostics}
+      writerDraft={writerDraft}
+      onApplyDraft={applyWriterDraft}
+      draftProvider={draftProvider}
+      documentDiagnostics={documentExportDiagnostics}
+    />
   );
 
   return (
