@@ -11,9 +11,9 @@
 
 主路径上，server structural success 没有直接写入 state。Architect 结果仍先走 `validateAdaptationPlan()`，Writer 结果仍先走 `validateWriterScenePatch()`，再通过 `applySceneDrafts()` 写回 document。这是 3.4b 最关键的边界，当前实现守住了。
 
-第一轮发现的 auto-detect、provider switching 和 response envelope guard 已在后续提交中修复。最新复核发现一个更核心的 UI workflow 边界问题：确认 scene outline 之后，当前实现会立刻调用 Writer、validation，并把 `WriterScenePatch` apply 到 `ScreenplayDocument.script`。这让“确认大纲”承担了“生成候选剧本”和“写入剧本”两个动作，缺少 Writer 结果预览 / 剧本概览 / 最终应用确认。
+第一轮发现的 auto-detect、provider switching 和 response envelope guard 已在后续提交中修复。第二轮发现的“确认 scene outline 后立即 apply Writer patch”也已在 `2e7b235` 中拆成生成草稿和应用草稿两个阶段。
 
-这个问题建议在本 PR 内修复。3.4b 已经把真实 / 代理 Writer 接进前端，outline confirmation 的下一步不应直接突变用户稿件；至少需要把 Writer 产物先作为候选 patch 展示，再由显式“写入 / 应用到剧本”动作调用 document operation。
+最新复核仍不建议直接合并：pending `writerDraft` 没有随 source、document、provider 或新 outline 失效，旧 Writer patch 仍可能被应用到新上下文。另一个中等风险是 Writer 草稿预览目前只显示标题和 block 数，尚不足以支撑“审阅后写入”。
 
 ## Findings
 
@@ -261,3 +261,88 @@ rg "openai|handleModelCall|..." dist/  # ✅ empty
 - 文案回归：outline confirmation 控件不出现 `确认写入` / `已写入`；mock writer diagnostic 不出现 `Writer 写入 scene draft`。
 
 函数名 `confirmSceneOutline` 可以继续描述“用户确认 outline”这一事件，但它不应再包含最终 document apply。这个拆分会让 3.5 Writer tool surface 的规划自然落位：Architect 工具负责 plan / outline，Writer 工具负责候选 draft，Validation / Apply 才负责写入当前剧本。
+
+## Third Review Follow-Up (2026-06-07)
+
+`2e7b235` 已经解决第二轮最关键的问题：Writer 生成和 document apply 不再绑定在同一个按钮里。当前实现新增了 `writerDraft: WriterScenePatch | null` 和 `isGeneratingWriter` 状态；`generateWriterDraft()` 只调用 Writer、运行 `validateWriterScenePatch()`，并把通过 validation 的 patch 存成 pending draft；只有 `applyWriterDraft()` 会调用 `applySceneDrafts()` 写入 `ScreenplayDocument.script`。
+
+复核状态：主拆分已解决，但仍有两个需要在本 PR 内处理的 workflow 边界。
+
+### Active High：pending `writerDraft` 不会随上下文变化失效，旧 patch 仍可应用
+
+位置：`src/App.tsx:151`、`src/App.tsx:285`、`src/App.tsx:348`、`src/App.tsx:381`、`src/App.tsx:459`、`src/App.tsx:594`
+
+修复后，Topbar 的 apply 可用条件是：
+
+```ts
+canApply={hasWriterDraft && !isDraftApplied}
+```
+
+但 `hasWriterDraft` 只看 `writerDraft !== null`。当前这些路径不会清掉 pending draft：
+
+- `invalidateModelRun()` 只把 `latestRunIdRef.current` 设为 `null`，不会 `setWriterDraft(null)`。
+- provider 切换调用 `handleProviderChange()`，只 invalidate in-flight run，不 invalidate pending draft。
+- 普通手稿编辑通过 `handleEdit()` / `handleUpdateBlockText()` 只 invalidate model run，不 invalidate pending draft。
+- `updateSourceText()` 清掉了 `adaptationPlan` / `adaptationTrace`，但没有清 `writerDraft`。
+- `generateSceneOutline()` 开始新规划时清掉 `adaptationPlan` / `adaptationTrace`，但没有清 `writerDraft`。
+
+因此可以出现：
+
+1. 用户生成 outline。
+2. 用户点击“确认生成”，得到 pending Writer draft。
+3. 用户修改 source、preferences、手稿，或切换 provider，或重新生成 outline。
+4. 旧 `writerDraft` 仍留在 state。
+5. Topbar 仍显示“应用”，点击后旧 patch 通过 `applyWriterDraft()` 写入当前 document。
+
+这会把旧 brief / 旧 source refs / 旧 provider 输出应用到新的创作上下文，正好绕过了两阶段设计想保护的 human review 边界。
+
+建议：
+
+- 增加 `invalidateWriterDraft()`，至少执行 `setWriterDraft(null)`，必要时也清掉 writer draft diagnostics。
+- 在 source text change、preferences change、document edit、manual block edit、provider change、new outline generation、clear adaptation run 中调用它。
+- `generateWriterDraft()` 开始时也应先清掉旧 `writerDraft`，避免 generation in-flight 时 UI 仍可应用旧 draft。
+- 补测试：pending draft 存在后，修改 source/preferences/document、切 provider、重新生成 outline，都不应还能点击“应用”。
+
+### Active Medium：Writer 草稿预览不足以支撑“审阅后写入”
+
+位置：`src/components/panels/SceneOutlinePanel.tsx:84`
+
+当前预览只展示：
+
+- `sceneCardId`
+- `title`
+- block 数量
+
+这比直接写入前进了一步，但还不够构成真正的 Writer 草稿审阅点。用户仍看不到将要写入的 `heading`、`synopsis`、block 文本、角色对白、source refs 或 validation diagnostics 摘要。实际决策仍接近盲按“应用到剧本”。
+
+建议本 PR 至少把 preview 扩到可判断写入内容的最小集合：
+
+- 每场 scene 的 `heading`、`synopsis`、source refs。
+- 前若干个 blocks 的类型和文本摘要；dialogue block 显示 character id / name。
+- 显示 validation 通过状态和 diagnostics 摘要。
+- 如果空间有限，可使用可展开 row，但默认 preview 不能只剩 title 和 block count。
+
+### 已验证
+
+本次复核运行：
+
+```sh
+pnpm format:check
+pnpm lint
+pnpm build
+pnpm test
+pnpm e2e
+```
+
+结果：
+
+- `pnpm format:check` passed。
+- `pnpm lint` passed。
+- `pnpm build` passed。
+- `pnpm test` passed：12 files / 157 tests。
+- `pnpm e2e` passed：3 tests。
+
+测试缺口：
+
+- 当前没有 App / SceneOutlinePanel 层面的测试覆盖“生成 Writer draft 不改稿，应用后才改稿”。
+- 当前没有测试覆盖 pending writer draft 在 source / preferences / document / provider / new outline 变化后失效。
