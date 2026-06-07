@@ -1,17 +1,16 @@
-import { FileText, Layout } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
-import { PanelBody, PanelHeader, PanelMeta, PanelShell, PanelTitle, Tabs } from './components/ui';
+import { AppShell } from './components/shell';
+import { SceneNavigator, ScriptEditorPanel } from './features/editor';
 import {
   AdaptationPreferencesPanel,
-  DiagnosticsPanel,
+  ConverterActions,
+  ConverterPanel,
+  DiagnosticsBand,
   SceneOutlinePanel,
-  ScriptEditorPanel,
   SourcePanel,
-  Topbar,
-  WorkbenchLayout,
   YamlExportPanel,
-} from './components/panels';
+} from './features/converter';
 import {
   ADAPTATION_PLAN_SCHEMA_ID,
   WRITER_SCENE_PATCH_SCHEMA_ID,
@@ -104,12 +103,11 @@ function App() {
   const [adaptationPlan, setAdaptationPlan] = useState<AdaptationPlan>();
   const [adaptationTrace, setAdaptationTrace] = useState<NovelAdaptationTraceStep[]>([]);
   const [exportFeedback, setExportFeedback] = useState('');
-  const [outputTab, setOutputTab] = useState('outline');
   const [selectedBlockId, setSelectedBlockId] = useState<BlockId | null>(null);
   const [providerType, setProviderType] = useState<ModelProviderType>('mock');
   const [isProxyAvailable, setIsProxyAvailable] = useState(false);
   const [isProbing, setIsProbing] = useState(true);
-  // Writer two-phase workflow (per PR #38 Second Review):
+  // Writer two-phase workflow:
   // Phase 1 — click "确认生成" triggers Writer, stores validated patch here.
   // Phase 2 — click "应用到剧本" calls applySceneDrafts() and writes to document.
   const [writerDraft, setWriterDraft] = useState<WriterScenePatch | null>(null);
@@ -119,8 +117,7 @@ function App() {
     (traceStep) => traceStep.artifactType === 'writer_draft',
   );
   const hasWriterDraft = writerDraft !== null;
-  // Synchronous gate to prevent duplicate Writer calls within the same event
-  // batch (useState closures are stale until next render).
+  // Synchronous gate to prevent duplicate Writer calls within the same event batch.
   const generatingRef = useRef(false);
   // Which scene is currently shown in the central editor.
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
@@ -148,34 +145,14 @@ function App() {
   // Track the latest call to ignore stale async results.
   const latestRunIdRef = useRef<string | null>(null);
 
-  /**
-   * Invalidate any in-flight model run so a stale response cannot
-   * overwrite state after the user has changed source, preferences,
-   * or document content.
-   */
   const invalidateModelRun = () => {
     latestRunIdRef.current = null;
   };
 
-  /**
-   * Invalidate the pending Writer draft so an outdated patch
-   * cannot be applied after the user has changed source text,
-   * preferences, document content, provider, or outline.
-   *
-   * This must be called at every context-change site that could
-   * make a previously generated draft stale.  Skipping it would
-   * allow the "应用到剧本" button to write old source refs /
-   * old provider output into the current document.
-   */
   const invalidateWriterDraft = () => {
     setWriterDraft(null);
   };
 
-  /**
-   * Switch model provider and invalidate any in-flight model run so a
-   * stale response from the old provider cannot write state after the
-   * user has already switched back.
-   */
   const handleProviderChange = (next: ModelProviderType) => {
     invalidateModelRun();
     invalidateWriterDraft();
@@ -207,8 +184,6 @@ function App() {
               const body = await res.json();
               if (body?.trace?.provider === 'local_proxy') {
                 setIsProxyAvailable(true);
-                // Keep default providerType='mock' — the user can
-                // manually switch once they confirm a working API key.
               }
             } catch {
               // JSON parse failed — not our endpoint
@@ -238,11 +213,7 @@ function App() {
     () => withParsedNovelChapters(screenplayDocument, parsedNovel.chapters),
     [parsedNovel.chapters, screenplayDocument],
   );
-  // Keep docRef in sync with the derived working document used by all call sites.
   docRef.current = workingDocument;
-  // Clamp activeSceneIndex when scenes array shrinks below current index
-  // (e.g. document reset, outline regeneration).  Using useEffect keeps
-  // the setState out of the render path.
   useEffect(() => {
     const maxIndex = Math.max(0, workingDocument.script.scenes.length - 1);
     if (activeSceneIndex > maxIndex) {
@@ -303,6 +274,27 @@ function App() {
     [adaptationDiagnostics, chapterCount, documentDiagnostics, parsedNovel.diagnostics, sourceText],
   );
 
+  // Stage-filtered diagnostics for inline display between converter cards.
+  const sourceDiagnostics = useMemo(
+    () => displayedDiagnostics.filter((d) => d.path === 'sourceText' || d.path?.startsWith('ch_')),
+    [displayedDiagnostics],
+  );
+  const planDiagnostics = useMemo(
+    () =>
+      displayedDiagnostics.filter(
+        (d) =>
+          d.path === 'model' || d.code?.startsWith('model_') || d.code?.startsWith('adaptation_'),
+      ),
+    [displayedDiagnostics],
+  );
+  const documentExportDiagnostics = useMemo(
+    () =>
+      displayedDiagnostics.filter(
+        (d) => !sourceDiagnostics.includes(d) && !planDiagnostics.includes(d),
+      ),
+    [displayedDiagnostics, sourceDiagnostics, planDiagnostics],
+  );
+
   const yamlPreview = useMemo(
     () => serializeDocumentToYaml(workingDocument, { generatedAt }),
     [generatedAt, workingDocument],
@@ -313,9 +305,6 @@ function App() {
   // ---------------------------------------------------------------------------
 
   const handleEdit = (action: EditAction) => {
-    // Any document mutation invalidates in-flight model runs and
-    // pending Writer drafts — a stale plan or patch must not
-    // overwrite the user's manual edits.
     if (action.type !== 'select-block') {
       invalidateModelRun();
       invalidateWriterDraft();
@@ -415,8 +404,6 @@ function App() {
   const generateSceneOutline = async () => {
     const runId = crypto.randomUUID();
     latestRunIdRef.current = runId;
-    // Clear previous plan and draft immediately so stale outline
-    // or Writer patch is not displayed or confirmed.
     setAdaptationPlan(undefined);
     setAdaptationTrace([]);
     setWriterDraft(null);
@@ -430,12 +417,10 @@ function App() {
         structuredOutput: { schemaId: ADAPTATION_PLAN_SCHEMA_ID },
       });
 
-      // Discard stale results (user changed source while request was in flight).
       if (result.runId !== latestRunIdRef.current) {
         return;
       }
 
-      // Validate the Architect output before accepting it into state.
       const knownChapterIds = new Set(
         workingDocument.source.type === 'novel'
           ? workingDocument.source.chapters.map((c) => c.id)
@@ -444,13 +429,10 @@ function App() {
       const validated = validateAdaptationPlan(result.data, { knownChapterIds });
 
       if (!validated.plan) {
-        // Schema or semantic failure — plan is NOT written to state.
-        // Clear any previous plan so stale outline is not displayed.
         setAdaptationPlan(undefined);
         setAdaptationTrace([]);
         setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
         setExportFeedback('');
-        setOutputTab('outline');
         return;
       }
 
@@ -478,7 +460,6 @@ function App() {
       );
       setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
       setExportFeedback('');
-      setOutputTab('outline');
       clearSelection();
     } catch (err) {
       setAdaptationDiagnostics([
@@ -497,17 +478,11 @@ function App() {
       return;
     }
 
-    // Prevent duplicate Writer calls when the Topbar "剧本" or SceneOutline
-    // "确认生成" button is clicked while a generation is already in flight.
-    // Uses a ref (not state) for synchronous guard — useState closures are
-    // stale until the next render.
     if (generatingRef.current) {
       return;
     }
     generatingRef.current = true;
 
-    // Clear any previous draft before starting a new generation so the
-    // "应用到剧本" button cannot apply a stale patch while generating.
     setWriterDraft(null);
 
     const runId = crypto.randomUUID();
@@ -523,7 +498,6 @@ function App() {
         structuredOutput: { schemaId: WRITER_SCENE_PATCH_SCHEMA_ID },
       });
 
-      // Discard stale results.
       if (result.runId !== latestRunIdRef.current) {
         return;
       }
@@ -534,8 +508,6 @@ function App() {
         return;
       }
 
-      // Validate the Writer output. Do NOT apply to document yet —
-      // the user must review the draft and explicitly apply it.
       const knownChapterIds = new Set(
         workingDocument.source.type === 'novel'
           ? workingDocument.source.chapters.map((c) => c.id)
@@ -554,11 +526,9 @@ function App() {
         return;
       }
 
-      // Store validated patch as pending draft — NOT applied yet.
       setWriterDraft(validated.patch);
       setAdaptationDiagnostics([...result.diagnostics, ...validated.diagnostics]);
       setExportFeedback('');
-      setOutputTab('outline');
     } catch (err) {
       setWriterDraft(null);
       setAdaptationDiagnostics([
@@ -575,14 +545,6 @@ function App() {
     }
   };
 
-  /**
-   * Apply the pending Writer draft to the screenplay document.
-   *
-   * This is the ONLY function allowed to call applySceneDrafts().
-   * The user must explicitly click "应用到剧本" after reviewing the
-   * generated draft — the outline confirmation flow no longer writes
-   * directly to ScreenplayDocument.script.
-   */
   const applyWriterDraft = () => {
     if (!writerDraft) return;
 
@@ -602,8 +564,6 @@ function App() {
   };
 
   const copyYaml = async () => {
-    setOutputTab('yaml');
-
     if (!exportStatus.isReady) {
       setExportFeedback('存在 validation error，暂不复制。');
       return;
@@ -618,8 +578,6 @@ function App() {
   };
 
   const downloadYaml = () => {
-    setOutputTab('yaml');
-
     if (!exportStatus.isReady) {
       setExportFeedback('存在 validation error，暂不下载。');
       return;
@@ -639,129 +597,77 @@ function App() {
   };
 
   return (
-    <div className="app-shell">
-      <Topbar
-        canGenerate={!!adaptationPlan && !hasWriterDraft && !isDraftApplied && !isGeneratingWriter}
-        canApply={hasWriterDraft && !isDraftApplied}
-        isExportReady={exportStatus.isReady}
-        onGenerateOutline={generateSceneOutline}
-        onGenerateDraft={generateWriterDraft}
-        onApplyDraft={applyWriterDraft}
-        onDownloadYaml={downloadYaml}
-        providerType={providerType}
-        isProxyAvailable={isProxyAvailable}
-        isProbing={isProbing}
-        onProviderChange={handleProviderChange}
-      />
+    <AppShell
+      providerType={providerType}
+      isProxyAvailable={isProxyAvailable}
+      isProbing={isProbing}
+      onProviderChange={handleProviderChange}
+      center={
+        <>
+          <SceneNavigator
+            scenes={workingDocument.script.scenes}
+            activeIndex={activeSceneIndex}
+            onSelect={setActiveSceneIndex}
+          />
+          <ScriptEditorPanel
+            charactersById={charactersById}
+            scene={activeScene}
+            selectedBlockId={selectedBlockId}
+            onEdit={handleEdit}
+            onUpdateBlockText={handleUpdateBlockText}
+          />
+        </>
+      }
+      right={
+        <ConverterPanel>
+          {/* Workflow actions — at the top of the converter card flow */}
+          <ConverterActions
+            canGenerate={
+              !!adaptationPlan && !hasWriterDraft && !isDraftApplied && !isGeneratingWriter
+            }
+            canApply={hasWriterDraft && !isDraftApplied}
+            isExportReady={exportStatus.isReady}
+            onGenerateOutline={generateSceneOutline}
+            onGenerateDraft={generateWriterDraft}
+            onApplyDraft={applyWriterDraft}
+            onDownloadYaml={downloadYaml}
+          />
 
-      <WorkbenchLayout
-        left={
-          <PanelShell>
-            <PanelHeader>
-              <PanelTitle icon={<FileText size={16} />}>Source</PanelTitle>
-              <PanelMeta>
-                {workingDocument.source.type} · {chapterCount} chapters
-              </PanelMeta>
-            </PanelHeader>
-            <PanelBody>
-              <SourcePanel
-                chapterCount={chapterCount}
-                sourceText={sourceText}
-                sourceType={workingDocument.source.type}
-                onSourceTextChange={updateSourceText}
-              />
-              <AdaptationPreferencesPanel
-                preferences={adaptationPreferences}
-                onPreferenceChange={updateAdaptationPreference}
-              />
-            </PanelBody>
-          </PanelShell>
-        }
-        center={
-          <>
-            {workingDocument.script.scenes.length > 1 && (
-              <nav
-                aria-label="场景导航"
-                className="flex flex-wrap gap-1 rounded-md bg-[#f2ece2] p-1"
-              >
-                {workingDocument.script.scenes.map((scene, index) => (
-                  <button
-                    key={scene.id}
-                    className={
-                      index === activeSceneIndex
-                        ? 'min-h-8 rounded bg-white px-2.5 text-xs font-extrabold text-[#17211d] shadow-sm'
-                        : 'min-h-8 rounded bg-transparent px-2.5 text-xs font-extrabold text-[#66716b] hover:bg-[#fffaf2]'
-                    }
-                    type="button"
-                    onClick={() => setActiveSceneIndex(index)}
-                  >
-                    Scene {index + 1} · {scene.title}
-                  </button>
-                ))}
-              </nav>
-            )}
-            <ScriptEditorPanel
-              charactersById={charactersById}
-              scene={activeScene}
-              selectedBlockId={selectedBlockId}
-              onEdit={handleEdit}
-              onUpdateBlockText={handleUpdateBlockText}
-            />
-          </>
-        }
-        right={
-          <PanelShell className="panel-output">
-            <PanelHeader>
-              <PanelTitle icon={<Layout size={16} />}>Output</PanelTitle>
-              <PanelMeta>document v{workingDocument.documentVersion}</PanelMeta>
-            </PanelHeader>
-            <PanelBody>
-              <Tabs
-                tabs={[
-                  { id: 'outline', label: 'Scene Outline' },
-                  { id: 'yaml', label: 'YAML' },
-                  { id: 'diagnostics', label: 'Diagnostics' },
-                ]}
-                activeTabId={outputTab}
-                onTabChange={setOutputTab}
-              />
-              <div className="min-h-0 flex-1 overflow-auto">
-                {outputTab === 'outline' &&
-                  (adaptationPlan ? (
-                    <SceneOutlinePanel
-                      plan={adaptationPlan}
-                      trace={adaptationTrace}
-                      writerDraft={writerDraft}
-                      isGeneratingWriter={isGeneratingWriter}
-                      isDraftApplied={isDraftApplied}
-                      onGenerateDraft={generateWriterDraft}
-                      onApplyDraft={applyWriterDraft}
-                    />
-                  ) : (
-                    <div className="flex items-start gap-2 rounded-md border border-[#d9d1c4] bg-[#fffdf8] p-4 text-sm leading-relaxed text-[#66716b]">
-                      尚未生成改编大纲。点击顶部「大纲」按钮开始。
-                    </div>
-                  ))}
-                {outputTab === 'yaml' && (
-                  <div className="flex min-h-0 flex-col gap-2.5">
-                    <YamlExportPanel
-                      exportStatus={exportStatus}
-                      feedback={exportFeedback}
-                      onCopy={copyYaml}
-                      onDownload={downloadYaml}
-                    />
-                    <pre className="yaml-preview">{yamlPreview}</pre>
-                  </div>
-                )}
-                {outputTab === 'diagnostics' && (
-                  <DiagnosticsPanel diagnostics={displayedDiagnostics} />
-                )}
-              </div>
-            </PanelBody>
-          </PanelShell>
-        }
-      />
-    </div>
+          <SourcePanel
+            chapterCount={chapterCount}
+            sourceText={sourceText}
+            sourceType={workingDocument.source.type}
+            onSourceTextChange={updateSourceText}
+          />
+          <DiagnosticsBand diagnostics={sourceDiagnostics} />
+
+          <AdaptationPreferencesPanel
+            preferences={adaptationPreferences}
+            onPreferenceChange={updateAdaptationPreference}
+          />
+
+          <SceneOutlinePanel
+            plan={adaptationPlan}
+            trace={adaptationTrace}
+            writerDraft={writerDraft}
+            isGeneratingWriter={isGeneratingWriter}
+            isDraftApplied={isDraftApplied}
+            onGenerateDraft={generateWriterDraft}
+            onApplyDraft={applyWriterDraft}
+          />
+          <DiagnosticsBand diagnostics={planDiagnostics} />
+
+          <YamlExportPanel
+            exportStatus={exportStatus}
+            feedback={exportFeedback}
+            onCopy={copyYaml}
+            onDownload={downloadYaml}
+          />
+          <pre className="yaml-preview">{yamlPreview}</pre>
+          <DiagnosticsBand diagnostics={documentExportDiagnostics} />
+        </ConverterPanel>
+      }
+    />
   );
 }
 

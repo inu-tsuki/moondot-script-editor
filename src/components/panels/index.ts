@@ -1,10 +1,14 @@
-export { AdaptationPreferencesPanel } from './AdaptationPreferencesPanel';
-export { DiagnosticsPanel } from './DiagnosticsPanel';
-export { ManuscriptSurface } from './ManuscriptSurface';
-export { ScenePage } from './ScenePage';
-export { SceneOutlinePanel } from './SceneOutlinePanel';
-export { ScriptEditorPanel } from './ScriptEditorPanel';
-export { SourcePanel } from './SourcePanel';
-export { Topbar } from './Topbar';
-export { WorkbenchLayout } from './WorkbenchLayout';
-export { YamlExportPanel } from './YamlExportPanel';
+// Panels have been migrated to src/features/editor/ and src/features/converter/.
+// This barrel file is kept as a re-export convenience during migration.
+// New code should import from the feature directories directly.
+export { SceneNavigator, ScriptEditorPanel } from '../../features/editor';
+export {
+  AdaptationPreferencesPanel,
+  ConverterActions,
+  ConverterPanel,
+  DiagnosticsBand,
+  DiagnosticsPanel,
+  SceneOutlinePanel,
+  SourcePanel,
+  YamlExportPanel,
+} from '../../features/converter';

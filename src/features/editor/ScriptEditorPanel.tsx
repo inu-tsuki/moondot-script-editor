@@ -1,6 +1,6 @@
 import { AlertTriangle, ChevronDown, Plus, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { Button, PanelTitle } from '../ui';
+import { Button, PanelTitle } from '../../components/ui';
 import { ManuscriptSurface } from './ManuscriptSurface';
 import { ScenePage } from './ScenePage';
 import { buildDefaultBlockDraft } from '../../core/screenplay';

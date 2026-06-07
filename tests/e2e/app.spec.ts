@@ -1,18 +1,19 @@
 import { expect, test } from '@playwright/test';
 
-test('loads the workbench and switches output tabs', async ({ page }) => {
+test('loads the workbench with editor and converter panels', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByText('Source', { exact: true })).toBeVisible();
+  // Editor center area
   await expect(page.getByText('Semantic Blocks', { exact: true })).toBeVisible();
-  await expect(page.getByText('Output', { exact: true })).toBeVisible();
 
-  const outputPanel = page.getByRole('main').filter({ hasText: 'Output' });
+  // Converter right panel — source card
+  await expect(page.getByLabel('小说来源文本')).toBeVisible();
 
-  await outputPanel.getByRole('button', { name: 'Diagnostics' }).click();
-  await expect(page.getByText('提交样例满足 3+ 章节检查。')).toBeVisible();
+  // Scene outline card is hidden when no plan (returns null internally)
+  // ConverterActions buttons are visible
+  await expect(page.getByRole('button', { name: '大纲' })).toBeVisible();
 
-  await outputPanel.getByRole('button', { name: 'YAML' }).click();
+  // YAML preview is visible in the converter flow
   await expect(page.locator('.yaml-preview')).toContainText('schemaVersion');
 });
 

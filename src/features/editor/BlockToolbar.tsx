@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '../ui';
+import { Button } from '../../components/ui';
 import { buildDefaultBlockDraft } from '../../core/screenplay';
 import type { BlockId, CharacterProfile, EditAction, SceneId } from '../../core/screenplay';
 

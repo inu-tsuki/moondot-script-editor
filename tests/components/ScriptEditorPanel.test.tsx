@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { ScriptEditorPanel } from '../../src/components/panels/ScriptEditorPanel';
+import { ScriptEditorPanel } from '../../src/features/editor/ScriptEditorPanel';
 import { demoScreenplayDocument } from '../../src/core/screenplay';
 import type { EditAction, ScreenplayDocument } from '../../src/core/screenplay';
 
