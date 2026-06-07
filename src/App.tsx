@@ -144,6 +144,16 @@ function App() {
     latestRunIdRef.current = null;
   };
 
+  /**
+   * Switch model provider and invalidate any in-flight model run so a
+   * stale response from the old provider cannot write state after the
+   * user has already switched back.
+   */
+  const handleProviderChange = (next: ModelProviderType) => {
+    invalidateModelRun();
+    setProviderType(next);
+  };
+
   // ---------------------------------------------------------------------------
   // Auto-detect /api/model/call availability on mount
   // ---------------------------------------------------------------------------
@@ -169,7 +179,8 @@ function App() {
               const body = await res.json();
               if (body?.trace?.provider === 'local_proxy') {
                 setIsProxyAvailable(true);
-                setProviderType('local_proxy');
+                // Keep default providerType='mock' — the user can
+                // manually switch once they confirm a working API key.
               }
             } catch {
               // JSON parse failed — not our endpoint
@@ -555,7 +566,7 @@ function App() {
         providerType={providerType}
         isProxyAvailable={isProxyAvailable}
         isProbing={isProbing}
-        onProviderChange={setProviderType}
+        onProviderChange={handleProviderChange}
       />
 
       <WorkbenchLayout

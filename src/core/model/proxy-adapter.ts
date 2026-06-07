@@ -106,6 +106,38 @@ const classifyFetchError = (
   return { reason: 'network', message: 'Unknown error during model call.' };
 };
 
+/**
+ * Minimal structural guard for a JSON value that claims to be a
+ * ModelCallResult.  Ensures the envelope fields are present with
+ * expected types before we cast and return it to the caller.
+ *
+ * This prevents malformed server / proxy responses from crashing
+ * downstream code that assumes valid diagnostics / trace / error.
+ */
+const isModelCallResultEnvelope = (x: unknown): x is Record<string, unknown> => {
+  if (x === null || typeof x !== 'object') return false;
+  const obj = x as Record<string, unknown>;
+
+  // diagnostics must be an array (even if empty)
+  if (!Array.isArray(obj.diagnostics)) return false;
+
+  // data must exist as a key (null is acceptable)
+  if (!('data' in obj)) return false;
+
+  // trace must be a non-null object with at least a provider string
+  const trace = obj.trace;
+  if (trace === null || typeof trace !== 'object') return false;
+  if (typeof (trace as Record<string, unknown>).provider !== 'string') return false;
+
+  // error, if present, must have a reason string
+  if (obj.error !== undefined && obj.error !== null) {
+    const err = obj.error as Record<string, unknown>;
+    if (typeof err.reason !== 'string') return false;
+  }
+
+  return true;
+};
+
 // ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
@@ -198,11 +230,7 @@ export const createProxyModelAdapter = (baseUrl = ''): ModelAdapter => {
       // ------------------------------------------------------------------
       // 5. Validate shape and return
       // ------------------------------------------------------------------
-      if (
-        parsed !== null &&
-        typeof parsed === 'object' &&
-        'trace' in (parsed as Record<string, unknown>)
-      ) {
+      if (isModelCallResultEnvelope(parsed)) {
         // Looks like a ModelCallResult — return as-is.
         // The caller (App.tsx) will run semantic validation on the data.
         return parsed as ModelCallResult<ModelStagePayloadMap[S]>;

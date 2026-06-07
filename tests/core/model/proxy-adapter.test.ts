@@ -327,6 +327,65 @@ describe('ProxyModelAdapter', () => {
       expect(result.error!.reason).toBe('parse');
       expect(result.error!.message).toContain('unexpected JSON structure');
     });
+
+    it('returns parse error on JSON with trace but missing diagnostics and data', async () => {
+      // Malformed envelope: has trace but missing required fields
+      mockFetch.mockResolvedValueOnce(textResponse({ trace: { provider: 'local_proxy' } }));
+
+      const adapter = createProxyModelAdapter();
+      const result = await adapter.call(architectRequest);
+
+      expect(result.data).toBeNull();
+      expect(result.error).toBeDefined();
+      expect(result.error!.reason).toBe('parse');
+      expect(result.error!.message).toContain('unexpected JSON structure');
+    });
+
+    it('returns parse error when diagnostics is not an array', async () => {
+      mockFetch.mockResolvedValueOnce(
+        textResponse({
+          data: null,
+          diagnostics: 'not-an-array',
+          trace: { provider: 'local_proxy' },
+        }),
+      );
+
+      const adapter = createProxyModelAdapter();
+      const result = await adapter.call(architectRequest);
+
+      expect(result.data).toBeNull();
+      expect(result.error).toBeDefined();
+      expect(result.error!.reason).toBe('parse');
+    });
+
+    it('returns parse error when trace is null', async () => {
+      mockFetch.mockResolvedValueOnce(textResponse({ data: null, diagnostics: [], trace: null }));
+
+      const adapter = createProxyModelAdapter();
+      const result = await adapter.call(architectRequest);
+
+      expect(result.data).toBeNull();
+      expect(result.error).toBeDefined();
+      expect(result.error!.reason).toBe('parse');
+    });
+
+    it('returns parse error when error.reason is not a string', async () => {
+      mockFetch.mockResolvedValueOnce(
+        textResponse({
+          data: null,
+          diagnostics: [],
+          trace: { provider: 'local_proxy' },
+          error: { reason: 42 },
+        }),
+      );
+
+      const adapter = createProxyModelAdapter();
+      const result = await adapter.call(architectRequest);
+
+      expect(result.data).toBeNull();
+      expect(result.error).toBeDefined();
+      expect(result.error!.reason).toBe('parse');
+    });
   });
 
   // -----------------------------------------------------------------------
