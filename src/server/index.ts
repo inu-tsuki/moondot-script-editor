@@ -17,4 +17,5 @@
 
 export { canMakeRealCall, readServerEnv } from './env';
 export type { ServerEnv } from './env';
+export { handleModelCall } from './handler';
 export { createOpenAIClient } from './openai-client';
